@@ -1,0 +1,14 @@
+[package]
+name = "d-organizer"
+version = "0.1.0"
+authors = ["KBR9 <cabero96@protonmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+notify = "4.0.12"
+serde = { version = "1.0.104", features = ["derive"] }
+serde_json = "1.0.48"
+structopt = { version = "0.3" }
+crossbeam-channel = "0.4.0"
