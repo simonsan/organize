@@ -1,5 +1,3 @@
-use crate::config::Rule;
-use regex::Regex;
 use std::io::Error;
 use std::path::{Path, PathBuf};
 

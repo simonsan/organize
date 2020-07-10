@@ -1,0 +1,1 @@
+./target/release/d-organizer --watch /home/cabero/Downloads/ --config ./config.json &

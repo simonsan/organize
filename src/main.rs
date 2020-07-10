@@ -2,14 +2,12 @@ mod cli;
 mod config;
 mod file;
 
-use crate::config::{Config, Rule};
+use crate::config::Config;
 use notify::{raw_watcher, RawEvent, RecursiveMode, Watcher};
 use regex::Regex;
 use std::sync::mpsc::channel;
 use std::thread;
 use std::time::Duration;
-use std::path::Path;
-use std::io::Error;
 
 fn main() -> std::io::Result<()> {
     let config = Config::new()?;
@@ -42,13 +40,13 @@ fn main() -> std::io::Result<()> {
                                         .expect("ERROR: invalid regex");
                                     if regex.is_match(abs_path.to_str().unwrap()) {
                                         thread::sleep(Duration::from_millis(5000));
-                                        file::File::from(&abs_path).rename(&pattern.dst);
+                                        file::File::from(&abs_path).rename(&pattern.dst)?;
                                         continue 'outer;
                                     }
                                 }
                             }
                             thread::sleep(Duration::from_millis(5000));
-                            file::File::from(&abs_path).rename(&rule.dst);
+                            file::File::from(&abs_path).rename(&rule.dst)?;
                         }
                     }
                 }

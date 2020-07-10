@@ -1,10 +1,7 @@
 use crate::cli::Cli;
 use serde::Deserialize;
-use std::borrow::{Borrow, BorrowMut};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::io::{Error, ErrorKind};
-use std::iter::FromIterator;
-use std::ops::BitXor;
 use std::path::PathBuf;
 
 fn vec_compare(a: Vec<&String>, b: Vec<&String>) -> bool {

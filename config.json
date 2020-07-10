@@ -4,6 +4,10 @@
     "dst": "/home/cabero/Documents"
   },
   {
+    "extension": "doc",
+    "dst": "/home/cabero/Documents"
+  },
+  {
     "extension": "jpg",
     "dst": "/home/cabero/Pictures",
     "patterns": [
@@ -12,5 +16,9 @@
         "dst": "/home/cabero/Pictures/Wallpapers"
       }
     ]
+  },
+  {
+    "extension": "jpeg",
+    "dst": "/home/cabero/Pictures"
   }
 ]
