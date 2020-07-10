@@ -1,11 +1,16 @@
 [
   {
-    "extensions": ["pdf"],
+    "extension": "pdf",
     "dst": "/home/cabero/Documents"
   },
   {
-    "extensions": ["jpg"],
-    "suffix": "unsplash",
-    "dst": "/home/cabero/Pictures/Wallpapers"
+    "extension": "jpg",
+    "dst": "/home/cabero/Pictures",
+    "patterns": [
+      {
+        "regex": ".*unsplash.*",
+        "dst": "/home/cabero/Pictures/Wallpapers"
+      }
+    ]
   }
 ]

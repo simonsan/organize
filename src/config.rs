@@ -1,37 +1,51 @@
 use crate::cli::Cli;
 use serde::Deserialize;
+use std::borrow::{Borrow, BorrowMut};
+use std::collections::{HashMap, HashSet};
 use std::io::{Error, ErrorKind};
+use std::iter::FromIterator;
 use std::ops::BitXor;
 use std::path::PathBuf;
-use std::collections::HashMap;
 
-#[derive(Debug, Deserialize)]
-pub struct Rule {
-    pub extensions: Option<Vec<String>>,
-    pub suffix: Option<String>,
-    pub prefix: Option<String>,
-    pub regex: Option<String>,
+fn vec_compare(a: Vec<&String>, b: Vec<&String>) -> bool {
+    (a.len() == b.len()) &&  // zip stops at the shortest
+        a.iter()
+            .zip(b)
+            .all(|(a,b)| a.as_str() == b.as_str())
+}
+
+#[derive(Debug, Deserialize, Eq, PartialEq)]
+pub struct PatternRule {
+    pub regex: String,
     pub dst: String,
+}
+
+#[derive(Debug, Deserialize, Eq, PartialEq)]
+pub struct Rule {
+    pub extension: String,
+    pub dst: String,
+    pub patterns: Option<Vec<PatternRule>>,
 }
 
 impl Rule {
     fn validate(&self) -> Result<(), Error> {
-        if self.extensions.as_ref().unwrap().is_empty() || self.extensions.as_ref().unwrap().iter().any(|x| x == "") {
-            return Err(Error::new(ErrorKind::InvalidData, "extensions cannot be empty or contain empty strings"))
+        if self.extension == "" {
+            return Err(Error::new(ErrorKind::InvalidData, "field 'extension' cannot be an empty string"))
         }
-        if !self.has_valid_detailed_rules() {
-            return Err(Error::new(ErrorKind::InvalidData, "suffix/prefix options are mutually exclusive with regex"))
+        if self.dst == "" {
+            return Err(Error::new(ErrorKind::InvalidData, "field 'dst' cannot be an empty string"))
         }
-
-        let new_path = PathBuf::from(self.dst.as_str());
-        if !new_path.exists() {
-            return Err(Error::new(ErrorKind::InvalidData, "invalid dst field, please provide a valid path"))
+        if self.patterns.is_some() {
+            for pattern in self.patterns.as_ref().unwrap().iter() {
+                if pattern.regex == "" {
+                    return Err(Error::new(ErrorKind::InvalidData, "field 'regex' cannot be an empty string"))
+                }
+                if pattern.dst == "" {
+                    return Err(Error::new(ErrorKind::InvalidData, "field 'dst' cannot be an empty string"))
+                }
+            }
         }
         Ok(())
-    }
-
-    pub fn has_valid_detailed_rules(&self) -> bool {
-        !(self.regex.is_some() && (self.prefix.is_some() || self.suffix.is_some()))
     }
 }
 
@@ -47,7 +61,7 @@ impl Config {
         let f = std::fs::File::open(&app.config)?;
         let reader = std::io::BufReader::new(f);
         let rules: Vec<Rule> = serde_json::from_reader(reader)?;
-        let config = Config {
+        let mut config = Config {
             watch: app.watch,
             path: app.config,
             rules,
@@ -56,20 +70,28 @@ impl Config {
         Ok(config)
     }
 
-    fn validate(&self) -> Result<(), Error> {
+    fn validate(&mut self) -> Result<(), Error> {
+        let mut extensions: Vec<&String> = Vec::new();
         for rule in self.rules.iter() {
-            rule.validate()?
+            rule.validate()?;
+            extensions.push(&rule.extension);
+        }
+
+        let mut unique_extensions = extensions.clone();
+        unique_extensions.dedup_by(|a, b| a == b);
+        if !vec_compare(extensions, unique_extensions) {
+            return Err(Error::new(ErrorKind::InvalidData, "ERROR: multiple rules with the same extension"))
         }
         Ok(())
     }
 
-    pub fn map_extensions_to_rules(&self) -> HashMap<&String, &Rule> {
-        let mut map: HashMap<&String, &Rule> = Default::default();
+    pub fn map_extension_to_rule(&self) -> HashMap<&String, &Rule> {
+        let mut map: HashMap<&String, &Rule> = HashMap::new();
         for rule in self.rules.iter() {
-            for extension in rule.extensions.as_ref().unwrap() {
-               map.insert(extension, rule);
-            }
+            map.insert(&rule.extension, rule);
         }
         map
     }
 }
+
+

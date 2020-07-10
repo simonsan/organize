@@ -1,38 +1,42 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$schema": "http://json-schema.org/draft-04/schema#",
   "type": "array",
   "items": [
     {
       "type": "object",
       "properties": {
-        "extensions": {
-          "type": "array",
-          "description": "file extensions to match (do not include the dot)",
-          "items": [
-            {
-              "type": "string"
-            }
-          ]
-        },
-        "prefix": {
+        "extension": {
           "type": "string",
-          "description": "optional prefix to match"
-        },
-        "suffix": {
-          "type": "string",
-          "description": "optional suffix to match"
-        },
-        "regex": {
-          "type": "string",
-          "description": "optional regex to match"
         },
         "dst": {
           "type": "string",
-          "description": "folder to which matched files will be moved"
+          "description": "default destination folder for the specified extension"
+        },
+        "patterns": {
+          "type": "array",
+          "description": "optional array of regex patterns",
+          "items": [
+            {
+              "type": "object",
+              "properties": {
+                "regex": {
+                  "type": "string"
+                },
+                "dst": {
+                  "type": "string",
+                  "description": "destination folder for files matching the specified regex"
+                }
+              },
+              "required": [
+                "regex",
+                "dst"
+              ]
+            }
+          ]
         }
       },
       "required": [
-        "extensions",
+        "extension",
         "dst"
       ]
     }
