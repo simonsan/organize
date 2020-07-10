@@ -16,7 +16,7 @@ pub struct Cli {
 
 impl Cli {
     pub fn new() -> Result<Cli, Error> {
-        let mut app = Cli::from_args() as Cli;
+        let mut app: Cli = Cli::from_args();
         app.watch = canonicalize(&app.watch)?;
         app.config = canonicalize(&app.config)?;
         Ok(app)

@@ -1,5 +1,11 @@
 [
   {
-    "dst": ""
+    "extensions": ["pdf"],
+    "dst": "/home/cabero/Documents"
+  },
+  {
+    "extensions": ["jpg"],
+    "suffix": "unsplash",
+    "dst": "/home/cabero/Pictures/Wallpapers"
   }
 ]
