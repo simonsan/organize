@@ -13,15 +13,15 @@ impl<'a> File<'a> {
     }
 
     pub fn rename(&self, dst: &str) -> Result<(), Error> {
-        let file_stem = self.path.file_stem().unwrap().to_str().unwrap();
+        let stem = self.path.file_stem().unwrap().to_str().unwrap();
         let extension = self.path.extension().unwrap().to_str().unwrap();
-        let mut new_path = Path::new(dst).join(format!("{}.{}", file_stem, extension));
+        let mut new_path = Path::new(dst).join(format!("{}.{}", stem, extension));
         let mut n = 1;
 
         while new_path.exists() {
             let new_filename = format!(
                 "{} ({:?}).{}",
-                file_stem,
+                stem,
                 n,
                 extension
             );
