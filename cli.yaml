@@ -1,25 +1,25 @@
 name: d-organizer
 version: "1.0"
 author: Andres Cabero <cabero96@protonmail.com>
-about: redistribute files across your filesystem using a set of rules
+about: a productivity tool for tidiness lovers
 args:
   - config:
       short: c
       long: config
-      value_name: config
+      value_name: filepath
       help: config filepath
       takes_value: true
       required: true
   - watch:
       short: w
       long: watch
-      value_name: watch
+      value_name: path
       help: folder to watch for new files
       takes_value: true
       required: true
   - delay:
       short: d
       long: delay
-      value_name: delay
-      help: delay time before files are moved (defaults to 5 seconds)
+      value_name: seconds
+      help: delay time before files are moved (defaults to 3 seconds)
       takes_value: true

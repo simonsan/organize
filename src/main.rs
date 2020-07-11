@@ -4,7 +4,6 @@ mod file;
 mod logger;
 mod notifier;
 
-extern crate log;
 #[macro_use]
 extern crate clap;
 use crate::config::UserConfig;

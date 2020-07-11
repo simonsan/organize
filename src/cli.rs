@@ -12,19 +12,23 @@ pub struct Cli {
 impl Cli {
     pub fn new() -> Result<Cli, Error> {
         let yaml = load_yaml!("../cli.yaml");
-        let matches = App::from_yaml(yaml).get_matches();
+        let app = App::from_yaml(yaml);
+        let matches = app.get_matches();
         let config = canonicalize(PathBuf::from(matches.value_of("config").unwrap()))?;
         if config.exists() {
             if config.extension().is_some()
                 && (config.extension().unwrap().eq("yaml") || config.extension().unwrap().eq("yml"))
             {
                 let watch = canonicalize(PathBuf::from(matches.value_of("watch").unwrap()))?;
-                let delay = matches.value_of("delay").unwrap_or("5000");
-                Ok(Cli {
-                    config,
-                    watch,
-                    delay: delay.parse().unwrap(),
-                })
+                let delay = match matches.value_of("delay") {
+                    Some(time) => {
+                        time.parse::<u64>().unwrap() * 1000
+                    },
+                    None => {
+                        3000
+                    }
+                };
+                Ok(Cli { config, watch, delay })
             } else {
                 Err(Error::new(
                     ErrorKind::InvalidData,
