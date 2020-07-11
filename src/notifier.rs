@@ -19,9 +19,11 @@ impl Notifier {
     }
 
     pub fn watch(&mut self, user_config: UserConfig) {
-        self.watcher
-            .watch(user_config.args.watch, RecursiveMode::NonRecursive)
-            .unwrap();
+        for path in user_config.args.watch.iter() {
+            self.watcher
+                .watch(path, RecursiveMode::NonRecursive)
+                .unwrap();
+        }
 
         loop {
             match self.receiver.recv() {

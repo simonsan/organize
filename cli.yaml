@@ -16,6 +16,7 @@ args:
       value_name: path
       help: folder to watch for new files
       takes_value: true
+      multiple: true
       required: true
   - delay:
       short: d
