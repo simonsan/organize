@@ -64,7 +64,6 @@ impl Config {
         Ok(config.validate()?)
     }
 
-    // TODO implement
     fn validate(self) -> Result<Self, Error> {
         for (_, fields) in self.rules.iter() {
             if fields.new_folder == "" {
