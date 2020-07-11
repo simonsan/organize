@@ -1,0 +1,15 @@
+[package]
+name = "d-organizer"
+version = "0.1.0"
+authors = ["KBR9 <cabero96@protonmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+notify = "4.0.12"
+crossbeam-channel = "0.4.0"
+regex = "1"
+clap = { version = "2.33.1", features = ["yaml"] }
+yaml-rust = "0.4"
+log = "0.4"
