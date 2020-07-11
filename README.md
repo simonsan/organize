@@ -23,8 +23,7 @@ cargo install --path .
 
 ## Configuration 
 This tool requires a YAML configuration file. You can find an example configuration at ```examples/config.yaml```.
-In this file you must declare rules that will define the program's behaviour. 
-Each rule is an object like this:
+In this file you must declare rules that will define the program's behaviour as follows:
 
 ```$xslt
 rules:
