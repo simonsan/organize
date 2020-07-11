@@ -14,17 +14,17 @@ impl<'a> Rule<'a> {
         Rule { yaml }
     }
     pub fn get_dst_for_file(&self, file: &File) -> &'a str {
-        let patterns = self.yaml["subpatterns"].as_vec();
+        let patterns = self.yaml["patterns"].as_vec();
         if patterns.is_some() {
             for pattern in patterns.unwrap() {
                 if file.matches_pattern(pattern) {
-                    let dst = pattern["dst"].as_str().unwrap();
+                    let dst = pattern["new_folder"].as_str().unwrap();
                     return dst;
                 }
             }
         }
 
-        self.yaml["dst"].as_str().unwrap()
+        self.yaml["new_folder"].as_str().unwrap()
     }
 
     pub fn is_badvalue(&self) -> bool {
@@ -51,4 +51,7 @@ impl UserConfig {
             rules: rules.index(0).clone(),
         })
     }
+
+    // TODO implement
+    // fn validate() { }
 }

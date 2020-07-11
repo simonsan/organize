@@ -1,0 +1,55 @@
+# d-organizer
+This is a productivity tool designed to keep your filesystem in order.
+For example, you can use this to keep your downloads folder clean. You can even manage several folders, so you can keep not only your downloads folder clean, but also your home directory.
+
+## Requirements
+- Rust
+- Cargo
+
+## Installation
+To install, run the following commands:
+```$xslt
+git clone git@github.com:cbr9/d-organizer.git
+cd d-organizer
+cargo install --path .
+```
+
+or
+```$xslt
+git clone https://github.com/cbr9/d-organizer.git
+cd d-organizer
+cargo install --path .
+```
+
+## Configuration 
+This tool requires a YAML configuration file. You can find an example configuration at ```examples/config.yaml```.
+In this file you must declare rules that will define the program's behaviour. 
+Each rule is an object like this:
+
+```
+extension:
+    - new_folder: <string>
+    - patterns:
+        - regex: <string>
+          new_folder: <string>
+        - ... more patterns
+```
+
+If you're not familiar with YAML, here we're defining an object with the name `extension`.
+Within it we define a `new_folder` field, which is required, and a `patterns` field, which is optional.
+Files with the given `extension` will be moved to `new_folder`.
+The `patterns` field defines an array of objects, each of which must have `regex` and a `new_folder` field. 
+Filenames matching the specified regular expression will be moved to its associated `new_folder`.
+
+## Usage
+Run
+```$xslt
+d-organizer --watch /folder/to/watch/ --config config.yaml --delay 2
+```
+The `delay` argument is optional. By default, `d-organizer` will wait for three seconds before it moves any file.
+This is to allow browser to automatically open files after they've been downloaded (specifying a delay of 0 will break this behaviour, since the browser won't find the given file).
+
+I plan to change this behaviour so that files are not moved while they're open in another process. Feel free to open a PR if you want to help.
+
+### Recommendation
+You can set `d-organizer` to start on system launch (memory footprint is about 300K).

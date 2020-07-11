@@ -3,36 +3,36 @@ pics: &base_pics "/home/user/Pictures"
 dl: &deep_learning "/home/user/Documents/Bibliography/CS/Machine Learning & Data Science/Deep Learning"
 
 pdf:
-  dst: *docs
-  subpatterns:
+  new_folder: *docs
+  patterns:
     - regex: ".*deep learning.*"
-      dst: *deep_learning
+      new_folder: *deep_learning
     - regex: ".*neural.*"
-      dst: *deep_learning
+      new_folder: *deep_learning
 
 docx:
-  dst: *docs
+  new_folder: *docs
 
 jpg:
-  dst: *base_pics
-  subpatterns:
+  new_folder: *base_pics
+  patterns:
     - regex: ".*unsplash.*"
-      dst: "/home/user/Pictures/Wallpapers"
+      new_folder: "/home/user/Pictures/Wallpapers"
 
 jpeg:
-  dst: *base_pics
+  new_folder: *base_pics
 
 py:
-  dst: "/home/user/Code/Python"
+  new_folder: "/home/user/Code/Python"
 
 rs:
-  dst: "/home/user/Code/Rust"
+  new_folder: "/home/user/Code/Rust"
 
 ts:
-  dst: "/home/user/Code/Web-Development"
+  new_folder: "/home/user/Code/Web-Development"
 
 go:
-  dst: "/home/user/Code/Go/src/"
+  new_folder: "/home/user/Code/Go/src/"
 
 sh:
-  dst: "/home/user/Code/Bash"
+  new_folder: "/home/user/Code/Bash"

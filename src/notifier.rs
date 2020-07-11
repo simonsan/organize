@@ -1,6 +1,7 @@
 use crate::config::{Rule, UserConfig};
 use crate::file::File;
 use notify::{raw_watcher, RawEvent, RecommendedWatcher, RecursiveMode, Watcher};
+use notify::op;
 use std::sync::mpsc::{channel, Receiver};
 use std::thread;
 use std::time::Duration;
@@ -32,7 +33,7 @@ impl Notifier {
                     op: Ok(op),
                     cookie: _,
                 }) => match op {
-                    notify::op::CREATE => {
+                    op::CREATE => {
                         if abs_path.is_file() {
                             let extension = abs_path.extension().unwrap().to_str().unwrap();
                             let rule = Rule::from_yaml(&user_config.rules[extension]);
@@ -49,7 +50,7 @@ impl Notifier {
                                 }
                             }
                         }
-                    }
+                    },
                     _ => continue,
                 },
                 Ok(event) => eprintln!("broken event: {:?}", event),
