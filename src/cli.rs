@@ -19,7 +19,7 @@ impl Cli {
             if config.extension().is_some()
                 && (config.extension().unwrap().eq("yaml") || config.extension().unwrap().eq("yml"))
             {
-                let watch: Vec<PathBuf> = matches.values_of("watch").unwrap().map(|path| PathBuf::from(path)).collect();
+                let watch: Vec<PathBuf> = matches.values_of("watch").unwrap().map(|path| canonicalize(PathBuf::from(path)).unwrap()).collect();
                 let delay = match matches.value_of("delay") {
                     Some(time) => {
                         time.parse::<u64>().unwrap() * 1000
