@@ -15,28 +15,39 @@ impl Cli {
         let yaml = load_yaml!("../cli.yaml");
         let app = App::from_yaml(yaml);
         let matches = app.get_matches();
-        let config = canonicalize(PathBuf::from(matches.value_of("config").unwrap()))?;
+        let config = canonicalize(PathBuf::from(
+            matches.value_of("config").unwrap(), // safe unwrap, "config" is required
+        ))?;
+
         if config.exists() {
-            if config.extension().is_some()
-                && (config.extension().unwrap().eq("yaml") || config.extension().unwrap().eq("yml"))
-            {
-                let watch: Vec<PathBuf> = matches.values_of("watch").unwrap().map(|path| canonicalize(PathBuf::from(path)).unwrap()).collect();
-                let delay = match matches.value_of("delay") {
-                    Some(time) => {
-                        time.parse::<u8>().unwrap()
-                    },
-                    None => {
-                        3
-                    }
-                };
-                Ok(Cli { config, watch, delay })
+            let extension = config.extension().ok_or_else(|| {
+                Error::new(ErrorKind::InvalidData, "invalid config file extension")
+            })?;
+            if extension.eq("yaml") || extension.eq("yaml") {
+                let watch: Vec<PathBuf> = matches
+                    .values_of("watch")
+                    .unwrap() // safe unwrap, "watch" is required
+                    .map(|path| {
+                        canonicalize(PathBuf::from(path))
+                            .unwrap_or_else(|_| panic!("{} is not a valid path", path))
+                    })
+                    .collect();
+
+                let delay = matches
+                    .value_of("delay")
+                    .unwrap_or("3")
+                    .parse::<u8>()
+                    .unwrap(); // safe unwrap, "3" cannot fail to be parsed
+
+                Ok(Cli {
+                    config,
+                    watch,
+                    delay,
+                })
             } else {
                 Err(Error::new(
                     ErrorKind::InvalidData,
-                    format!(
-                        "ERROR: invalid file extension for {:#?}",
-                        &config.file_name().unwrap()
-                    ),
+                    "ERROR: invalid config file extension",
                 ))
             }
         } else {

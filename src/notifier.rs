@@ -1,7 +1,8 @@
 use crate::config::{Config, Rule};
 use crate::file::File;
-use notify::{raw_watcher, RawEvent, RecommendedWatcher, RecursiveMode, Watcher};
 use notify::op;
+use notify::{raw_watcher, Error, RawEvent, RecommendedWatcher, RecursiveMode, Watcher};
+use std::str::pattern::Pattern;
 use std::sync::mpsc::{channel, Receiver};
 use std::thread;
 use std::time::Duration;
@@ -19,11 +20,9 @@ impl Notifier {
         Notifier { watcher, receiver }
     }
 
-    pub fn watch(&mut self, user_config: Config) {
+    pub fn watch(&mut self, user_config: Config) -> Result<(), Error> {
         for path in user_config.args.watch.iter() {
-            self.watcher
-                .watch(path, RecursiveMode::NonRecursive)
-                .unwrap();
+            self.watcher.watch(path, RecursiveMode::NonRecursive)?;
         }
 
         loop {
@@ -34,29 +33,28 @@ impl Notifier {
                     cookie: _,
                 }) => match op {
                     op::CREATE => {
-                        if abs_path.is_file() {
-                            let extension = abs_path.extension().unwrap().to_str().unwrap();
-                            let fields = user_config.rules.get(extension);
-                            match fields {
-                                Some(fields) => {
-                                    let rule = Rule::from_fields(fields);
-                                    let file = File::from(&abs_path);
-                                    let dst = rule.get_dst_for_file(&file);
-                                    if user_config.args.delay > 0 {
-                                        thread::sleep(Duration::from_millis((user_config.args.delay as u64) * 1000));
+                        let extension = abs_path.extension();
+                        if abs_path.is_file() && extension.is_some() && extension.unwrap().to_str().is_some() {
+                            let fields = user_config.rules.get(extension.unwrap().to_str().unwrap());  // safe unwraps
+                            if fields.is_some() {
+                                let rule = Rule::from_fields(fields.unwrap()); // safe unwrap
+                                let file = File::from(&abs_path);
+                                let dst = rule.get_file_dst(&file);
+                                if user_config.args.delay > 0 {
+                                    thread::sleep(Duration::from_millis(
+                                        (user_config.args.delay as u64) * 1000,
+                                    ));
+                                }
+                                match file.rename(dst) {
+                                    Ok(_) => continue,
+                                    Err(e) => {
+                                        eprintln!("{}", e);
+                                        continue;
                                     }
-                                    match file.rename(dst) {
-                                        Ok(_) => continue,
-                                        Err(e) => {
-                                            eprintln!("{}", e);
-                                            continue;
-                                        }
-                                    }
-                                },
-                                None => continue
+                                }
                             }
                         }
-                    },
+                    }
                     _ => continue,
                 },
                 Ok(event) => eprintln!("broken event: {:?}", event),
