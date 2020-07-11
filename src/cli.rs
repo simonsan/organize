@@ -6,7 +6,7 @@ use std::path::PathBuf;
 pub struct Cli {
     pub(crate) config: PathBuf,
     pub(crate) watch: Vec<PathBuf>,
-    pub(crate) delay: u64,
+    pub(crate) delay: u8,
 }
 
 impl Cli {
@@ -22,10 +22,10 @@ impl Cli {
                 let watch: Vec<PathBuf> = matches.values_of("watch").unwrap().map(|path| canonicalize(PathBuf::from(path)).unwrap()).collect();
                 let delay = match matches.value_of("delay") {
                     Some(time) => {
-                        time.parse::<u64>().unwrap() * 1000
+                        time.parse::<u8>().unwrap()
                     },
                     None => {
-                        3000
+                        3
                     }
                 };
                 Ok(Cli { config, watch, delay })

@@ -26,7 +26,7 @@ This tool requires a YAML configuration file. You can find an example configurat
 In this file you must declare rules that will define the program's behaviour. 
 Each rule is an object like this:
 
-```
+```$xslt
 extension:
     - new_folder: <string>
     - patterns:

@@ -41,7 +41,7 @@ impl Notifier {
                             if !(rule.is_null() || rule.is_badvalue()) {
                                 let dst = rule.get_dst_for_file(&file);
                                 if user_config.args.delay > 0 {
-                                    thread::sleep(Duration::from_millis(user_config.args.delay));
+                                    thread::sleep(Duration::from_millis((user_config.args.delay as u64) * 1000));
                                 }
                                 match file.rename(dst) {
                                     Ok(_) => continue,
