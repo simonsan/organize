@@ -34,13 +34,6 @@ rules:
               new_folder: <string>
             - ... more patterns
 
-    extension:
-        - new_folder: <string>
-        - patterns:
-            - regex: <string>
-              new_folder: <string>
-            - ... more patterns
-
     ... more extensions
 ```
 
