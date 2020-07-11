@@ -6,12 +6,12 @@ mod notifier;
 
 #[macro_use]
 extern crate clap;
-use crate::config::UserConfig;
+use crate::config::Config;
 use crate::notifier::Notifier;
 
 fn main() {
-    let user_config = UserConfig::new();
-    match user_config {
+    let config = Config::new();
+    match config {
         Ok(config) => {
             let mut notifier = Notifier::new();
             notifier.watch(config);

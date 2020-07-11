@@ -3,6 +3,7 @@ use std::fs::canonicalize;
 use std::io::{Error, ErrorKind};
 use std::path::PathBuf;
 
+#[derive(Debug, PartialEq)]
 pub struct Cli {
     pub(crate) config: PathBuf,
     pub(crate) watch: Vec<PathBuf>,
