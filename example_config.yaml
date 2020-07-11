@@ -18,8 +18,6 @@ jpg:
   subpatterns:
     - regex: ".*unsplash.*"
       dst: "/home/cabero/Pictures/Wallpapers"
-    - regex: ".*wikipedia.*"
-      dst: *base_pics
 
 jpeg:
   dst: *base_pics

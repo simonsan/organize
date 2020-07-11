@@ -1,17 +1,17 @@
 use crate::cli::Cli;
+use crate::file::File;
 use std::fs;
 use std::io::Error;
 use std::ops::Index;
 use yaml_rust::{Yaml, YamlLoader};
-use crate::file::File;
 
 pub struct Rule<'a> {
-    yaml: &'a Yaml
+    yaml: &'a Yaml,
 }
 
-impl <'a> Rule <'a>{
+impl<'a> Rule<'a> {
     pub fn from_yaml(yaml: &Yaml) -> Rule {
-        Rule{ yaml }
+        Rule { yaml }
     }
     pub fn get_dst_for_file(&self, file: &File) -> &'a str {
         let patterns = self.yaml["subpatterns"].as_vec();
@@ -19,7 +19,7 @@ impl <'a> Rule <'a>{
             for pattern in patterns.unwrap() {
                 if file.matches_pattern(pattern) {
                     let dst = pattern["dst"].as_str().unwrap();
-                    return dst
+                    return dst;
                 }
             }
         }
