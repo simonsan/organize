@@ -1,8 +1,7 @@
 use crate::config::{Config, Rule};
 use crate::file::File;
 use notify::op;
-use notify::{raw_watcher, Error, RawEvent, RecommendedWatcher, RecursiveMode, Watcher};
-use std::str::pattern::Pattern;
+use notify::{raw_watcher, RawEvent, RecommendedWatcher, RecursiveMode, Watcher};
 use std::sync::mpsc::{channel, Receiver};
 use std::thread;
 use std::time::Duration;
@@ -20,9 +19,11 @@ impl Notifier {
         Notifier { watcher, receiver }
     }
 
-    pub fn watch(&mut self, user_config: Config) -> Result<(), Error> {
+    pub fn watch(&mut self, user_config: Config) {
         for path in user_config.args.watch.iter() {
-            self.watcher.watch(path, RecursiveMode::NonRecursive)?;
+            self.watcher
+                .watch(path, RecursiveMode::NonRecursive)
+                .unwrap();
         }
 
         loop {
@@ -34,8 +35,12 @@ impl Notifier {
                 }) => match op {
                     op::CREATE => {
                         let extension = abs_path.extension();
-                        if abs_path.is_file() && extension.is_some() && extension.unwrap().to_str().is_some() {
-                            let fields = user_config.rules.get(extension.unwrap().to_str().unwrap());  // safe unwraps
+                        if abs_path.is_file()
+                            && extension.is_some()
+                            && extension.unwrap().to_str().is_some()
+                        {
+                            let fields =
+                                user_config.rules.get(extension.unwrap().to_str().unwrap()); // safe unwraps
                             if fields.is_some() {
                                 let rule = Rule::from_fields(fields.unwrap()); // safe unwrap
                                 let file = File::from(&abs_path);
