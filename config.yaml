@@ -1,0 +1,25 @@
+docs: &docs "/home/cabero/Documents"
+pics: &base_pics "/home/cabero/Pictures"
+dl: &deep_learning "/home/cabero/Documents/Bibliography/CS/Machine Learning & Data Science/Deep Learning"
+
+pdf:
+  dst: *docs
+  subpatterns:
+    - regex: ".*deep learning.*"
+      dst: *deep_learning
+    - regex: ".*neural.*"
+      dst: *deep_learning
+
+docx:
+  dst: *docs
+
+jpg:
+  dst: *base_pics
+  subpatterns:
+    - regex: ".*unsplash.*"
+      dst: "/home/cabero/Pictures/Wallpapers"
+    - regex: ".*wikipedia.*"
+      dst: *base_pics
+      
+jpeg:
+  dst: *base_pics

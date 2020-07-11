@@ -1,5 +1,7 @@
 use std::io::Error;
 use std::path::{Path, PathBuf};
+use yaml_rust::Yaml;
+use regex::Regex;
 
 pub struct File<'a> {
     path: &'a PathBuf,
@@ -18,5 +20,13 @@ impl<'a> File<'a> {
                 .to_str()
                 .unwrap(),
         )?)
+    }
+
+    pub fn matches_pattern(&self, pattern: &'a Yaml) -> bool {
+        let regex = pattern["regex"].as_str().unwrap();
+        let regex = Regex::new(regex)
+            .expect("ERROR: invalid regex");
+
+        regex.is_match(self.path.to_str().unwrap())
     }
 }

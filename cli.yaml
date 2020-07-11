@@ -1,0 +1,19 @@
+name: d-organizer
+version: "1.0"
+author: Andres Cabero <cabero96@protonmail.com>
+about: redistribute files across your filesystem using a set of rules
+args:
+  - config:
+      short: c
+      long: config
+      value_name: config
+      help: config filepath
+      takes_value: true
+      required: true
+  - watch:
+      short: w
+      long: watch
+      value_name: watch
+      help: folder to watch for new files
+      takes_value: true
+      required: true
