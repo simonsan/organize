@@ -6,6 +6,7 @@ use std::path::PathBuf;
 pub struct Cli {
     pub(crate) config: PathBuf,
     pub(crate) watch: PathBuf,
+    pub(crate) delay: u64,
 }
 
 impl Cli {
@@ -18,7 +19,8 @@ impl Cli {
                 && (config.extension().unwrap().eq("yaml") || config.extension().unwrap().eq("yml"))
             {
                 let watch = canonicalize(PathBuf::from(matches.value_of("watch").unwrap()))?;
-                Ok(Cli { config, watch })
+                let delay = matches.value_of("delay").unwrap_or("5000");
+                Ok(Cli { config, watch, delay: delay.parse().unwrap() })
             } else {
                 Err(Error::new(
                     ErrorKind::InvalidData,

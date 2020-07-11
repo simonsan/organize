@@ -90,6 +90,7 @@ version = "0.1.0"
 dependencies = [
  "clap",
  "crossbeam-channel",
+ "log",
  "notify",
  "regex",
  "yaml-rust 0.4.4",

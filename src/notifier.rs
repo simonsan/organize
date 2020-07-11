@@ -33,11 +33,11 @@ impl Notifier {
                     notify::op::CREATE => {
                         if abs_path.is_file() {
                             let extension = abs_path.extension().unwrap().to_str().unwrap();
-                            let rule = Rule::from(&user_config.rules[extension]);
+                            let rule = Rule::from_yaml(&user_config.rules[extension]);
                             let file = File::from(&abs_path);
                             if !(rule.is_null() || rule.is_badvalue()) {
                                 let dst = rule.get_dst_for_file(&file);
-                                thread::sleep(Duration::from_millis(5000));
+                                thread::sleep(Duration::from_millis(user_config.args.delay));
                                 file.rename(dst).unwrap();
                             }
                         }

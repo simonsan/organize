@@ -6,15 +6,15 @@ use yaml_rust::{Yaml, YamlLoader};
 use crate::file::File;
 
 pub struct Rule<'a> {
-    rule: &'a Yaml
+    yaml: &'a Yaml
 }
 
 impl <'a> Rule <'a>{
-    pub fn from(rule: &Yaml) -> Rule {
-        Rule{rule}
+    pub fn from_yaml(yaml: &Yaml) -> Rule {
+        Rule{ yaml }
     }
     pub fn get_dst_for_file(&self, file: &File) -> &'a str {
-        let patterns = self.rule["subpatterns"].as_vec();
+        let patterns = self.yaml["subpatterns"].as_vec();
         if patterns.is_some() {
             for pattern in patterns.unwrap() {
                 if file.matches_pattern(pattern) {
@@ -24,15 +24,15 @@ impl <'a> Rule <'a>{
             }
         }
 
-        self.rule["dst"].as_str().unwrap()
+        self.yaml["dst"].as_str().unwrap()
     }
 
     pub fn is_badvalue(&self) -> bool {
-        self.rule.is_badvalue()
+        self.yaml.is_badvalue()
     }
 
     pub fn is_null(&self) -> bool {
-        self.rule.is_null()
+        self.yaml.is_null()
     }
 }
 

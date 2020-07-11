@@ -20,6 +20,21 @@ jpg:
       dst: "/home/cabero/Pictures/Wallpapers"
     - regex: ".*wikipedia.*"
       dst: *base_pics
-      
+
 jpeg:
   dst: *base_pics
+
+py:
+  dst: "/home/cabero/Code/Python"
+
+rs:
+  dst: "/home/cabero/Code/Rust"
+
+ts:
+  dst: "/home/cabero/Code/Web-Development"
+
+go:
+  dst: "/home/cabero/Code/Go/src/"
+
+sh:
+  dst: "/home/cabero/Code/Bash"
