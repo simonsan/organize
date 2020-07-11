@@ -27,19 +27,31 @@ In this file you must declare rules that will define the program's behaviour.
 Each rule is an object like this:
 
 ```$xslt
-extension:
-    - new_folder: <string>
-    - patterns:
-        - regex: <string>
-          new_folder: <string>
-        - ... more patterns
+rules:
+    extension:
+        - new_folder: <string>
+        - patterns:
+            - regex: <string>
+              new_folder: <string>
+            - ... more patterns
+
+    extension:
+        - new_folder: <string>
+        - patterns:
+            - regex: <string>
+              new_folder: <string>
+            - ... more patterns
+
+    ... more extensions
 ```
 
-If you're not familiar with YAML, here we're defining an object with the name `extension`.
+If you're not familiar with YAML, here we're defining an object with the name `rules`, which itself holds objects, each of which defines an extension.
 Within it we define a `new_folder` field, which is required, and a `patterns` field, which is optional.
 Files with the given `extension` will be moved to `new_folder`.
 The `patterns` field defines an array of objects, each of which must have `regex` and a `new_folder` field. 
 Filenames matching the specified regular expression will be moved to its associated `new_folder`.
+
+Note: only the `rules` object is required, together with some rules within it. You can define YAML variables outside `rules`.
 
 ## Usage
 Run
