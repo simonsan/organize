@@ -1,4 +1,4 @@
-mod actions;
+pub(crate) mod actions;
 mod filters;
 mod rules;
 

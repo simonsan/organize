@@ -12,8 +12,8 @@ fn main() {
     let config = Config::new();
     match config {
         Ok(config) => {
-            let mut notifier = Notifier::new();
-            notifier.watch(config);
+            // let mut notifier = Notifier::new();
+            // notifier.watch(config);
         }
         Err(e) => eprintln!("{}", e),
     }

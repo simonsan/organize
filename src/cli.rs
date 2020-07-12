@@ -1,10 +1,9 @@
 use clap::App;
-use clap::Clap;
 use std::fs::canonicalize;
 use std::io::{Error, ErrorKind};
 use std::path::PathBuf;
 
-#[derive(Debug, PartialEq, Clap)]
+#[derive(Debug, PartialEq)]
 pub struct Cli {
     pub(crate) config: PathBuf,
     pub(crate) watch: bool,

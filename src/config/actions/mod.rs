@@ -1,10 +1,13 @@
 pub mod file;
+mod utils;
 
+#[derive(PartialEq)]
 pub enum Action {
     Echo,
     Shell,
 }
 
+#[derive(PartialEq)]
 enum FileAction {
     Move,
     Rename,
@@ -13,7 +16,8 @@ enum FileAction {
     Trash,
 }
 
-enum ConflictOption {
+#[derive(PartialEq)]
+pub enum ConflictOption {
     Overwrite,
     Skip,
     Rename,
