@@ -8,6 +8,7 @@ pub struct Cli {
     pub(crate) config: PathBuf,
     pub(crate) watch: Vec<PathBuf>,
     pub(crate) delay: u8,
+    pub(crate) daemon: bool,
 }
 
 impl Cli {
@@ -68,10 +69,13 @@ impl Cli {
             None => 3,
         };
 
+        let daemon = matches.is_present("daemon");
+
         let cli = Cli {
             config,
             watch,
             delay,
+            daemon,
         };
 
         cli.validate_config()?
