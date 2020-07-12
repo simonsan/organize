@@ -1,46 +1,14 @@
+mod actions;
+mod filters;
+mod rules;
+
 use crate::cli::Cli;
-use crate::file::File;
+use crate::config::rules::Fields;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::fs;
 use std::io::{Error, ErrorKind};
 use std::path::Path;
-
-#[derive(Debug, PartialEq, Deserialize)]
-pub struct Pattern {
-    pub(crate) regex: String,
-    pub(crate) new_folder: String,
-}
-
-#[derive(Debug, PartialEq, Deserialize)]
-pub struct Fields {
-    pub(crate) new_folder: String,
-    pub(crate) patterns: Option<Vec<Pattern>>,
-}
-
-pub struct Rule<'a> {
-    fields: &'a Fields,
-}
-
-impl<'a> Rule<'a> {
-    pub fn from_fields(fields: &'a Fields) -> Self {
-        Rule { fields }
-    }
-
-    pub fn get_file_dst(&self, file: &File) -> String {
-        match &self.fields.patterns {
-            Some(patterns) => {
-                for pattern in patterns {
-                    if file.matches_pattern(&pattern) {
-                        return pattern.new_folder.to_owned();
-                    }
-                }
-                self.fields.new_folder.to_owned()
-            }
-            None => self.fields.new_folder.to_owned(),
-        }
-    }
-}
 
 type Rules = HashMap<String, Fields>;
 #[derive(Debug, PartialEq, Deserialize)]

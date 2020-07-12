@@ -1,6 +1,5 @@
 mod cli;
 mod config;
-mod file;
 mod logger;
 mod notifier;
 

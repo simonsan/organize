@@ -1,5 +1,5 @@
+use crate::config::actions::file::File;
 use crate::config::{Config, Rule};
-use crate::file::File;
 use notify::op;
 use notify::{raw_watcher, RawEvent, RecommendedWatcher, RecursiveMode, Watcher};
 use std::sync::mpsc::{channel, Receiver};
