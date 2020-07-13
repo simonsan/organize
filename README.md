@@ -52,7 +52,7 @@ d-organizer --watch /folder/to/watch/ --config config.yaml --delay 2 --daemon
 ```
 As stated above, you can pass several paths to `--watch`.
 The `delay` argument is optional. By default, `d-organizer` will wait for three seconds before it moves any file.
-This is to allow browsers to automatically open files after they've been downloaded (specifying a delay of 0 will break this behaviour, since the browser won't find the given file). the `daemon` option starts the process in the background.
+This is to allow browsers to automatically open files after they've been downloaded (specifying a delay of 0 will break this behaviour, since the browser won't find the given file). The `daemon` option starts the process in the background.
 
 I plan to change this behaviour so that files are not moved while they're open in another process. Feel free to open a PR if you want to help.
 
