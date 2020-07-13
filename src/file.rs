@@ -1,5 +1,5 @@
-use crate::config::actions::utils::get_stem_and_extension;
 use crate::config::actions::ConflictOption;
+use crate::utils::get_stem_and_extension;
 use std::io::{Error, ErrorKind};
 use std::path::{Path, PathBuf};
 
