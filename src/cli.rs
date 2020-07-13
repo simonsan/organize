@@ -11,7 +11,6 @@ pub enum SubCommands {
 
 pub struct Cli<'a> {
     pub subcommand: (SubCommands, ArgMatches<'a>),
-    pub daemon:     bool,
 }
 impl<'a> Cli<'a> {
     pub fn from_yaml(yaml: &'a Yaml) -> Self {
@@ -29,7 +28,6 @@ impl<'a> Cli<'a> {
 
         Cli {
             subcommand: (name, cmd),
-            daemon:     false, // temporary
         }
     }
 }
