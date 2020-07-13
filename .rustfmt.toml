@@ -1,0 +1,17 @@
+unstable_features = true
+indent_style = "Block"
+reorder_imports = true
+brace_style = "SameLineWhere"
+max_width = 140
+merge_derives = true
+normalize_comments = true
+overflow_delimited_expr = true
+reorder_impl_items = true
+struct_field_align_threshold = 30
+struct_lit_single_line = false
+tab_spaces = 4
+trailing_comma = "Vertical"
+trailing_semicolon = true
+use_field_init_shorthand = true
+#fn_call_width = 140
+#struct_variant_width = 140
