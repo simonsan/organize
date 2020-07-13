@@ -2,6 +2,8 @@
   <dictionary name="cabero">
     <words>
       <w>badvalue</w>
+      <w>subcommand</w>
+      <w>subcommands</w>
     </words>
   </dictionary>
 </component>
