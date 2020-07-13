@@ -36,14 +36,15 @@ fn main() -> Result<(), Error> {
                 config.edit_config()?;
             }
         }
-        SubCommands::Run => {
+        SubCommands::Run => todo!(),
+        SubCommands::Suggest => todo!(),
+        SubCommands::Watch => {
             todo!();
             #[allow(unreachable_code)] // temporary
             if cli.daemon {
                 start_daemon()
             }
         }
-        SubCommands::Suggest => todo!(),
     }
     Ok(())
 }

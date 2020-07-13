@@ -6,6 +6,7 @@ pub enum SubCommands {
     Config,
     Run,
     Suggest,
+    Watch,
 }
 
 pub struct Cli<'a> {
@@ -22,6 +23,7 @@ impl<'a> Cli<'a> {
             "config" => SubCommands::Config,
             "run" => SubCommands::Run,
             "suggest" => SubCommands::Suggest,
+            "watch" => SubCommands::Watch,
             _ => panic!("ERROR: subcommands are no longer required or match arms are missing"),
         };
 

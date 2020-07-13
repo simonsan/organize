@@ -3,31 +3,18 @@ author: Andres Cabero <cabero96@protonmail.com>
 version: "1.0"
 about: a productivity tool for tidiness lovers
 settings:
-  - SubcommandRequiredElseHelp # don't touch this
+  - SubcommandRequiredElseHelp
   - StrictUtf8
 subcommands:
   - run:
-      about: Run d-organizer with the default configuration
+      about: Run with the default configuration. Does not apply rules marked with `watch`
       args:
-        - with_config:
+        - with_config: &with-config
             long: with-config
             help: Provide a different configuration
             takes_value: true
             value_name: file
-        - watch:
-            short: w
-            long: watch
-            help: Watch folders with the `watch` config option
-            takes_value: false
-            requires: delay
-            default_value: "false"
-        - delay:
-            short: d
-            long: delay
-            value_name: seconds
-            help: Delay time before files are moved (defaults to 3 seconds)
-            takes_value: true
-            default_value: "3"
+
   - config:
       about: Edit configuration
       args:
@@ -36,3 +23,18 @@ subcommands:
             help: Shows the default configuration path
   - suggest:
       about: Show improved workflow suggestions (must be enabled in config; experimental feature)
+  - watch:
+      about: Watch folders with the `watch` config option
+      args:
+        - with_config: *with-config
+        - delay:
+            short: d
+            long: delay
+            value_name: seconds
+            help: Delay time before files are moved
+            takes_value: true
+            default_value: "3"
+        - daemon:
+            long: daemon
+            takes_value: false
+            help: Start watching as a background process
