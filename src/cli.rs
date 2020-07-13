@@ -1,63 +1,33 @@
-use clap::App;
-use std::fs::canonicalize;
-use std::io::{Error, ErrorKind};
-use std::path::PathBuf;
+use clap::{App, ArgMatches};
+use yaml_rust::Yaml;
 
-#[derive(Debug, PartialEq)]
-pub struct Cli {
-    pub(crate) config: PathBuf,
-    pub(crate) watch: bool,
-    pub(crate) delay: Option<u8>,
+#[derive(PartialEq, Debug)]
+pub enum SubCommands {
+    Config,
+    Run,
+    Suggest,
 }
 
-impl Cli {
-    fn validate_config(self) -> Result<Self, Error> {
-        if self.config.exists() {
-            let extension = self.config.extension().ok_or_else(|| {
-                Error::new(ErrorKind::InvalidData, "invalid config file extension")
-            })?;
-            if !(extension.eq("yaml") || extension.eq("yaml")) {
-                return Err(Error::new(
-                    ErrorKind::InvalidData,
-                    "ERROR: invalid config file extension",
-                ));
-            }
-            return Ok(self);
-        }
-        Err(Error::new(
-            ErrorKind::InvalidData,
-            "ERROR: config file does not exist",
-        ))
-    }
-
-    pub fn new() -> Result<Cli, Error> {
-        let yaml = load_yaml!("../cli.yaml");
+pub struct Cli<'a> {
+    pub subcommand: (SubCommands, ArgMatches<'a>),
+    pub daemon:     bool,
+}
+impl<'a> Cli<'a> {
+    pub fn from_yaml(yaml: &'a Yaml) -> Self {
         let app = App::from_yaml(yaml);
-        let matches = app.get_matches();
-        let config = canonicalize(PathBuf::from(
-            matches.value_of("config").unwrap(), // safe unwrap, "config" is required
-        ))?;
-
-        let watch = matches.values_of("watch").is_some(); // safe unwrap, "watch" is required
-        let mut delay: Option<u8> = None;
-        if watch {
-            delay = Some(match matches.value_of("delay") {
-                Some(delay) => match delay.parse::<u8>() {
-                    Ok(delay) => delay,
-                    Err(_) => {
-                        return Err(Error::new(ErrorKind::InvalidData, "invalid delay value"))
-                    }
-                },
-                None => 3,
-            })
-        }
-
-        let cli = Cli {
-            config,
-            watch,
-            delay,
+        let matches = app.get_matches_safe().unwrap_or_else(|e| e.exit());
+        let (name, cmd) = matches.subcommand();
+        let cmd = cmd.unwrap().clone();
+        let name = match name {
+            "config" => SubCommands::Config,
+            "run" => SubCommands::Run,
+            "suggest" => SubCommands::Suggest,
+            _ => panic!("ERROR: subcommands are no longer required or match arms are missing"),
         };
 
-        Ok(cli.validate_config()?)
+        Cli {
+            subcommand: (name, cmd),
+            daemon:     false, // temporary
+        }
     }
 }
