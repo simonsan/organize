@@ -1,0 +1,38 @@
+name: d-organizer
+author: Andres Cabero <cabero96@protonmail.com>
+version: "1.0"
+about: a productivity tool for tidiness lovers
+settings:
+  - SubcommandRequiredElseHelp # don't touch this
+  - StrictUtf8
+subcommands:
+  - run:
+      about: Run d-organizer with the default configuration
+      args:
+        - with_config:
+            long: with-config
+            help: Provide a different configuration
+            takes_value: true
+            value_name: file
+        - watch:
+            short: w
+            long: watch
+            help: Watch folders with the `watch` config option
+            takes_value: false
+            requires: delay
+            default_value: "false"
+        - delay:
+            short: d
+            long: delay
+            value_name: seconds
+            help: Delay time before files are moved (defaults to 3 seconds)
+            takes_value: true
+            default_value: "3"
+  - config:
+      about: Edit configuration
+      args:
+        - show_path:
+            long: show-path
+            help: Shows the default configuration path
+  - suggest:
+      about: Show improved workflow suggestions (must be enabled in config; experimental feature)
