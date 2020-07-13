@@ -1,82 +1,81 @@
-pub(crate) mod actions;
-mod filters;
-mod rules;
-
-use crate::cli::Cli;
-use crate::config::rules::Fields;
-use serde::Deserialize;
-use std::collections::HashMap;
-use std::fs;
+use crate::cli::{Cli, SubCommands};
+use clap::ArgMatches;
 use std::io::{Error, ErrorKind};
 use std::path::Path;
+use std::process::Command;
+use yaml_rust::{Yaml, YamlEmitter};
 
-type Rules = HashMap<String, Fields>;
-#[derive(Debug, PartialEq, Deserialize)]
-struct UserConfig {
-    rules: Rules,
+pub(crate) mod actions;
+mod filters;
+
+pub struct UserConfig<'a> {
+    args: &'a Cli<'a>,
+    path: &'a Path,
 }
 
-pub struct Config {
-    pub rules: Rules,
-    pub args: Cli,
-}
-
-impl Config {
-    pub fn new() -> Result<Self, Error> {
-        let cli = Cli::new()?;
-        let content = fs::read_to_string(&cli.config)?;
-        let user_config: UserConfig =
-            serde_yaml::from_str(content.as_str()).expect("error parsing config file");
-        let config = Config {
-            args: cli,
-            rules: user_config.rules,
-        };
-
-        Ok(config.validate()?)
+impl<'a> UserConfig<'a> {
+    pub fn new(args: &'a Cli, path: &'a Path) -> Self {
+        UserConfig {
+            args,
+            path,
+        }
     }
 
-    fn validate(self) -> Result<Self, Error> {
-        for fields in self.rules.values() {
-            if fields.new_folder == "" {
-                return Err(Error::new(
-                    ErrorKind::InvalidData,
-                    "field 'new_folder' cannot be an empty string",
-                ));
+    pub fn create_config_dir(&self) -> Result<&Self, Error> {
+        assert!(!self.path.parent().unwrap().exists());
+        std::fs::create_dir(self.path.parent().unwrap())?;
+        Ok(self)
+    }
+
+    pub fn create_config_file(&self, default_config: &'a Yaml) -> Result<&Self, Error> {
+        // safe unwrap, dir is created at $HOME or $UserProfile%,
+        // so it exists and the user must have permissions
+        assert!(!self.path.exists());
+        let mut output = String::new();
+        let mut emitter = YamlEmitter::new(&mut output);
+        emitter
+            .dump(default_config)
+            .expect("ERROR: could not create starter config");
+        std::fs::write(&self.path, output)?;
+        Ok(self)
+    }
+
+    fn prompt_editor_env_var(&self) -> String {
+        let platform = std::env::consts::OS;
+        if platform == "linux" || platform == "macos" {
+            String::from(
+                "d-organizer could not find an $EDITOR environment variable or it's not properly set.\nIn your .bashrc (or .zshrc), set 'export EDITOR=$(which <your-favorite-editor-name>) or \
+                    run d-organizer as 'EDITOR=$(which <your-favorite-editor-name>) d-organizer config'",
+            )
+        } else if platform == "windows" {
+            String::from("d-organizer could not find an EDITOR environment variable or it's not properly set")
+        } else {
+            format!("{} platform not supported", platform)
+        }
+    }
+
+    pub fn show_path(&self) {
+        assert_eq!(self.args.subcommand.0, SubCommands::Config);
+        println!("{}", self.path.to_str().unwrap());
+    }
+
+    pub fn edit_config(&self) -> Result<&Self, Error> {
+        assert_eq!(self.args.subcommand.0, SubCommands::Config);
+        match std::env::var("EDITOR") {
+            Ok(editor) => {
+                let mut editor = Command::new(editor);
+                editor
+                    .arg(self.path.to_str().unwrap())
+                    .spawn()
+                    .expect("ERROR: failed to run editor")
+                    .wait()
+                    .expect("ERROR: command was not running");
+                Ok(self)
             }
-            let new_path = Path::new(&fields.new_folder);
-            if !new_path.exists() {
-                return Err(Error::new(
-                    ErrorKind::InvalidData,
-                    format!("specified path '{}' does not exist", fields.new_folder),
-                ));
-            }
-            match &fields.patterns {
-                Some(patterns) => {
-                    for pattern in patterns.iter() {
-                        if pattern.regex == "" {
-                            return Err(Error::new(
-                                ErrorKind::InvalidData,
-                                "field 'regex' cannot be an empty string",
-                            ));
-                        }
-                        if pattern.new_folder == "" {
-                            return Err(Error::new(
-                                ErrorKind::InvalidData,
-                                "field 'new_folder' cannot be an empty string",
-                            ));
-                        }
-                        let new_path = Path::new(&pattern.new_folder);
-                        if !new_path.exists() {
-                            return Err(Error::new(
-                                ErrorKind::InvalidData,
-                                format!("specified path '{}' does not exist", pattern.new_folder),
-                            ));
-                        }
-                    }
-                }
-                None => continue,
+            Err(_) => {
+                let error_msg = self.prompt_editor_env_var();
+                Err(Error::new(ErrorKind::NotFound, error_msg))
             }
         }
-        Ok(self)
     }
 }
