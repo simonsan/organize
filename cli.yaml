@@ -24,3 +24,6 @@ args:
       value_name: seconds
       help: delay time before files are moved (defaults to 3 seconds)
       takes_value: true
+  - daemon:
+      long: daemon
+      help: run in the background
