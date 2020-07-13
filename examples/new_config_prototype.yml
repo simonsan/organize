@@ -1,0 +1,33 @@
+enable_suggestions: true
+rules:
+  - folders:
+      recursive: false
+      watch: false
+      - path: ... # this folder will not be scanned recursively
+        watch: true # this folder will be constantly watched for changes
+        recursive: false
+      - path: ...
+        recursive: true
+    actions:
+      - ...
+      - ...
+    filters:
+      - ...
+      - ...
+    options:
+      enable_suggestions: false
+
+  - folders:
+      recursive: false
+      watch: false
+      - path: ... # this folder will not be scanned recursively
+        watch: true # this folder will be constantly watched for changes
+        recursive: false
+      - path: ...
+        recursive: true
+    actions:
+      - ...
+      - ...
+    filters:
+      - ...
+      - ...

@@ -17,9 +17,9 @@ fn main() -> Result<(), Error> {
     let config_file = dirs::home_dir()
         .expect("ERROR: cannot determine home directory")
         .join(".d-organizer")
-        .join("config.yml");
+        .join("old_config.yml");
     let yaml = load_yaml!("../cli.yml");
-    let example_config = load_yaml!("../examples/config.yml");
+    let example_config = load_yaml!("../examples/old_config.yml");
     let cli = Cli::from_yaml(yaml);
     let config = UserConfig::new(&cli, &config_file);
     if !config_file.exists() {
