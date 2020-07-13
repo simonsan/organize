@@ -17,7 +17,7 @@ fn main() -> Result<(), Error> {
     let config_file = dirs::home_dir()
         .expect("ERROR: cannot determine home directory")
         .join(".d-organizer")
-        .join("old_config.yml");
+        .join("config.yml");
     let yaml = load_yaml!("../cli.yml");
     let example_config = load_yaml!("../examples/old_config.yml");
     let cli = Cli::from_yaml(yaml);
