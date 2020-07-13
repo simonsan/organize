@@ -8,7 +8,7 @@ pub struct File {
 }
 
 impl<'a> File {
-    pub fn from(path: &'a mut PathBuf) -> Result<Self, Error> {
+    pub fn from(path: &'a PathBuf) -> Result<Self, Error> {
         assert!(
             path.is_file(),
             "ERROR: tried creating a config::actions::File from a non-file PathBuf"
@@ -73,19 +73,18 @@ impl<'a> File {
         Ok(to.to_path_buf())
     }
 
-    pub fn r#move(&mut self, dst: &PathBuf, conflict_option: ConflictOption) -> Result<&Self, Error> {
-        assert!(dst.is_dir());
-        let new_path = self.new_path(stem, extension, dst, conflict_option)?;
-        std::fs::rename(self.path.as_path(), dst.as_path())?;
+    pub fn r#move(&mut self, to: PathBuf, conflict_option: ConflictOption) -> Result<&Self, Error> {
+        assert!(to.is_dir());
+        let new_path = self.new_path(&to, conflict_option)?;
+        std::fs::rename(self.path.as_path(), to.as_path())?;
         self.path = new_path;
         Ok(self)
     }
 
-    pub fn rename(&mut self, dst: &PathBuf, conflict_option: ConflictOption) -> Result<&Self, Error> {
-        assert!(dst.is_file());
-        let (stem, extension) = get_stem_and_extension(dst)?;
-        let new_path = self.new_path(stem, extension, dst, conflict_option)?;
-        std::fs::rename(self.path.as_path(), dst.as_path())?;
+    pub fn rename(&mut self, to: PathBuf, conflict_option: ConflictOption) -> Result<&Self, Error> {
+        assert!(to.is_file());
+        let new_path = self.new_path(&to, conflict_option)?;
+        std::fs::rename(self.path.as_path(), to.as_path())?;
         self.path = new_path;
         Ok(self)
     }
