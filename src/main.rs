@@ -41,7 +41,7 @@ fn main() -> Result<(), Error> {
         SubCommands::Watch => {
             todo!();
             #[allow(unreachable_code)] // temporary
-            if cli.daemon {
+            if cli.subcommand.1.is_present("daemon") {
                 start_daemon()
             }
         }
