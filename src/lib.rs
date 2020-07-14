@@ -2,7 +2,6 @@ mod cli;
 mod config;
 pub(crate) mod file;
 mod logger;
-mod utils;
 
 #[cfg(test)]
 pub mod tests {
