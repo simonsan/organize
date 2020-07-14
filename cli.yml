@@ -7,7 +7,7 @@ settings:
   - StrictUtf8
 subcommands:
   - run:
-      about: Run with the default configuration. Does not apply rules marked with `watch`
+      about: Run with the default configuration
       args:
         - with_config: &with-config
             long: with-config
