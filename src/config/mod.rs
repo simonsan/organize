@@ -1,11 +1,10 @@
 use crate::cli::{Cli, SubCommands};
-use clap::ArgMatches;
 use std::io::{Error, ErrorKind};
 use std::path::Path;
 use std::process::Command;
 use yaml_rust::{Yaml, YamlEmitter};
 
-pub(crate) mod actions;
+pub mod actions;
 mod filters;
 
 pub struct UserConfig<'a> {

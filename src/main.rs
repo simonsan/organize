@@ -1,8 +1,7 @@
 mod cli;
 mod config;
-mod file;
+pub(crate) mod file;
 mod logger;
-pub mod utils;
 
 #[macro_use]
 extern crate clap;
