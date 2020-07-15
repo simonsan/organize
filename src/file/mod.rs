@@ -1,7 +1,7 @@
 pub mod utils;
 
-use crate::config::actions::ConflictOption;
-use crate::file::utils::new_path;
+use crate::configuration::actions::ConflictOption;
+use crate::file::utils::new_filepath;
 use std::fs::canonicalize;
 use std::io::{Error, ErrorKind};
 use std::path::{Path, PathBuf};
@@ -23,17 +23,17 @@ impl<'a> File {
         })
     }
 
-    pub fn copy(&self, to: &Path, conflict_option: ConflictOption) -> Result<PathBuf, Error> {
-        let new_path = new_path(&self.path, to, conflict_option)?;
+    pub fn copy(&self, to: &Path, conflict_option: ConflictOption) -> Result<(), Error> {
+        let new_path = new_filepath(&self.path, to, conflict_option)?;
         std::fs::copy(self.path.as_path(), new_path.as_path()).expect("cannot write file (permission denied)");
-        Ok(new_path)
+        Ok(())
     }
 
     // works for move too
-    pub fn rename(&self, to: &Path, conflict_option: ConflictOption) -> Result<PathBuf, Error> {
-        let new_path = new_path(&self.path, &to, conflict_option)?;
+    pub fn rename(&self, to: &Path, conflict_option: ConflictOption) -> Result<(), Error> {
+        let new_path = new_filepath(&self.path, &to, conflict_option)?;
         std::fs::rename(self.path.as_path(), new_path.as_path()).expect("couldn't rename file");
-        Ok(new_path)
+        Ok(())
     }
 
     pub fn delete(&self) -> Result<(), Error> {

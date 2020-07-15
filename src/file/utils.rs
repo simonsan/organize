@@ -1,4 +1,4 @@
-use crate::config::actions::ConflictOption;
+use crate::configuration::actions::ConflictOption;
 use std::io::{Error, ErrorKind};
 use std::path::{Path, PathBuf};
 
@@ -30,10 +30,10 @@ fn new_dir(to: &Path) -> Result<PathBuf, Error> {
 /// # Errors
 /// This function will return an error in the following case:
 /// * The target path exists and `conflict_option` is set to skip
-pub fn new_path(from: &Path, to: &Path, conflict_option: ConflictOption) -> Result<PathBuf, Error> {
+pub fn new_filepath(from: &Path, to: &Path, conflict_option: ConflictOption) -> Result<PathBuf, Error> {
     if to.exists() {
         return match conflict_option {
-            ConflictOption::Skip => Err(Error::new(
+            ConflictOption::skip => Err(Error::new(
                 ErrorKind::AlreadyExists,
                 format!(
                     "ERROR: {} already exists",
@@ -41,7 +41,7 @@ pub fn new_path(from: &Path, to: &Path, conflict_option: ConflictOption) -> Resu
                         .ok_or_else(|| Error::new(ErrorKind::InvalidData, "ERROR: cannot convert OsStr to &str"))?
                 ),
             )),
-            ConflictOption::Rename => {
+            ConflictOption::rename => {
                 let mut n = 1;
 
                 let (stem, extension) = if to.is_file() {
@@ -60,7 +60,7 @@ pub fn new_path(from: &Path, to: &Path, conflict_option: ConflictOption) -> Resu
                 }
                 Ok(new_path)
             }
-            ConflictOption::Overwrite => {
+            ConflictOption::overwrite => {
                 if to.is_file() {
                     Ok(to.to_path_buf())
                 } else if to.is_dir() {
@@ -69,6 +69,7 @@ pub fn new_path(from: &Path, to: &Path, conflict_option: ConflictOption) -> Resu
                     panic!("file is neither a file nor a dir?")
                 }
             }
+            ConflictOption::ask => todo!(),
         };
     }
     Ok(to.to_path_buf())
