@@ -1,51 +1,26 @@
 mod cli;
-mod config;
-pub(crate) mod file;
-mod logger;
+pub mod configuration;
+pub mod file;
+mod subcommands;
 
-#[macro_use]
-extern crate clap;
-extern crate yaml_rust;
-use crate::cli::{Cli, SubCommands};
-use crate::config::UserConfig;
+use crate::cli::Cli;
+use crate::subcommands::config::UserConfig;
+use colored::Colorize;
 use std::env;
 use std::io::Error;
 use std::process::Command;
 
-fn main() -> Result<(), Error> {
-    let config_file = dirs::home_dir()
-        .expect("ERROR: cannot determine home directory")
-        .join(".d-organizer")
-        .join("config.yml");
-    let yaml = load_yaml!("../cli.yml");
-    let example_config = load_yaml!("../examples/old_config.yml");
-    let cli = Cli::from_yaml(yaml);
-    let config = UserConfig::new(&cli, &config_file);
-    if !config_file.exists() {
-        config
-            .create_config_dir()
-            .and_then(|config| config.create_config_file(example_config))?;
-    }
-
-    match cli.subcommand.0 {
-        SubCommands::Config => {
-            if cli.subcommand.1.is_present("show_path") {
-                config.show_path();
-            } else {
-                config.edit_config()?;
-            }
-        }
-        SubCommands::Run => todo!(),
-        SubCommands::Suggest => todo!(),
-        SubCommands::Watch => {
-            todo!();
-            #[allow(unreachable_code)] // temporary
-            if cli.subcommand.1.is_present("daemon") {
-                start_daemon()
-            }
+fn main() {
+    let cli = Cli::new();
+    let config = UserConfig::new(&cli);
+    match config {
+        Ok(config) => cli.run(config).unwrap(),
+        Err(e) => {
+            let description = e.to_string();
+            print!("{}", "ERROR: ".red());
+            println!("{}", description);
         }
     }
-    Ok(())
 }
 
 fn start_daemon() {
