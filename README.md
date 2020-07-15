@@ -1,3 +1,5 @@
+This branch is in beta and the configuration section of this readme does not apply.
+
 # d-organizer
 This is a productivity tool designed to keep your filesystem in order.
 For example, you can use this to keep your downloads folder clean. You can even manage several folders, so you can keep not only your downloads folder clean, but also your home directory.
