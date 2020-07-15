@@ -21,6 +21,11 @@ subcommands:
         - show_path:
             long: show-path
             help: Shows the default configuration path
+            conflicts_with: new
+        - new:
+            long: new
+            conflicts_with: show_path
+            help: create a new config file in the current directory
   - suggest:
       about: Show improved workflow suggestions (must be enabled in config; experimental feature)
   - watch:
@@ -38,3 +43,5 @@ subcommands:
             long: daemon
             takes_value: false
             help: Start watching as a background process
+  - logs:
+      about: Show logs
