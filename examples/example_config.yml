@@ -4,18 +4,12 @@ rules:
         to: ""
         if_exists: rename # default
         counter_separator: " " # default
-      echo: ""
-      shell: ""
-      delete: true
 
-    filters:
-      regex: ".*all.*"
     options:
       watch: true
-      hidden_files: false
 
     folders:
-      - path: "/"
+      - path: "/home/user/"
         options:
           watch: false
-          hidden_files: true
+          hidden_files: false
