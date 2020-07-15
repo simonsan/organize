@@ -10,6 +10,8 @@ use std::env;
 use std::io::Error;
 use std::process::Command;
 
+// TODO remove panics
+
 fn main() {
     let cli = Cli::new();
     let config = UserConfig::new(&cli);

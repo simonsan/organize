@@ -45,35 +45,8 @@ impl Cli {
                 }
             }
             SubCommands::Run => {
-                let config = config.validate()?;
-                for rule in config.rules.iter() {
-                    let actions = &rule.actions;
-                    let folders = &rule.folders;
-                    // let filters = &rule.filters; // these unwraps are safe because the config has been previously filled with defaults
-                    let options = rule.options.as_ref().unwrap();
-                    for folder in folders {
-                        let files = fs::read_dir(folder.path.as_ref().unwrap()).unwrap();
-                        for file in files {
-                            match file {
-                                Ok(file) => {
-                                    let path = file.path();
-                                    let filename = path.file_name().unwrap().to_str().unwrap();
-                                    let is_file = path.is_file();
-                                    let is_hidden_file = filename.starts_with(".");
-                                    let must_process_hidden_files =
-                                        folder.options.as_ref().unwrap().hidden_files.unwrap();
-                                    if !(!is_file || !must_process_hidden_files && is_hidden_file) {
-                                        // if it is a file and it's either a hidden file and this folder is configured to process them
-                                        // or it's not a hidden file in the first place (automatically simplified)
-                                        println!("{}", filename);
-                                        println!("{:?}", file.metadata());
-                                    }
-                                }
-                                Err(e) => eprintln!("{}", e),
-                            }
-                        }
-                    }
-                }
+                // let config = config.validate()?;
+                todo!();
             }
             SubCommands::Suggest => todo!(),
             SubCommands::Watch => {

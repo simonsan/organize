@@ -26,7 +26,6 @@ impl UserConfig {
         config.path = config.path(args);
         config.rules = config.parse()?;
         config.fill_missing_fields();
-
         if !config.path.exists() {
             utils::create_config_file(&config.path)?;
         };
