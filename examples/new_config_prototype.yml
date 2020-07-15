@@ -1,33 +1,21 @@
-enable_suggestions: true
 rules:
-  - folders:
-      recursive: false
-      watch: false
-      - path: ... # this folder will not be scanned recursively
-        watch: true # this folder will be constantly watched for changes
-        recursive: false
-      - path: ...
-        recursive: true
-    actions:
-      - ...
-      - ...
-    filters:
-      - ...
-      - ...
-    options:
-      enable_suggestions: false
+  - actions:
+      rename:
+        to: ""
+        if_exists: rename # default
+        counter_separator: " " # default
+      echo: ""
+      shell: ""
+      delete: true
 
-  - folders:
-      recursive: false
-      watch: false
-      - path: ... # this folder will not be scanned recursively
-        watch: true # this folder will be constantly watched for changes
-        recursive: false
-      - path: ...
-        recursive: true
-    actions:
-      - ...
-      - ...
     filters:
-      - ...
-      - ...
+      regex: ".*all.*"
+    options:
+      watch: true
+      hidden_files: false
+
+    folders:
+      - path: "/"
+        options:
+          watch: false
+          hidden_files: true
