@@ -3,45 +3,60 @@ pub mod utils;
 use crate::cli::Cli;
 use crate::configuration::options::Options;
 use crate::configuration::Rule;
-use crate::subcommands::SubCommands;
-use colored::Colorize;
 use std::collections::HashMap;
 use std::fs;
 use std::io::{Error, ErrorKind};
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use yaml_rust::YamlLoader;
 
+/// Represents the user's configuration file
+/// ### Fields
+/// * `path`: the path the user's config, either the default one or some other passed with the --with-config argument
+/// * `rules`: a list of parsed rules defined by the user
 pub struct UserConfig {
     pub path: PathBuf,
-    pub rules: Vec<Rule>,
+    pub rules: Rules,
 }
 
-impl UserConfig {
-    pub fn new(args: &Cli) -> Result<Self, Error> {
-        let mut config = UserConfig {
-            path: PathBuf::new(),
-            rules: Vec::new(),
-        };
-        config.path = config.path(args);
-        config.rules = config.parse()?;
-        config.fill_missing_fields();
-        if !config.path.exists() {
-            utils::create_config_file(&config.path)?;
-        };
-        Ok(config)
-    }
+pub struct Rules(Vec<Rule>);
 
-    fn parse(&self) -> Result<Vec<Rule>, Error> {
-        let content = fs::read_to_string(&self.path)?;
+impl Rules {
+    /// Returns a new object containing the parsed rules from the user's config file.
+    /// ### Errors
+    /// This function will return an error in the following cases:
+    /// - The config file does not contain a `rules` field
+    /// - The path does not already exist.
+    /// Other errors may also be returned according to OpenOptions::open.
+    /// - It encounters while reading an error of a kind
+    /// other than ErrorKind::Interrupted, or if the contents of the file are not valid UTF-8.
+    pub(in crate::subcommands::config) fn new(path: &Path) -> Result<Self, Error> {
+        let content = fs::read_to_string(path)?;
         let rules: HashMap<String, Vec<Rule>> = serde_yaml::from_str(&content).expect("could not parse config file");
-        let rules = rules.get("rules").unwrap().clone();
+        let mut rules = Rules(
+            rules
+                .get("rules")
+                .ok_or_else(|| Error::new(ErrorKind::InvalidData, "field 'rules' is missing"))
+                .unwrap()
+                .clone(),
+        );
+        rules.fill_missing_fields();
         Ok(rules)
     }
 
-    fn fill_missing_fields(&mut self) {
+    /// Fills the missing fields of the user's config. Since most fields are optional,
+    /// we need a safe way to ensure all needed fields are defined in the internal representation.
+    ///
+    /// We combine global options with default options, preserving (when possible) the global options.
+    /// We then combine each folder's options with these modified global options, giving a higher
+    /// priority to these folder-level options, since they're more specific.
+    /// ### Return
+    /// This function does not return anything. All mutations are done in place.
+    pub(in crate::subcommands::config) fn fill_missing_fields(&mut self) {
+        // since we defined addition between Options objects as not commutative
+        // if we want to preserve the most specific object's fields we need to place
+        // it to the right of the + operator
         let default_options = &Options::default();
-        for rule in self.rules.iter_mut() {
+        for rule in self.0.iter_mut() {
             rule.options = Some(default_options + rule.options.as_ref().unwrap_or_else(|| default_options));
             for folder in rule.folders.iter_mut() {
                 match &folder.options {
@@ -51,20 +66,46 @@ impl UserConfig {
             }
         }
     }
+}
 
-    fn path(&self, args: &Cli) -> PathBuf {
-        if (args.subcommand.0 == SubCommands::Run || args.subcommand.0 == SubCommands::Watch)
-            && args.subcommand.1.is_present("with_config")
-        {
-            PathBuf::from(args.subcommand.1.value_of("with_config").unwrap())
-        } else {
-            dirs::home_dir()
+impl UserConfig {
+    /// Creates a new UserConfig instance.
+    /// It parses the configuration file
+    /// and fills missing fields with either the defaults, in the case of global options,
+    /// or with the global options, in the case of folder-level options.
+    /// If the config file does not exist, it is created.
+    /// ### Errors
+    /// This constructor fails in the following cases:
+    /// - The configuration file does not exist
+    pub fn new(args: &Cli) -> Result<Self, Error> {
+        let path = match args.subcommand.1.value_of("with_config") {
+            Some(path) => PathBuf::from(path),
+            None => dirs::home_dir()
                 .expect("ERROR: cannot determine home directory")
                 .join(".d-organizer")
-                .join("config.yml")
+                .join("config.yml"),
+        };
+
+        if !path.exists() {
+            utils::create_config_file(&path)?;
         }
+
+        let rules = Rules::new(&path)?;
+
+        Ok(UserConfig {
+            path,
+            rules,
+        })
     }
 
+    /// Launches an editor to modify the default config.
+    /// This function represents the `config` subcommand without any arguments.
+    /// ### Errors
+    /// This functions returns an error in the following cases:
+    /// - There is no $EDITOR environment variable.
+    /// ### Panics
+    /// This functions panics in the following cases:
+    /// - The $EDITOR env. variable was found but its process could not be started.
     pub fn edit(&self) -> Result<&Self, Error> {
         match std::env::var("EDITOR") {
             Ok(editor) => {
@@ -84,8 +125,15 @@ impl UserConfig {
         }
     }
 
+    /// Validates the user's config.
+    /// ### Errors
+    /// This function returns an error in the following cases:
+    /// - An empty string was provided as the path to a folder
+    /// - The path supplied to a folder does not exist
+    /// - The path supplied to a folder is not a directory
+    /// - No path was supplied to a folder
     pub fn validate(self) -> Result<Self, Error> {
-        for (i, rule) in self.rules.iter().enumerate() {
+        for (i, rule) in self.rules.0.iter().enumerate() {
             for (j, folder) in rule.folders.iter().enumerate() {
                 match &folder.path {
                     Some(path) => {

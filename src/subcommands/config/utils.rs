@@ -1,9 +1,4 @@
-use crate::configuration::options::Options;
-use crate::configuration::Rule;
 use clap::load_yaml;
-use colored::Colorize;
-use std::collections::HashMap;
-use std::fs;
 use std::io::{Error, ErrorKind};
 use std::path::Path;
 use yaml_rust::YamlEmitter;
@@ -18,7 +13,10 @@ pub fn create_config_file(path: &Path) -> Result<(), Error> {
     if path.exists() {
         return Err(Error::new(
             ErrorKind::AlreadyExists,
-            "d-organizer.yml already exists in this directory",
+            format!(
+                "{} already exists in this directory",
+                path.file_name().unwrap().to_str().unwrap()
+            ),
         ));
     }
     match path.parent() {
