@@ -1,0 +1,22 @@
+---
+rules:
+  - actions:
+      rename:
+        to: ""
+        if_exists: rename
+        counter_separator: " "
+      echo: ""
+      shell: ""
+      delete: true
+      trash: true
+    filters:
+      regex: ".*all.*"
+    options:
+      ignore:
+        - /home/cabero/Downloads/ignored_dir
+      watch: true
+    folders:
+      - path: ""
+        options:
+          watch: false
+          
