@@ -68,14 +68,22 @@ pub fn process_actions(actions: &Actions, file: &mut File, i: &usize) -> Result<
             .to
             .as_ref()
             .unwrap_or_else(|| panic!("ERROR: 'to' field not defined in rule number {}", i));
-        file.path = r#move(&file.path, dst, action.if_exists.as_ref().unwrap())?;
+        file.path = r#move(
+            &file.path,
+            dst,
+            action.if_exists.as_ref().unwrap_or_else(|| &ConflictOption::rename),
+        )?;
     };
     if let Some(action) = &actions.rename {
         let dst = action
             .to
             .as_ref()
             .unwrap_or_else(|| panic!("ERROR: 'to' field not defined in rule number {}", i));
-        file.path = rename(&file.path, dst, action.if_exists.as_ref().unwrap())?;
+        file.path = rename(
+            &file.path,
+            dst,
+            action.if_exists.as_ref().unwrap_or_else(|| &ConflictOption::rename),
+        )?;
     }
     if actions.delete.is_some() {
         delete(&file.path)?;
