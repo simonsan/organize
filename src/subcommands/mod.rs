@@ -1,5 +1,4 @@
-pub(crate) mod config;
-mod logs;
+pub mod config;
 pub mod run;
 
 #[derive(Clone, PartialEq, Debug)]

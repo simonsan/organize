@@ -1,5 +1,7 @@
 unstable_features = true
 indent_style = "Block"
+imports_layout = "Vertical"
+merge_imports = true
 reorder_imports = true
 brace_style = "SameLineWhere"
 max_width = 120

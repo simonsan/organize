@@ -1,7 +1,7 @@
 rules:
   - actions:
       rename:
-        to: ""
+        to: "{path.parent}"
         if_exists: rename # default
         counter_separator: " " # default
 

@@ -2,6 +2,7 @@ use serde::Deserialize;
 
 #[derive(PartialEq, Debug, Clone, Deserialize)]
 pub struct Filters {
-    regex: Option<String>,
-    filename: Option<String>,
+    pub regex: Option<String>,
+    pub filename: Option<String>,
+    pub extension: Option<String>,
 }

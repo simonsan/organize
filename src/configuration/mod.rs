@@ -1,12 +1,15 @@
 pub mod actions;
-mod filters;
-mod folders;
+pub mod conflicts;
+pub mod filters;
+pub mod folders;
 pub mod options;
 
-use crate::configuration::actions::Actions;
-use crate::configuration::filters::Filters;
-use crate::configuration::folders::Folder;
-use crate::configuration::options::Options;
+use crate::configuration::{
+    actions::Actions,
+    filters::Filters,
+    folders::Folder,
+    options::Options,
+};
 use serde::Deserialize;
 
 #[derive(Debug, Clone, Deserialize)]

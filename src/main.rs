@@ -1,19 +1,22 @@
-mod cli;
+pub mod cli;
 pub mod configuration;
 pub mod file;
-mod subcommands;
+pub mod subcommands;
 
-use crate::cli::Cli;
-use crate::subcommands::config::UserConfig;
+use crate::{
+    cli::Cli,
+    subcommands::config::UserConfig,
+};
 use colored::Colorize;
-use std::env;
-use std::io::Error;
-use std::process::Command;
+use std::{
+    env,
+    process::Command,
+};
 
 // TODO remove panics
 
 fn main() {
-    let cli = Cli::new();
+    let cli = Cli::default();
     let config = UserConfig::new(&cli);
     match config {
         Ok(config) => cli.run(config).unwrap(),
@@ -25,6 +28,7 @@ fn main() {
     }
 }
 
+#[allow(dead_code)]
 fn start_daemon() {
     let mut args = env::args();
     let command = args.next().unwrap(); // must've been started through a command

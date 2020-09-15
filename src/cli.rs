@@ -1,17 +1,28 @@
-use crate::file::File;
-use crate::subcommands::config::{utils, UserConfig};
-use crate::subcommands::SubCommands;
-use clap::{load_yaml, App, ArgMatches};
-use std::io::Error;
-use std::{env, fs};
+use crate::subcommands::{
+    config::{
+        utils,
+        UserConfig,
+    },
+    run::run,
+    SubCommands,
+};
+use clap::{
+    load_yaml,
+    App,
+    ArgMatches,
+};
+use std::{
+    env,
+    io::Error,
+};
 
 #[derive(Clone, Debug)]
 pub struct Cli {
     pub subcommand: (SubCommands, ArgMatches),
 }
 
-impl Cli {
-    pub fn new() -> Self {
+impl Default for Cli {
+    fn default() -> Self {
         let yaml = load_yaml!("../cli.yml");
         let app = App::from(yaml);
         let matches = app.get_matches();
@@ -30,7 +41,9 @@ impl Cli {
             subcommand: (name, cmd),
         }
     }
+}
 
+impl Cli {
     pub fn run(self, config: UserConfig) -> Result<(), Error> {
         match self.subcommand.0 {
             SubCommands::Config => {
@@ -46,7 +59,7 @@ impl Cli {
             }
             SubCommands::Run => {
                 // let config = config.validate()?;
-                todo!();
+                run(config.rules)?;
             }
             SubCommands::Suggest => todo!(),
             SubCommands::Watch => {

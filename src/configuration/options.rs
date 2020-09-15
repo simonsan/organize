@@ -1,6 +1,8 @@
 use serde::Deserialize;
-use std::ops::Add;
-use std::path::PathBuf;
+use std::{
+    ops::Add,
+    path::PathBuf,
+};
 
 #[derive(Clone, PartialEq, Debug, Deserialize)]
 pub struct Options {
@@ -70,6 +72,74 @@ impl Add for &Options {
             suggestions: combine_options(self.suggestions, rhs.suggestions, Some(false)),
             enabled: combine_options(self.enabled, rhs.enabled, Some(true)),
             hidden_files: combine_options(self.hidden_files, rhs.hidden_files, Some(true)),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::{
+        Error,
+        ErrorKind,
+    };
+
+    #[test]
+    fn none_plus_default() -> Result<(), Error> {
+        let left = Options {
+            recursive: None,
+            watch: None,
+            ignore: None,
+            suggestions: None,
+            enabled: None,
+            system_files: None,
+            hidden_files: None,
+        };
+        let right = Options::default();
+        let result = left.to_owned() + right.to_owned();
+        if result == right {
+            Ok(())
+        } else {
+            eprintln!("{:?}, {:?}", left, right);
+            Err(Error::from(ErrorKind::Other))
+        }
+    }
+
+    #[test]
+    fn random_combine() -> Result<(), Error> {
+        let left = Options {
+            recursive: None,
+            watch: Some(true),
+            ignore: Some(vec![PathBuf::from("/home/cabero/Downloads/ignored_dir")]),
+            suggestions: None,
+            enabled: None,
+            system_files: None,
+            hidden_files: Some(false),
+        };
+        let right = Options {
+            recursive: None,
+            watch: Some(false),
+            ignore: None,
+            suggestions: None,
+            enabled: None,
+            system_files: None,
+            hidden_files: Some(true),
+        };
+        let expected = Options {
+            recursive: Some(false),
+            watch: Some(false),
+            ignore: Some(vec![PathBuf::from("/home/cabero/Downloads/ignored_dir")]),
+            suggestions: Some(false),
+            enabled: Some(true),
+            system_files: Some(false),
+            hidden_files: Some(true),
+        };
+
+        if left.to_owned() + right.to_owned() == expected {
+            Ok(())
+        } else {
+            eprintln!("{:?}, {:?}", left, right);
+            Err(Error::from(ErrorKind::Other))
         }
     }
 }
