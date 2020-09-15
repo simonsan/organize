@@ -11,6 +11,7 @@ use crate::{
 use colored::Colorize;
 use serde::Deserialize;
 use std::{
+    fs::create_dir_all,
     io,
     io::{
         Error,
@@ -92,7 +93,7 @@ pub fn process_actions(actions: &Actions, file: &mut File, i: &usize) -> Result<
 }
 
 fn copy(from: &Path, to: &Path, conflict_option: &ConflictOption) -> Result<(), Error> {
-    if conflict_option == &ConflictOption::skip {
+    if conflict_option == &ConflictOption::skip || from == to {
         return Ok(());
     }
     let new_path = new_filepath(from, to, conflict_option)?;
@@ -101,7 +102,7 @@ fn copy(from: &Path, to: &Path, conflict_option: &ConflictOption) -> Result<(), 
 }
 
 fn rename(from: &Path, to: &Path, conflict_option: &ConflictOption) -> Result<PathBuf, Error> {
-    if conflict_option == &ConflictOption::skip {
+    if conflict_option == &ConflictOption::skip || from == to {
         return Ok(from.to_path_buf());
     }
     let dst = new_filepath(from, &to, conflict_option)?;
@@ -110,8 +111,11 @@ fn rename(from: &Path, to: &Path, conflict_option: &ConflictOption) -> Result<Pa
 }
 
 fn r#move(from: &Path, to: &Path, conflict_option: &ConflictOption) -> Result<PathBuf, Error> {
-    if conflict_option == &ConflictOption::skip {
+    if conflict_option == &ConflictOption::skip || from == to {
         return Ok(from.to_path_buf());
+    }
+    if !to.exists() {
+        create_dir_all(to.to_str().unwrap())?;
     }
     let dst = to.join(from.file_name().unwrap());
     rename(from, &dst, conflict_option)?;
@@ -162,7 +166,7 @@ pub fn new_filepath(from: &Path, to: &Path, conflict_option: &ConflictOption) ->
                 }
             }
             ConflictOption::ask => {
-                let input = ask(to)?;
+                let input = resolve_name_conflict(to)?;
                 new_filepath(from, to, &input)
             }
         };
@@ -170,7 +174,7 @@ pub fn new_filepath(from: &Path, to: &Path, conflict_option: &ConflictOption) ->
     Ok(to.to_path_buf())
 }
 
-pub fn ask(dst: &Path) -> Result<ConflictOption, Error> {
+pub fn resolve_name_conflict(dst: &Path) -> Result<ConflictOption, Error> {
     print!(
         "A file named {} already exists in the destination.\n [(o)verwrite / (r)ename / (s)kip]: ",
         dst.file_name().unwrap().to_str().unwrap().underline().bold()
@@ -247,18 +251,26 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "already exists")]
-    fn rename_with_skip_conflict() {
+    fn rename_with_skip_conflict() -> Result<(), Error> {
         let file1 = PathBuf::from("/home/cabero/Code/Rust/d-organizer/tests/files/test1.txt");
         let file2 = PathBuf::from("/home/cabero/Code/Rust/d-organizer/tests/files/test2.txt");
-        new_filepath(&file1, &file2, &ConflictOption::skip).unwrap();
+        let expected = new_filepath(&file1, &file2, &ConflictOption::skip).unwrap();
+        if file1 == expected {
+            Ok(())
+        } else {
+            Err(Error::new(ErrorKind::Other, "filepath after rename is not as expected"))
+        }
     }
 
     #[test]
-    #[should_panic(expected = "already exists")]
-    fn move_with_skip_conflict() {
+    fn move_with_skip_conflict() -> Result<(), Error> {
         let file = PathBuf::from("/home/cabero/Code/Rust/d-organizer/tests/files/test1.txt");
         let dir = PathBuf::from("/home/cabero/Code/Rust/d-organizer/tests/files/test_dir");
-        new_filepath(&file, &dir.join(file.file_name().unwrap()), &ConflictOption::skip).unwrap();
+        let expected = new_filepath(&file, &dir.join(file.file_name().unwrap()), &ConflictOption::skip).unwrap();
+        if file == expected {
+            Ok(())
+        } else {
+            Err(Error::new(ErrorKind::Other, "filepath after move is not as expected"))
+        }
     }
 }
