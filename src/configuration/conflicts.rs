@@ -1,9 +1,14 @@
+use crate::configuration::options::combine_options;
 use serde::Deserialize;
-use std::path::PathBuf;
+use std::{
+    borrow::Borrow,
+    ops::Add,
+    path::PathBuf,
+};
 
 #[derive(PartialEq, Debug, Clone, Deserialize)]
 pub struct ConflictingFileOperation {
-    pub to: Option<PathBuf>,
+    pub to: PathBuf,
     pub if_exists: Option<ConflictOption>,
     pub counter_separator: Option<String>,
 }
@@ -11,9 +16,43 @@ pub struct ConflictingFileOperation {
 impl Default for ConflictingFileOperation {
     fn default() -> Self {
         ConflictingFileOperation {
-            to: None,
+            to: PathBuf::new(), // shouldn't get to this if 'to' isn't specified
             if_exists: Some(Default::default()),
             counter_separator: Some(" ".to_string()),
+        }
+    }
+}
+
+impl Add for ConflictingFileOperation {
+    type Output = Self;
+
+    /// Performs the + operation.
+    /// This addition is not commutative.
+    /// The right-hand object's fields are prioritized.
+    fn add(self, rhs: Self) -> Self::Output {
+        ConflictingFileOperation {
+            if_exists: combine_options(self.if_exists, rhs.if_exists, Some(Default::default())),
+            to: rhs.to,
+            counter_separator: combine_options(self.counter_separator, rhs.counter_separator, Some(Default::default())),
+        }
+    }
+}
+
+impl Add for &ConflictingFileOperation {
+    type Output = ConflictingFileOperation;
+
+    /// Performs the + operation.
+    /// This addition is not commutative.
+    /// The right-hand object's fields are prioritized.
+    fn add(self, rhs: Self) -> Self::Output {
+        ConflictingFileOperation {
+            if_exists: combine_options(self.clone().if_exists, rhs.clone().if_exists, Some(Default::default())),
+            to: rhs.clone().to,
+            counter_separator: combine_options(
+                self.clone().counter_separator,
+                rhs.clone().counter_separator,
+                Some(Default::default()),
+            ),
         }
     }
 }

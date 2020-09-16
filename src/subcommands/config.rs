@@ -1,6 +1,7 @@
 use crate::{
     cli::Cli,
     configuration::{
+        actions::Actions,
         options::Options,
         Rule,
     },
@@ -29,6 +30,7 @@ pub struct UserConfig {
     pub rules: Rules,
 }
 
+#[derive(Debug)]
 pub struct Rules(Vec<Rule>);
 
 impl Rules {
@@ -40,7 +42,7 @@ impl Rules {
     /// Other errors may also be returned according to OpenOptions::open.
     /// - It encounters while reading an error of a kind
     /// other than ErrorKind::Interrupted, or if the contents of the file are not valid UTF-8.
-    pub(in crate::subcommands::config) fn new(path: &Path) -> Result<Self, Error> {
+    pub fn new(path: &Path) -> Result<Self, Error> {
         let content = fs::read_to_string(path)?;
         let rules: HashMap<String, Vec<Rule>> = serde_yaml::from_str(&content).expect("could not parse config file");
         let mut rules = Rules(
@@ -67,8 +69,10 @@ impl Rules {
         // if we want to preserve the most specific object's fields we need to place
         // it to the right of the + operator
         let default_options = &Options::default();
+        let default_actions = &Actions::default();
         for rule in self.0.iter_mut() {
             rule.options = Some(default_options + rule.options.as_ref().unwrap_or_else(|| default_options));
+            rule.actions = default_actions + &rule.actions;
             for folder in rule.folders.iter_mut() {
                 match &folder.options {
                     Some(options) => folder.options = Some(rule.options.as_ref().unwrap() + options),

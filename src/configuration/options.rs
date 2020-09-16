@@ -29,7 +29,7 @@ impl Default for Options {
     }
 }
 
-fn combine_options<T>(lhs: Option<T>, rhs: Option<T>, default: Option<T>) -> Option<T> {
+pub fn combine_options<T>(lhs: Option<T>, rhs: Option<T>, default: Option<T>) -> Option<T> {
     if lhs.is_some() && rhs.is_none() {
         lhs
     } else if lhs.is_none() && rhs.is_some() {

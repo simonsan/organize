@@ -1,7 +1,10 @@
 use crate::{
-    configuration::conflicts::{
-        ConflictOption,
-        ConflictingFileOperation,
+    configuration::{
+        conflicts::{
+            ConflictOption,
+            ConflictingFileOperation,
+        },
+        options::combine_options,
     },
     file::{
         get_stem_and_extension,
@@ -19,6 +22,7 @@ use std::{
         Read,
         Write,
     },
+    ops::Add,
     path::{
         Path,
         PathBuf,
@@ -39,8 +43,8 @@ pub struct Actions {
 impl Default for Actions {
     fn default() -> Self {
         Actions {
-            echo: None,
-            shell: None,
+            echo: Some("".to_string()),
+            shell: Some("".to_string()),
             trash: Some(false),
             delete: Some(false),
             copy: Some(Default::default()),
@@ -50,12 +54,50 @@ impl Default for Actions {
     }
 }
 
+impl Add for Actions {
+    type Output = Self;
+
+    /// Performs the + operation.
+    /// This addition is not commutative.
+    /// The right-hand object's fields are prioritized.
+    fn add(self, rhs: Self) -> Self::Output {
+        Actions {
+            rename: combine_options(self.rename, rhs.rename, Some(Default::default())),
+            r#move: combine_options(self.r#move, rhs.r#move, Some(Default::default())),
+            copy: combine_options(self.copy, rhs.copy, Some(Default::default())),
+            delete: combine_options(self.delete, rhs.delete, Some(false)),
+            trash: combine_options(self.trash, rhs.trash, Some(false)),
+            shell: combine_options(self.shell, rhs.shell, Some("".to_string())),
+            echo: combine_options(self.echo, rhs.echo, Some("".to_string())),
+        }
+    }
+}
+
+impl Add for &Actions {
+    type Output = Actions;
+
+    /// Performs the + operation.
+    /// This addition is not commutative.
+    /// The right-hand object's fields are prioritized.
+    fn add(self, rhs: Self) -> Self::Output {
+        let r#move = self.r#move.clone().unwrap_or_default() + rhs.r#move.clone().unwrap_or_default();
+        let copy = self.copy.clone().unwrap_or_default() + rhs.copy.clone().unwrap_or_default();
+        let rename = self.rename.clone().unwrap_or_default() + rhs.rename.clone().unwrap_or_default();
+        Actions {
+            rename: Some(rename),
+            r#move: Some(r#move),
+            copy: Some(copy),
+            delete: combine_options(self.delete, rhs.delete, Some(false)),
+            trash: combine_options(self.trash, rhs.trash, Some(false)),
+            shell: combine_options(self.clone().shell, rhs.clone().shell, Some("".to_string())),
+            echo: combine_options(self.clone().echo, rhs.clone().echo, Some("".to_string())),
+        }
+    }
+}
+
 pub fn process_actions(actions: &Actions, file: &mut File, i: &usize) -> Result<(), Error> {
     if let Some(action) = &actions.copy {
-        let dst = action
-            .to
-            .as_ref()
-            .unwrap_or_else(|| panic!("ERROR: 'to' field not defined in rule number {}", i));
+        let dst = &action.to;
         copy(
             &file.path,
             dst,
@@ -65,10 +107,7 @@ pub fn process_actions(actions: &Actions, file: &mut File, i: &usize) -> Result<
 
     // TODO the following three are conflicting operations - validate this
     if let Some(action) = &actions.r#move {
-        let dst = action
-            .to
-            .as_ref()
-            .unwrap_or_else(|| panic!("ERROR: 'to' field not defined in rule number {}", i));
+        let dst = &action.to;
         file.path = r#move(
             &file.path,
             dst,
@@ -76,10 +115,7 @@ pub fn process_actions(actions: &Actions, file: &mut File, i: &usize) -> Result<
         )?;
     };
     if let Some(action) = &actions.rename {
-        let dst = action
-            .to
-            .as_ref()
-            .unwrap_or_else(|| panic!("ERROR: 'to' field not defined in rule number {}", i));
+        let dst = &action.to;
         file.path = rename(
             &file.path,
             dst,
