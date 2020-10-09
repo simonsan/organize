@@ -69,10 +69,8 @@ impl Rules {
         // if we want to preserve the most specific object's fields we need to place
         // it to the right of the + operator
         let default_options = &Options::default();
-        let default_actions = &Actions::default();
         for rule in self.0.iter_mut() {
             rule.options = Some(default_options + rule.options.as_ref().unwrap_or_else(|| default_options));
-            rule.actions = default_actions + &rule.actions;
             for folder in rule.folders.iter_mut() {
                 match &folder.options {
                     Some(options) => folder.options = Some(rule.options.as_ref().unwrap() + options),
@@ -84,6 +82,10 @@ impl Rules {
 
     pub fn iter(&self) -> Iter<Rule> {
         self.0.iter()
+    }
+
+    pub fn validate(&self) {
+        todo!()
     }
 }
 
@@ -153,41 +155,29 @@ impl UserConfig {
     /// - No path was supplied to a folder
     pub fn validate(self) -> Result<Self, Error> {
         for (i, rule) in self.rules.0.iter().enumerate() {
+            rule.actions.check_conflicting_actions()?;
             for (j, folder) in rule.folders.iter().enumerate() {
-                match &folder.path {
-                    Some(path) => {
-                        if path.display().to_string().eq("") {
-                            return Err(Error::new(
-                                ErrorKind::InvalidData,
-                                format!(
-                                    "path defined in field 'path' cannot be an empty value (rule {}, folder {})",
-                                    j, i
-                                ),
-                            ));
-                        } else if !path.exists() {
-                            return Err(Error::new(
-                                ErrorKind::InvalidData,
-                                format!("path defined in field 'path' does not exist (rule {}, folder {})", j, i),
-                            ));
-                        } else if !path.is_dir() {
-                            return Err(Error::new(
-                                ErrorKind::InvalidData,
-                                format!(
-                                    "path defined in field 'path' is not a directory (rule {}, folder {})",
-                                    j, i
-                                ),
-                            ));
-                        }
-                    }
-                    None => {
-                        return Err(Error::new(
-                            ErrorKind::InvalidData,
-                            format!(
-                                "field 'path' is required but it was not supplied (rule {}, folder {})",
-                                j, i
-                            ),
-                        ))
-                    }
+                if folder.path.display().to_string().eq("") {
+                    return Err(Error::new(
+                        ErrorKind::InvalidData,
+                        format!(
+                            "path defined in field 'path' cannot be an empty value (rule {}, folder {})",
+                            j, i
+                        ),
+                    ));
+                } else if !folder.path.exists() {
+                    return Err(Error::new(
+                        ErrorKind::InvalidData,
+                        format!("path defined in field 'path' does not exist (rule {}, folder {})", j, i),
+                    ));
+                } else if !folder.path.is_dir() {
+                    return Err(Error::new(
+                        ErrorKind::InvalidData,
+                        format!(
+                            "path defined in field 'path' is not a directory (rule {}, folder {})",
+                            j, i
+                        ),
+                    ));
                 }
             }
         }

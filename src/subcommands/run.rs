@@ -15,7 +15,7 @@ pub fn run(rules: Rules) -> Result<(), Error> {
         for folder in rule.folders.iter() {
             let options = rule.options.as_ref().unwrap() + folder.options.as_ref().unwrap();
             let allow_hidden_files = options.hidden_files.unwrap();
-            let files = fs::read_dir(folder.path.as_ref().unwrap())?;
+            let files = fs::read_dir(&folder.path)?;
 
             'files: for file in files {
                 let path = file.unwrap().path();
@@ -24,8 +24,8 @@ pub fn run(rules: Rules) -> Result<(), Error> {
                     if file.is_hidden && !allow_hidden_files {
                         continue 'files;
                     }
-                    if file.matches_n_filters(filters)? {
-                        process_actions(actions, &mut file, &i)?;
+                    if file.matches_filters(filters) {
+                        process_actions(actions, &mut file)?;
                     }
                 }
             }

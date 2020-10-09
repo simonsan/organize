@@ -34,21 +34,26 @@ impl<'a> File<'a> {
         })
     }
 
-    pub fn matches_n_filters(&self, filters: &Filters) -> Result<bool, Error> {
+    pub fn matches_filters(&self, filters: &Filters) -> bool {
+        // TODO test this function
         let path = self.path.to_str().unwrap();
         if filters.regex.is_some() {
             let regex = Regex::new(filters.regex.as_ref().unwrap()).expect("invalid regex defined in config file");
             if regex.is_match(path) {
-                return Ok(true);
+                return true;
             }
         }
         if filters.filename.is_some() && self.filename == filters.filename.as_ref().unwrap() {
-            return Ok(true);
+            return true;
         }
-        if filters.extension.is_some() && self.extension == filters.extension.as_ref().unwrap() {
-            return Ok(true);
+        if let Some(extensions) = &filters.extensions {
+            for extension in extensions.iter() {
+                if self.extension == extension {
+                    return true;
+                }
+            }
         }
-        Ok(false)
+        false
     }
 
     // pub fn get_matching_rules(&self, rules: Rules) -> Result<Vec<&'a Rule>, Error> {

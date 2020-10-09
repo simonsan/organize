@@ -10,7 +10,7 @@ rules:
       delete: true
       trash: true
     filters:
-      regex: ".*all.*"
+      regex: ".*"
     options:
       ignore:
         - /home/cabero/Downloads/ignored_dir

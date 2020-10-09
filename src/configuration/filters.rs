@@ -4,5 +4,5 @@ use serde::Deserialize;
 pub struct Filters {
     pub regex: Option<String>,
     pub filename: Option<String>,
-    pub extension: Option<String>,
+    pub extensions: Option<Vec<String>>,
 }

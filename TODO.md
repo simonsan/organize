@@ -1,0 +1,1 @@
+- Implement support for having the same folder in different rules

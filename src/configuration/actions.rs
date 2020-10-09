@@ -2,6 +2,7 @@ use crate::{
     configuration::{
         conflicts::{
             ConflictOption,
+            ConflictingActions,
             ConflictingFileOperation,
         },
         options::combine_options,
@@ -54,48 +55,7 @@ impl Default for Actions {
     }
 }
 
-impl Add for Actions {
-    type Output = Self;
-
-    /// Performs the + operation.
-    /// This addition is not commutative.
-    /// The right-hand object's fields are prioritized.
-    fn add(self, rhs: Self) -> Self::Output {
-        Actions {
-            rename: combine_options(self.rename, rhs.rename, Some(Default::default())),
-            r#move: combine_options(self.r#move, rhs.r#move, Some(Default::default())),
-            copy: combine_options(self.copy, rhs.copy, Some(Default::default())),
-            delete: combine_options(self.delete, rhs.delete, Some(false)),
-            trash: combine_options(self.trash, rhs.trash, Some(false)),
-            shell: combine_options(self.shell, rhs.shell, Some("".to_string())),
-            echo: combine_options(self.echo, rhs.echo, Some("".to_string())),
-        }
-    }
-}
-
-impl Add for &Actions {
-    type Output = Actions;
-
-    /// Performs the + operation.
-    /// This addition is not commutative.
-    /// The right-hand object's fields are prioritized.
-    fn add(self, rhs: Self) -> Self::Output {
-        let r#move = self.r#move.clone().unwrap_or_default() + rhs.r#move.clone().unwrap_or_default();
-        let copy = self.copy.clone().unwrap_or_default() + rhs.copy.clone().unwrap_or_default();
-        let rename = self.rename.clone().unwrap_or_default() + rhs.rename.clone().unwrap_or_default();
-        Actions {
-            rename: Some(rename),
-            r#move: Some(r#move),
-            copy: Some(copy),
-            delete: combine_options(self.delete, rhs.delete, Some(false)),
-            trash: combine_options(self.trash, rhs.trash, Some(false)),
-            shell: combine_options(self.clone().shell, rhs.clone().shell, Some("".to_string())),
-            echo: combine_options(self.clone().echo, rhs.clone().echo, Some("".to_string())),
-        }
-    }
-}
-
-pub fn process_actions(actions: &Actions, file: &mut File, i: &usize) -> Result<(), Error> {
+pub fn process_actions(actions: &Actions, file: &mut File) -> Result<(), Error> {
     if let Some(action) = &actions.copy {
         let dst = &action.to;
         copy(
@@ -133,6 +93,7 @@ fn copy(from: &Path, to: &Path, conflict_option: &ConflictOption) -> Result<(), 
         return Ok(());
     }
     let new_path = new_filepath(from, to, conflict_option)?;
+    println!("{}", new_path.display());
     std::fs::copy(from, new_path.as_path()).expect("cannot write file (permission denied)");
     Ok(())
 }
@@ -208,6 +169,28 @@ pub fn new_filepath(from: &Path, to: &Path, conflict_option: &ConflictOption) ->
         };
     }
     Ok(to.to_path_buf())
+}
+
+impl Actions {
+    pub fn check_conflicting_actions(&self) -> Result<ConflictingActions, Error> {
+        let mut conflicting_options = Vec::new();
+        if self.r#move.is_some() {
+            conflicting_options.push(ConflictingActions::Move);
+        }
+        if self.rename.is_some() {
+            conflicting_options.push(ConflictingActions::Rename);
+        }
+        if self.delete.is_some() {
+            conflicting_options.push(ConflictingActions::Delete);
+        }
+        if conflicting_options.len() == 1 {
+            Ok(conflicting_options.get(0).unwrap().clone())
+        } else if conflicting_options.is_empty() {
+            Ok(ConflictingActions::None)
+        } else {
+            Err(Error::new(ErrorKind::InvalidInput, "too many conflicting actions"))
+        }
+    }
 }
 
 pub fn resolve_name_conflict(dst: &Path) -> Result<ConflictOption, Error> {

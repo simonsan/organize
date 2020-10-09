@@ -4,6 +4,7 @@ use crate::subcommands::{
         UserConfig,
     },
     run::run,
+    watch::Watcher,
     SubCommands,
 };
 use clap::{
@@ -63,7 +64,8 @@ impl Cli {
             }
             SubCommands::Suggest => todo!(),
             SubCommands::Watch => {
-                todo!();
+                let mut watcher = Watcher::new();
+                watcher.watch(&config.rules);
                 // if cli.subcommand.1.is_present("daemon") {
                 //     start_daemon()
                 // }

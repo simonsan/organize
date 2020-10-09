@@ -4,13 +4,23 @@ pub mod filters;
 pub mod folders;
 pub mod options;
 
-use crate::configuration::{
-    actions::Actions,
-    filters::Filters,
-    folders::Folder,
-    options::Options,
+use crate::{
+    configuration::{
+        actions::Actions,
+        filters::Filters,
+        folders::Folder,
+        options::Options,
+    },
+    subcommands::config::Rules,
 };
 use serde::Deserialize;
+use std::{
+    collections::HashMap,
+    path::{
+        Path,
+        PathBuf,
+    },
+};
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Rule {
@@ -29,4 +39,18 @@ impl Default for Rule {
             options: Some(Default::default()),
         }
     }
+}
+
+/// returns a hashmap where the keys are paths and the values are tuples of rules
+/// and indices that indicate the index of the key's corresponding folder in the rule's folders' list
+pub fn folder2rule(rules: &Rules) -> HashMap<&PathBuf, (&Rule, usize)> {
+    let mut map = HashMap::new();
+    for rule in rules.iter() {
+        for (i, folder) in rule.folders.iter().enumerate() {
+            if !map.contains_key(&folder.path) {
+                map.insert(&folder.path, (rule, i));
+            }
+        }
+    }
+    map
 }

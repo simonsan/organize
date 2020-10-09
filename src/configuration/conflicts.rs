@@ -6,6 +6,14 @@ use std::{
     path::PathBuf,
 };
 
+#[derive(Clone)]
+pub enum ConflictingActions {
+    Move,
+    Rename,
+    Delete,
+    None,
+}
+
 #[derive(PartialEq, Debug, Clone, Deserialize)]
 pub struct ConflictingFileOperation {
     pub to: PathBuf,
