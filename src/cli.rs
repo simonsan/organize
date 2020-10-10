@@ -1,5 +1,4 @@
 use crate::{
-    init,
     kill_daemon,
     lock_file::LockFile,
     start_daemon,
@@ -71,11 +70,24 @@ impl Cli {
             }
             SubCommands::Suggest => todo!(),
             SubCommands::Watch => {
-                if self.subcommand.1.is_present("replace") {
-                    kill_daemon()?;
-                }
-                if self.subcommand.1.is_present("daemon") {
-                    start_daemon()?;
+                if self.subcommand.1.is_present("replace") && self.subcommand.1.is_present("daemon") {
+                    match kill_daemon() {
+                        Ok(_) => {
+                            let lock_file = LockFile::new();
+                            lock_file.delete()?;
+                            start_daemon()?;
+                        }
+                        Err(_) => {
+                            println!("no running instance was found\nrun without --replace to start a new instance")
+                        }
+                    }
+                } else if self.subcommand.1.is_present("daemon") && !self.subcommand.1.is_present("replace") {
+                    let lock_file = LockFile::new();
+                    if lock_file.path.exists() {
+                        println!("a running instance already exists. Use `organizer stop` to stop this instance or `organizer watch --daemon --replace` to restart the daemon")
+                    } else {
+                        start_daemon()?;
+                    }
                 } else {
                     let mut watcher = Watcher::new();
                     watcher.watch(&config.rules, config.path);
@@ -84,6 +96,8 @@ impl Cli {
             SubCommands::Logs => todo!(),
             SubCommands::Stop => {
                 kill_daemon()?;
+                let lock_file = LockFile::new();
+                lock_file.delete()?;
             }
         };
         Ok(())

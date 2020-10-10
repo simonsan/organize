@@ -6,8 +6,9 @@ use std::{
     path::PathBuf,
 };
 
+#[derive(Default)]
 pub struct LockFile {
-    path: PathBuf,
+    pub path: PathBuf,
 }
 
 impl LockFile {
@@ -17,6 +18,10 @@ impl LockFile {
         Self {
             path,
         }
+    }
+
+    pub fn delete(&self) -> Result<(), Error> {
+        Ok(fs::remove_file(&self.path)?)
     }
 
     pub fn create(&self) -> Result<(), Error> {
@@ -33,10 +38,9 @@ impl LockFile {
     }
 
     pub fn get_pid(&self) -> Result<i32, Error> {
-        assert!(self.path.exists());
-        Ok(fs::read_to_string(&self.path)
-            .unwrap()
+        let f = fs::read_to_string(&self.path)?
             .parse::<i32>()
-            .expect("could not parse PID"))
+            .expect("could not parse PID");
+        Ok(f)
     }
 }

@@ -32,12 +32,8 @@ use sysinfo::{
 };
 
 // TODO remove panics
-fn main() {
-    init();
-}
-
-pub fn init() {
-    let mut cli = Cli::default();
+fn main() -> Result<(), Error> {
+    let cli = Cli::default();
     let config = UserConfig::new(&cli);
     match config {
         Ok(config) => cli.run(config).unwrap(),
@@ -47,6 +43,7 @@ pub fn init() {
             println!("{}", description);
         }
     }
+    Ok(())
 }
 
 fn start_daemon() -> Result<(), Error> {

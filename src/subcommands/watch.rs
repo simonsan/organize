@@ -2,14 +2,10 @@ use crate::{
     configuration::{
         actions::process_actions,
         folder2rules,
-        options::{
-            Options,
-            TemporaryOptions,
-        },
+        options::Options,
         Rule,
     },
     file::File,
-    init,
     subcommands::edit::TemporaryRules,
 };
 use notify::{
