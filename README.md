@@ -1,4 +1,4 @@
-# d-organizer
+# organizer
 This is a productivity tool designed to keep your filesystem in order.
 For example, you can use this to keep your downloads folder clean. You can even manage several folders, so you can keep not only your downloads folder clean, but also your home directory.
 
@@ -9,15 +9,15 @@ For example, you can use this to keep your downloads folder clean. You can even 
 ## Installation
 To install, run the following commands:
 ```$xslt
-git clone git@github.com:cbr9/d-organizer.git
-cd d-organizer
+git clone git@github.com:cbr9/organizer.git
+cd organizer
 cargo install --path .
 ```
 
 or
 ```$xslt
-git clone https://github.com/cbr9/d-organizer.git
-cd d-organizer
+git clone https://github.com/cbr9/organizer.git
+cd organizer
 cargo install --path .
 ```
 
@@ -48,14 +48,14 @@ Note: only the `rules` object is required, together with some rules within it. Y
 ## Usage
 Run
 ```$xslt
-d-organizer --watch /folder/to/watch/ --config config.yaml --delay 2 --daemon
+organizer --watch /folder/to/watch/ --config config.yaml --delay 2 --daemon
 ```
 As stated above, you can pass several paths to `--watch`.
-The `delay` argument is optional. By default, `d-organizer` will wait for three seconds before it moves any file.
+The `delay` argument is optional. By default, `organizer` will wait for three seconds before it moves any file.
 This is to allow browsers to automatically open files after they've been downloaded (specifying a delay of 0 will break this behaviour, since the browser won't find the given file). The `daemon` option starts the process in the background.
 
 I plan to change this behaviour so that files are not moved while they're open in another process. Feel free to open a PR if you want to help.
 
 ### Recommendation
-You can set `d-organizer` to start on system launch. 
+You can set `organizer` to start on system launch. 
 Memory footprint is about 300K (tested on Linux with kernel 5.7.7), so it has a very negligible impact.
