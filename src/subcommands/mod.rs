@@ -1,10 +1,10 @@
-pub mod config;
+pub mod edit;
 pub mod run;
 pub mod watch;
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum SubCommands {
-    Config,
+    Edit,
     Run,
     Suggest,
     Watch,

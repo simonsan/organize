@@ -2,10 +2,15 @@ use crate::{
     configuration::{
         actions::process_actions,
         folder2rules,
-        options::Options,
+        options::{
+            Options,
+            TemporaryOptions,
+        },
+        Rule,
     },
     file::File,
-    subcommands::config::Rules,
+    init,
+    subcommands::edit::TemporaryRules,
 };
 use notify::{
     op,
@@ -15,9 +20,12 @@ use notify::{
     RecursiveMode,
     Watcher as OtherWatcher,
 };
-use std::sync::mpsc::{
-    channel,
-    Receiver,
+use std::{
+    path::PathBuf,
+    sync::mpsc::{
+        channel,
+        Receiver,
+    },
 };
 
 pub struct Watcher {
@@ -41,10 +49,11 @@ impl Watcher {
         Watcher::default()
     }
 
-    pub fn watch(&mut self, rules: &Rules) {
+    pub fn watch(&mut self, rules: &[Rule], config_file: PathBuf) {
+        self.watcher.watch(&config_file, RecursiveMode::NonRecursive).unwrap();
         for rule in rules.iter() {
             for folder in rule.folders.iter() {
-                let is_recursive = if folder.options.as_ref().unwrap().recursive.unwrap() {
+                let is_recursive = if folder.options.recursive {
                     RecursiveMode::Recursive
                 } else {
                     RecursiveMode::NonRecursive
@@ -71,23 +80,15 @@ impl Watcher {
                             let parent_dir = file.path.parent().unwrap().to_path_buf();
                             let values = folder2rules.get(&parent_dir).unwrap().to_owned();
                             for (rule, i) in values {
-                                if rule
-                                    .options
-                                    .as_ref()
-                                    .unwrap()
-                                    .ignore
-                                    .as_ref()
-                                    .unwrap()
-                                    .contains(&parent_dir)
-                                {
+                                if rule.options.ignore.contains(&parent_dir) {
                                     continue;
                                 }
                                 let folder = rule.folders.get(i).unwrap();
                                 let Options {
                                     watch, ..
-                                } = folder.options.as_ref().unwrap();
-                                let filters = rule.filters.as_ref().unwrap();
-                                if watch.is_some() && watch.unwrap() && file.matches_filters(filters) {
+                                } = folder.options;
+
+                                if watch && file.matches_filters(&rule.filters) {
                                     println!("{}", &abs_path.display());
                                     process_actions(&rule.actions, &mut file).unwrap();
                                     break;

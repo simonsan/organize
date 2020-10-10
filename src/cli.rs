@@ -1,7 +1,10 @@
 use crate::{
+    init,
+    kill_daemon,
+    lock_file::LockFile,
     start_daemon,
     subcommands::{
-        config::{
+        edit::{
             utils,
             UserConfig,
         },
@@ -33,7 +36,7 @@ impl Default for Cli {
         let (name, cmd) = matches.subcommand().unwrap();
         let cmd = cmd.clone(); // safe unwrap, a subcommand is mandatory
         let name = match name {
-            "config" => SubCommands::Config,
+            "edit" => SubCommands::Edit,
             "run" => SubCommands::Run,
             "suggest" => SubCommands::Suggest,
             "watch" => SubCommands::Watch,
@@ -50,7 +53,7 @@ impl Default for Cli {
 impl Cli {
     pub fn run(self, config: UserConfig) -> Result<(), Error> {
         match self.subcommand.0 {
-            SubCommands::Config => {
+            SubCommands::Edit => {
                 if self.subcommand.1.is_present("show_path") {
                     println!("{}", config.path.display());
                 } else if self.subcommand.1.is_present("new") {
@@ -67,11 +70,16 @@ impl Cli {
             }
             SubCommands::Suggest => todo!(),
             SubCommands::Watch => {
+                if self.subcommand.1.is_present("replace") {
+                    let lock_file = LockFile::new();
+                    let pid = lock_file.get_pid()?;
+                    kill_daemon(pid);
+                }
                 if self.subcommand.1.is_present("daemon") {
-                    start_daemon()
+                    start_daemon()?;
                 } else {
                     let mut watcher = Watcher::new();
-                    watcher.watch(&config.rules);
+                    watcher.watch(&config.rules, config.path);
                 }
             }
             SubCommands::Logs => todo!(),

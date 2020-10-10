@@ -1,20 +1,20 @@
 use crate::{
-    configuration::actions::process_actions,
+    configuration::{
+        actions::process_actions,
+        Rule,
+    },
     file::File,
-    subcommands::config::Rules,
 };
 use std::{
     fs,
     io::Error,
 };
 
-pub fn run(rules: Rules) -> Result<(), Error> {
+pub fn run(rules: Vec<Rule>) -> Result<(), Error> {
     for rule in rules.iter() {
-        let filters = rule.filters.as_ref().unwrap();
         let actions = &rule.actions;
         for folder in rule.folders.iter() {
-            let options = rule.options.as_ref().unwrap() + folder.options.as_ref().unwrap();
-            let allow_hidden_files = options.hidden_files.unwrap();
+            let allow_hidden_files = folder.options.hidden_files;
             let files = fs::read_dir(&folder.path)?;
 
             'files: for file in files {
@@ -24,7 +24,7 @@ pub fn run(rules: Rules) -> Result<(), Error> {
                     if file.is_hidden && !allow_hidden_files {
                         continue 'files;
                     }
-                    if file.matches_filters(filters) {
+                    if file.matches_filters(&rule.filters) {
                         process_actions(actions, &mut file)?;
                     }
                 }

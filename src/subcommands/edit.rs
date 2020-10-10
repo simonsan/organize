@@ -1,8 +1,9 @@
 use crate::{
     cli::Cli,
     configuration::{
-        options::Options,
+        options::TemporaryOptions,
         Rule,
+        TemporaryRule,
     },
 };
 use std::{
@@ -26,13 +27,14 @@ use std::{
 /// * `rules`: a list of parsed rules defined by the user
 pub struct UserConfig {
     pub path: PathBuf,
-    pub rules: Rules,
+    pub rules: Vec<Rule>,
 }
 
 #[derive(Debug)]
+pub struct TemporaryRules(Vec<TemporaryRule>);
 pub struct Rules(Vec<Rule>);
 
-impl Rules {
+impl TemporaryRules {
     /// Returns a new object containing the parsed rules from the user's config file.
     /// ### Errors
     /// This function will return an error in the following cases:
@@ -43,8 +45,9 @@ impl Rules {
     /// other than ErrorKind::Interrupted, or if the contents of the file are not valid UTF-8.
     pub fn new(path: &Path) -> Result<Self, Error> {
         let content = fs::read_to_string(path)?;
-        let rules: HashMap<String, Vec<Rule>> = serde_yaml::from_str(&content).expect("could not parse config file");
-        let mut rules = Rules(
+        let rules: HashMap<String, Vec<TemporaryRule>> =
+            serde_yaml::from_str(&content).expect("could not parse config file");
+        let mut rules = TemporaryRules(
             rules
                 .get("rules")
                 .ok_or_else(|| Error::new(ErrorKind::InvalidData, "ERROR: field 'rules' is missing"))
@@ -63,23 +66,22 @@ impl Rules {
     /// priority to these folder-level options, since they're more specific.
     /// ### Return
     /// This function does not return anything. All mutations are done in place.
-    pub(in crate::subcommands::config) fn fill_missing_fields(&mut self) {
-        // since we defined addition between Options objects as not commutative
-        // if we want to preserve the most specific object's fields we need to place
-        // it to the right of the + operator
-        let default_options = &Options::default();
+    pub(in crate::subcommands::edit) fn fill_missing_fields(&mut self) -> Vec<Rule> {
+        let mut rules = Vec::new();
         for rule in self.0.iter_mut() {
-            rule.options = Some(default_options + rule.options.as_ref().unwrap_or_else(|| default_options));
-            for folder in rule.folders.iter_mut() {
-                match &folder.options {
-                    Some(options) => folder.options = Some(rule.options.as_ref().unwrap() + options),
-                    None => folder.options = rule.options.clone(),
-                }
-            }
+            // rule.options = Some(default_options + rule.options.as_ref().unwrap_or_else(|| default_options));
+            // for folder in rule.folders.iter_mut() {
+            //     match &folder.options {
+            //         Some(options) => folder.options = Some(rule.options.as_ref().unwrap() + options),
+            //         None => folder.options = rule.options.clone(),
+            //     }
+            // }
+            rules.push(rule.unwrap())
         }
+        rules
     }
 
-    pub fn iter(&self) -> Iter<Rule> {
+    pub fn iter(&self) -> Iter<TemporaryRule> {
         self.0.iter()
     }
 
@@ -110,7 +112,11 @@ impl UserConfig {
             utils::create_config_file(&path)?;
         }
 
-        let rules = Rules::new(&path)?;
+        let temp_rules = TemporaryRules::new(&path)?;
+        let mut rules = Vec::new();
+        for temp_rule in temp_rules.iter() {
+            rules.push(temp_rule.unwrap())
+        }
 
         Ok(UserConfig {
             path,
@@ -153,7 +159,7 @@ impl UserConfig {
     /// - The path supplied to a folder is not a directory
     /// - No path was supplied to a folder
     pub fn validate(self) -> Result<Self, Error> {
-        for (i, rule) in self.rules.0.iter().enumerate() {
+        for (i, rule) in self.rules.iter().enumerate() {
             rule.actions.check_conflicting_actions()?;
             for (j, folder) in rule.folders.iter().enumerate() {
                 if folder.path.display().to_string().eq("") {
@@ -229,7 +235,7 @@ pub mod utils {
         Ok(())
     }
 
-    pub(in crate::subcommands::config) fn prompt_editor_env_var() -> String {
+    pub(in crate::subcommands::edit) fn prompt_editor_env_var() -> String {
         let platform = std::env::consts::OS;
         if platform == "linux" || platform == "macos" {
             String::from(

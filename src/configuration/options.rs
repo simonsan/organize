@@ -1,11 +1,19 @@
+use crate::{
+    configuration::{
+        TemporaryConfigElement,
+        TemporaryRule,
+    },
+    file::File,
+};
 use serde::Deserialize;
 use std::{
+    error::Error,
     ops::Add,
     path::PathBuf,
 };
 
-#[derive(Clone, PartialEq, Debug, Deserialize)]
-pub struct Options {
+#[derive(Clone, PartialEq, Eq, Debug, Deserialize)]
+pub struct TemporaryOptions {
     pub recursive: Option<bool>,
     pub watch: Option<bool>,
     pub ignore: Option<Vec<PathBuf>>,
@@ -15,9 +23,38 @@ pub struct Options {
     pub hidden_files: Option<bool>,
 }
 
-impl Default for Options {
-    fn default() -> Self {
+#[derive(Debug, Clone)]
+pub struct Options {
+    pub recursive: bool,
+    pub watch: bool,
+    pub ignore: Vec<PathBuf>,
+    pub suggestions: bool,
+    pub enabled: bool,
+    pub system_files: bool,
+    pub hidden_files: bool,
+}
+
+impl TemporaryConfigElement<Options> for TemporaryOptions {
+    fn unwrap(self) -> Options {
         Options {
+            recursive: self.recursive.unwrap(),
+            watch: self.watch.unwrap(),
+            ignore: self.ignore.unwrap(),
+            suggestions: self.suggestions.unwrap(),
+            enabled: self.enabled.unwrap(),
+            system_files: self.system_files.unwrap(),
+            hidden_files: self.hidden_files.unwrap(),
+        }
+    }
+
+    fn fill(self, parent_rule: &TemporaryRule) -> Self {
+        Self::default() + parent_rule.options.clone().unwrap_or_default() + self
+    }
+}
+
+impl Default for TemporaryOptions {
+    fn default() -> Self {
+        TemporaryOptions {
             recursive: Some(false),
             watch: Some(false),
             ignore: Some(Vec::new()),
@@ -41,7 +78,7 @@ pub fn combine_options<T>(lhs: Option<T>, rhs: Option<T>, default: Option<T>) ->
     }
 }
 
-impl Add for Options {
+impl Add for TemporaryOptions {
     type Output = Self;
 
     /// Performs the + operation.
@@ -60,11 +97,11 @@ impl Add for Options {
     }
 }
 
-impl Add for &Options {
-    type Output = Options;
+impl Add for &TemporaryOptions {
+    type Output = TemporaryOptions;
 
     fn add(self, rhs: Self) -> Self::Output {
-        Options {
+        TemporaryOptions {
             recursive: combine_options(self.recursive, rhs.recursive, Some(false)),
             watch: combine_options(self.watch, rhs.watch, Some(false)),
             system_files: combine_options(self.system_files, rhs.system_files, Some(false)),
@@ -86,7 +123,7 @@ mod tests {
 
     #[test]
     fn none_plus_default() -> Result<(), Error> {
-        let left = Options {
+        let left = TemporaryOptions {
             recursive: None,
             watch: None,
             ignore: None,
@@ -95,7 +132,7 @@ mod tests {
             system_files: None,
             hidden_files: None,
         };
-        let right = Options::default();
+        let right = TemporaryOptions::default();
         let result = left.to_owned() + right.to_owned();
         if result == right {
             Ok(())
@@ -107,7 +144,7 @@ mod tests {
 
     #[test]
     fn random_combine() -> Result<(), Error> {
-        let left = Options {
+        let left = TemporaryOptions {
             recursive: None,
             watch: Some(true),
             ignore: Some(vec![PathBuf::from("/home/cabero/Downloads/ignored_dir")]),
@@ -116,7 +153,7 @@ mod tests {
             system_files: None,
             hidden_files: Some(false),
         };
-        let right = Options {
+        let right = TemporaryOptions {
             recursive: None,
             watch: Some(false),
             ignore: None,
@@ -125,7 +162,7 @@ mod tests {
             system_files: None,
             hidden_files: Some(true),
         };
-        let expected = Options {
+        let expected = TemporaryOptions {
             recursive: Some(false),
             watch: Some(false),
             ignore: Some(vec![PathBuf::from("/home/cabero/Downloads/ignored_dir")]),

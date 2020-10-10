@@ -1,5 +1,4 @@
 use crate::configuration::filters::Filters;
-use regex::Regex;
 use std::{
     io::{
         Error,
@@ -37,17 +36,14 @@ impl<'a> File<'a> {
     pub fn matches_filters(&self, filters: &Filters) -> bool {
         // TODO test this function
         let path = self.path.to_str().unwrap();
-        if filters.regex.is_some() {
-            let regex = Regex::new(filters.regex.as_ref().unwrap()).expect("invalid regex defined in config file");
-            if regex.is_match(path) {
-                return true;
-            }
-        }
-        if filters.filename.is_some() && self.filename == filters.filename.as_ref().unwrap() {
+        if filters.regex.is_match(path) {
             return true;
         }
-        if let Some(extensions) = &filters.extensions {
-            for extension in extensions.iter() {
+        if !filters.filename.is_empty() && self.filename == filters.filename {
+            return true;
+        }
+        if !filters.extensions.is_empty() {
+            for extension in filters.extensions.iter() {
                 if self.extension == extension {
                     return true;
                 }
@@ -55,18 +51,6 @@ impl<'a> File<'a> {
         }
         false
     }
-
-    // pub fn get_matching_rules(&self, rules: Rules) -> Result<Vec<&'a Rule>, Error> {
-    //     let mut matching_rules = Vec::new();
-    //     for rule in rules.iter() {
-    //         if let Some(filters) = &rule.filters {
-    //             if self.matches_filters(filters)? {
-    //                 matching_rules.push(rule)
-    //             }
-    //         }
-    //     }
-    //     Ok(matching_rules)
-    // }
 }
 
 /// # Arguments

@@ -15,7 +15,7 @@ subcommands:
             takes_value: true
             value_name: file
 
-  - config:
+  - edit:
       about: Edit configuration
       args:
         - show_path:
@@ -43,5 +43,9 @@ subcommands:
             long: daemon
             takes_value: false
             help: Start watching as a background process
+        - replace:
+            long: replace
+            takes_value: false
+            help: Restarts the running daemon
   - logs:
       about: Show logs
