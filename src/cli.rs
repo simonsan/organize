@@ -41,6 +41,7 @@ impl Default for Cli {
             "suggest" => SubCommands::Suggest,
             "watch" => SubCommands::Watch,
             "logs" => SubCommands::Logs,
+            "stop" => SubCommands::Stop,
             _ => panic!("ERROR: unknown subcommand"),
         };
 
@@ -71,9 +72,7 @@ impl Cli {
             SubCommands::Suggest => todo!(),
             SubCommands::Watch => {
                 if self.subcommand.1.is_present("replace") {
-                    let lock_file = LockFile::new();
-                    let pid = lock_file.get_pid()?;
-                    kill_daemon(pid);
+                    kill_daemon()?;
                 }
                 if self.subcommand.1.is_present("daemon") {
                     start_daemon()?;
@@ -83,6 +82,9 @@ impl Cli {
                 }
             }
             SubCommands::Logs => todo!(),
+            SubCommands::Stop => {
+                kill_daemon()?;
+            }
         };
         Ok(())
     }

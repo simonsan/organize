@@ -49,3 +49,5 @@ subcommands:
             help: Restarts the running daemon
   - logs:
       about: Show logs
+  - stop:
+      about: Stop watching

@@ -9,4 +9,5 @@ pub enum SubCommands {
     Suggest,
     Watch,
     Logs,
+    Stop,
 }

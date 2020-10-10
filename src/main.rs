@@ -64,10 +64,13 @@ fn start_daemon() -> Result<(), Error> {
     Ok(())
 }
 
-pub fn kill_daemon(pid: i32) {
+pub fn kill_daemon() -> Result<(), Error> {
+    let lock_file = LockFile::new();
+    let pid = lock_file.get_pid()?;
     let sys = System::new_all();
     sys.get_processes()
         .get(&pid)
         .expect("could not find running instance's PID")
         .kill(Signal::Kill);
+    Ok(())
 }
