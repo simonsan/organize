@@ -1,7 +1,6 @@
 use crate::{
     cli::Cli,
     configuration::{
-        actions::Actions,
         options::Options,
         Rule,
     },

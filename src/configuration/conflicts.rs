@@ -1,7 +1,6 @@
 use crate::configuration::options::combine_options;
 use serde::Deserialize;
 use std::{
-    borrow::Borrow,
     ops::Add,
     path::PathBuf,
 };

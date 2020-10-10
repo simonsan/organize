@@ -9,7 +9,7 @@ use std::{
 };
 
 pub fn run(rules: Rules) -> Result<(), Error> {
-    for (i, rule) in rules.iter().enumerate() {
+    for rule in rules.iter() {
         let filters = rule.filters.as_ref().unwrap();
         let actions = &rule.actions;
         for folder in rule.folders.iter() {

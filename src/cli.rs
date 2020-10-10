@@ -1,11 +1,14 @@
-use crate::subcommands::{
-    config::{
-        utils,
-        UserConfig,
+use crate::{
+    start_daemon,
+    subcommands::{
+        config::{
+            utils,
+            UserConfig,
+        },
+        run::run,
+        watch::Watcher,
+        SubCommands,
     },
-    run::run,
-    watch::Watcher,
-    SubCommands,
 };
 use clap::{
     load_yaml,
@@ -27,8 +30,8 @@ impl Default for Cli {
         let yaml = load_yaml!("../cli.yml");
         let app = App::from(yaml);
         let matches = app.get_matches();
-        let (name, cmd) = matches.subcommand();
-        let cmd = cmd.unwrap().clone(); // safe unwrap, a subcommand is mandatory
+        let (name, cmd) = matches.subcommand().unwrap();
+        let cmd = cmd.clone(); // safe unwrap, a subcommand is mandatory
         let name = match name {
             "config" => SubCommands::Config,
             "run" => SubCommands::Run,
@@ -64,11 +67,12 @@ impl Cli {
             }
             SubCommands::Suggest => todo!(),
             SubCommands::Watch => {
-                let mut watcher = Watcher::new();
-                watcher.watch(&config.rules);
-                // if cli.subcommand.1.is_present("daemon") {
-                //     start_daemon()
-                // }
+                if self.subcommand.1.is_present("daemon") {
+                    start_daemon()
+                } else {
+                    let mut watcher = Watcher::new();
+                    watcher.watch(&config.rules);
+                }
             }
             SubCommands::Logs => todo!(),
         };

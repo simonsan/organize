@@ -1,14 +1,6 @@
 use crate::configuration::options::Options;
-use clap::ErrorKind;
 use serde::Deserialize;
-use std::{
-    io::Error,
-    ops::Index,
-    path::{
-        Path,
-        PathBuf,
-    },
-};
+use std::path::PathBuf;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Folder {
@@ -24,5 +16,3 @@ impl Default for Folder {
         }
     }
 }
-
-type Folders = Vec<Folder>;

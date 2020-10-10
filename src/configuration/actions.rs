@@ -1,11 +1,8 @@
 use crate::{
-    configuration::{
-        conflicts::{
-            ConflictOption,
-            ConflictingActions,
-            ConflictingFileOperation,
-        },
-        options::combine_options,
+    configuration::conflicts::{
+        ConflictOption,
+        ConflictingActions,
+        ConflictingFileOperation,
     },
     file::{
         get_stem_and_extension,
@@ -23,7 +20,6 @@ use std::{
         Read,
         Write,
     },
-    ops::Add,
     path::{
         Path,
         PathBuf,

@@ -16,10 +16,7 @@ use crate::{
 use serde::Deserialize;
 use std::{
     collections::HashMap,
-    path::{
-        Path,
-        PathBuf,
-    },
+    path::PathBuf,
 };
 
 #[derive(Debug, Clone, Deserialize)]
@@ -43,13 +40,14 @@ impl Default for Rule {
 
 /// returns a hashmap where the keys are paths and the values are tuples of rules
 /// and indices that indicate the index of the key's corresponding folder in the rule's folders' list
-pub fn folder2rule(rules: &Rules) -> HashMap<&PathBuf, (&Rule, usize)> {
+pub fn folder2rules(rules: &Rules) -> HashMap<&PathBuf, Vec<(&Rule, usize)>> {
     let mut map = HashMap::new();
     for rule in rules.iter() {
         for (i, folder) in rule.folders.iter().enumerate() {
             if !map.contains_key(&folder.path) {
-                map.insert(&folder.path, (rule, i));
+                map.insert(&folder.path, Vec::new());
             }
+            map.get_mut(&folder.path).unwrap().push((rule, i));
         }
     }
     map
