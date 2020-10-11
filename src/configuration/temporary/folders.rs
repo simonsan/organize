@@ -7,7 +7,13 @@ use crate::configuration::{
     },
 };
 use serde::Deserialize;
-use std::path::PathBuf;
+use std::{
+    env,
+    path::{
+        Path,
+        PathBuf,
+    },
+};
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct TemporaryFolder {
@@ -41,5 +47,28 @@ impl TemporaryConfigElement<Folder> for TemporaryFolder {
             path: self.path,
             options: Some(options),
         }
+    }
+}
+
+impl TemporaryFolder {
+    pub fn expand_env_vars(&self) -> PathBuf {
+        let components = self.path.components();
+        let mut new_path = PathBuf::new();
+
+        for component in components.into_iter() {
+            let component: &Path = component.as_ref();
+            if component.to_str().unwrap().starts_with('$') {
+                let env_var = env::var(component.to_str().unwrap());
+                if let Ok(env_var) = env_var {
+                    println!("{}", env_var);
+                    new_path.push(env_var);
+                } else {
+                    panic!(format!("an environment variable ({}) was found in the configuration file but it couldn't be read. Are you sure it exists?", new_path.display()))
+                }
+            } else {
+                new_path.push(component);
+            }
+        }
+        new_path
     }
 }
