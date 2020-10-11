@@ -1,5 +1,5 @@
 [package]
-name = "organizer"
+name = "organize"
 version = "0.2.0"
 authors = ["KBR9 <cabero96@protonmail.com>"]
 edition = "2018"

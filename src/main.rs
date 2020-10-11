@@ -23,8 +23,8 @@ fn main() -> Result<(), Error> {
         },
         Err(e) => {
             let description = e.to_string();
-            print!("{}", "ERROR: ".red());
-            println!("{}", description);
+            eprint!("{}", "ERROR: ".red());
+            eprintln!("{}", description);
         }
     }
     Ok(())
