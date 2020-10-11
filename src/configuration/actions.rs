@@ -1,8 +1,11 @@
 use crate::{
-    configuration::conflicts::{
-        ConflictOption,
-        ConflictingActions,
-        ConflictingFileOperation,
+    configuration::{
+        conflicts::{
+            ConflictOption,
+            ConflictingActions,
+            ConflictingFileOperation,
+        },
+        temporary::folders::expand_env_vars,
     },
     file::{
         get_stem_and_extension,
@@ -54,17 +57,29 @@ impl Default for Actions {
 pub fn process_actions(actions: &Actions, file: &mut File) -> Result<(), Error> {
     if let Some(action) = &actions.copy {
         let dst = &action.to;
-        copy(&file.path, dst, action.if_exists.as_ref().unwrap_or_default())?;
+        copy(
+            &file.path,
+            &expand_env_vars(dst),
+            action.if_exists.as_ref().unwrap_or_default(),
+        )?;
     }
 
     // TODO the following three are conflicting operations - validate this
     if let Some(action) = &actions.r#move {
         let dst = &action.to;
-        file.path = r#move(&file.path, dst, action.if_exists.as_ref().unwrap_or_default())?;
+        file.path = r#move(
+            &file.path,
+            &expand_env_vars(dst),
+            action.if_exists.as_ref().unwrap_or_default(),
+        )?;
     };
     if let Some(action) = &actions.rename {
         let dst = &action.to;
-        file.path = rename(&file.path, dst, action.if_exists.as_ref().unwrap_or_default())?;
+        file.path = rename(
+            &file.path,
+            &expand_env_vars(dst),
+            action.if_exists.as_ref().unwrap_or_default(),
+        )?;
     }
     if actions.delete.is_some() {
         delete(&file.path)?;

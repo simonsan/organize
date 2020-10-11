@@ -7,5 +7,5 @@ pub mod rules;
 
 pub trait TemporaryConfigElement<T> {
     fn unwrap(self) -> T;
-    fn fill(self, parent_rule: &TemporaryRule) -> Self;
+    fn fill(&mut self, parent_rule: &TemporaryRule) -> Self;
 }

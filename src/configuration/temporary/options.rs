@@ -45,8 +45,8 @@ impl TemporaryConfigElement<Options> for TemporaryOptions {
         }
     }
 
-    fn fill(self, parent_rule: &TemporaryRule) -> Self {
-        Self::default() + parent_rule.options.clone().unwrap_or_default() + self
+    fn fill(&mut self, parent_rule: &TemporaryRule) -> Self {
+        Self::default() + parent_rule.options.clone().unwrap_or_default() + self.clone()
     }
 }
 

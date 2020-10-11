@@ -8,10 +8,11 @@ use crate::{
     cli::Cli,
     subcommands::edit::UserConfig,
 };
+use clap::crate_name;
 use colored::Colorize;
 use std::io::Error;
 
-static PROJECT_NAME: &str = "organizer";
+static PROJECT_NAME: &str = crate_name!();
 
 fn main() -> Result<(), Error> {
     let mut cli = Cli::new();
@@ -19,12 +20,11 @@ fn main() -> Result<(), Error> {
     match config {
         Ok(config) => match cli.run(config) {
             Ok(_) => {}
-            Err(e) => eprintln!("{}", e.to_string()),
+            Err(e) => eprintln!("{}", e),
         },
         Err(e) => {
-            let description = e.to_string();
             eprint!("{}", "ERROR: ".red());
-            eprintln!("{}", description);
+            eprintln!("{}", e);
         }
     }
     Ok(())
