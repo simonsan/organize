@@ -58,9 +58,8 @@ impl TemporaryFolder {
         for component in components.into_iter() {
             let component: &Path = component.as_ref();
             if component.to_str().unwrap().starts_with('$') {
-                let env_var = env::var(component.to_str().unwrap());
+                let env_var = env::var(component.to_str().unwrap().replace('$', ""));
                 if let Ok(env_var) = env_var {
-                    println!("{}", env_var);
                     new_path.push(env_var);
                 } else {
                     panic!(format!("an environment variable ({}) was found in the configuration file but it couldn't be read. Are you sure it exists?", new_path.display()))
