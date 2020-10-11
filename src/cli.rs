@@ -1,14 +1,17 @@
-use crate::subcommands::{
-    edit::{
-        utils,
-        UserConfig,
+use crate::{
+    subcommands::{
+        edit::{
+            utils,
+            UserConfig,
+        },
+        run::run,
+        watch::{
+            daemon::Daemon,
+            watch,
+        },
+        SubCommands,
     },
-    run::run,
-    watch::{
-        daemon::Daemon,
-        watch,
-    },
-    SubCommands,
+    PROJECT_NAME,
 };
 use clap::{
     load_yaml,
@@ -65,7 +68,7 @@ impl Cli {
                 if self.subcommand.1.is_present("show_path") {
                     println!("{}", config.path.display());
                 } else if self.subcommand.1.is_present("new") {
-                    let config_file = env::current_dir()?.join("d-organizer.yml");
+                    let config_file = env::current_dir()?.join(format!("{}.yml", PROJECT_NAME));
                     utils::create_config_file(&config_file)?;
                     println!("New config file created at {}", config_file.display());
                 } else {

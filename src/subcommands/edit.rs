@@ -1,6 +1,9 @@
-use crate::configuration::{
-    rules::Rule,
-    temporary::rules::TemporaryRules,
+use crate::{
+    configuration::{
+        rules::Rule,
+        temporary::rules::TemporaryRules,
+    },
+    PROJECT_NAME,
 };
 use clap::ArgMatches;
 use std::{
@@ -35,10 +38,14 @@ impl UserConfig {
     pub fn new(args: &ArgMatches) -> Result<Self, Error> {
         let path = match args.value_of("with_config") {
             Some(path) => PathBuf::from(path),
-            None => dirs::home_dir()
-                .expect("ERROR: cannot determine home directory")
-                .join(".d-organizer")
-                .join("config.yml"),
+            None => {
+                let mut project_dir = ".".to_string();
+                project_dir.push_str(PROJECT_NAME);
+                dirs::home_dir()
+                    .expect("ERROR: cannot determine home directory")
+                    .join(project_dir)
+                    .join("config.yml")
+            }
         };
 
         if !path.exists() {
@@ -124,6 +131,7 @@ impl UserConfig {
 }
 
 pub mod utils {
+    use crate::PROJECT_NAME;
     use clap::load_yaml;
     use std::{
         io::{
@@ -171,12 +179,13 @@ pub mod utils {
     pub(in crate::subcommands::edit) fn prompt_editor_env_var() -> String {
         let platform = std::env::consts::OS;
         if platform == "linux" || platform == "macos" {
-            String::from(
-                "d-organizer could not find an $EDITOR environment variable or it's not properly set.\nIn your .bashrc (or .zshrc), set 'export EDITOR=$(which <your-favorite-editor-name>) or \
-                run d-organizer as 'EDITOR=$(which <your-favorite-editor-name>) d-organizer config'",
-            )
+            format!("{} could not find an $EDITOR environment variable or it's not properly set.\nIn your .bashrc (or .zshrc), set 'export EDITOR=$(which <your-favorite-editor-name>) or \
+                run {} as 'EDITOR=$(which <your-favorite-editor-name>) {} config'", PROJECT_NAME, PROJECT_NAME, PROJECT_NAME)
         } else if platform == "windows" {
-            String::from("d-organizer could not find an EDITOR environment variable or it's not properly set")
+            format!(
+                "{} could not find an EDITOR environment variable or it's not properly set",
+                PROJECT_NAME
+            )
         } else {
             format!("{} platform not supported", platform)
         }

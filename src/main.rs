@@ -1,8 +1,8 @@
 pub mod cli;
 pub mod configuration;
 pub mod file;
-pub mod subcommands;
 pub mod lock_file;
+pub mod subcommands;
 
 use crate::{
     cli::Cli,
@@ -10,6 +10,8 @@ use crate::{
 };
 use colored::Colorize;
 use std::io::Error;
+
+static PROJECT_NAME: &str = "organizer";
 
 fn main() -> Result<(), Error> {
     let mut cli = Cli::new();

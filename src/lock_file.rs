@@ -1,11 +1,7 @@
 use std::{
     env::temp_dir,
     fs,
-    fs::File,
-    io::{
-        Error,
-        Read,
-    },
+    io::Error,
     path::PathBuf,
 };
 

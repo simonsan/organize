@@ -33,11 +33,6 @@ use std::{
         Receiver,
     },
 };
-use sysinfo::{
-    RefreshKind,
-    System,
-    SystemExt,
-};
 
 pub fn watch(cli: &mut Cli, config: &UserConfig) -> Result<(), Error> {
     if cli.subcommand.1.is_present("replace") {

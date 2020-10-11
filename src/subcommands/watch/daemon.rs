@@ -1,4 +1,7 @@
-use crate::lock_file::LockFile;
+use crate::{
+    lock_file::LockFile,
+    PROJECT_NAME,
+};
 use std::{
     env,
     io::{
@@ -8,7 +11,6 @@ use std::{
     process::Command,
 };
 use sysinfo::{
-    Process,
     ProcessExt,
     RefreshKind,
     Signal,
@@ -40,7 +42,7 @@ impl Daemon {
     }
 
     pub fn kill(&mut self) -> Result<(), Error> {
-        let pid = self.is_running();
+        let pid = self.running_instance();
         if let Some(pid) = pid {
             let sys = System::new_with_specifics(RefreshKind::with_processes(RefreshKind::new()));
             sys.get_process(pid).unwrap().kill(Signal::Kill);
@@ -74,11 +76,11 @@ impl Daemon {
         if process.is_none() {
             return true;
         }
-        let processes = sys.get_process_by_name("organizer");
+        let processes = sys.get_process_by_name(PROJECT_NAME);
         processes.len() <= 1
     }
 
-    fn is_running(&self) -> Option<i32> {
+    fn running_instance(&self) -> Option<i32> {
         let lock_file = LockFile::new();
         let sys = System::new_with_specifics(RefreshKind::with_processes(RefreshKind::new()));
         let pid = lock_file.read_pid();
