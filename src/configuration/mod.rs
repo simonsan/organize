@@ -1,76 +1,16 @@
-pub mod actions;
-pub mod conflicts;
-pub mod filters;
-pub mod folders;
-pub mod options;
-
-use crate::configuration::{
-    actions::Actions,
-    filters::{
-        Filters,
-        TemporaryFilters,
-    },
-    folders::{
-        Folder,
-        TemporaryFolder,
-    },
-    options::{
-        Options,
-        TemporaryOptions,
-    },
-};
-use serde::Deserialize;
+use crate::configuration::rules::Rule;
 use std::{
     collections::HashMap,
     path::PathBuf,
 };
 
-trait TemporaryConfigElement<T> {
-    fn unwrap(self) -> T;
-    fn fill(self, parent_rule: &TemporaryRule) -> Self;
-}
-
-#[derive(Debug, Clone, Deserialize)]
-pub struct TemporaryRule {
-    pub actions: Actions,
-    pub filters: TemporaryFilters,
-    pub folders: Vec<TemporaryFolder>,
-    pub options: Option<TemporaryOptions>,
-}
-
-impl TemporaryRule {
-    pub fn unwrap(&self) -> Rule {
-        let mut folders = Vec::new();
-        for folder in self.folders.iter() {
-            folders.push(folder.clone().fill(self).unwrap())
-        }
-        Rule {
-            actions: self.actions.clone(),
-            filters: self.filters.clone().unwrap(),
-            folders,
-            options: self.options.clone().unwrap_or_default().fill(self).unwrap(),
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct Rule {
-    pub actions: Actions,
-    pub filters: Filters,
-    pub folders: Vec<Folder>,
-    pub options: Options,
-}
-
-impl Default for TemporaryRule {
-    fn default() -> Self {
-        Self {
-            actions: Default::default(),
-            filters: Default::default(),
-            folders: Default::default(),
-            options: Some(Default::default()),
-        }
-    }
-}
+pub mod actions;
+pub mod conflicts;
+pub mod filters;
+pub mod folders;
+pub mod options;
+pub mod rules;
+pub mod temporary;
 
 /// returns a hashmap where the keys are paths and the values are tuples of rules
 /// and indices that indicate the index of the key's corresponding folder in the rule's folders' list
@@ -85,4 +25,88 @@ pub fn folder2rules(rules: &[Rule]) -> HashMap<&PathBuf, Vec<(&Rule, usize)>> {
         }
     }
     map
+}
+
+pub fn combine_options<T>(lhs: Option<T>, rhs: Option<T>, default: Option<T>) -> Option<T> {
+    if lhs.is_some() && rhs.is_none() {
+        lhs
+    } else if lhs.is_none() && rhs.is_some() {
+        rhs
+    } else if lhs.is_none() && rhs.is_none() {
+        default
+    } else {
+        // both are some
+        rhs
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::configuration::temporary::options::TemporaryOptions;
+    use std::{
+        io::{
+            Error,
+            ErrorKind,
+        },
+        path::PathBuf,
+    };
+
+    #[test]
+    fn none_plus_default() -> Result<(), Error> {
+        let left = TemporaryOptions {
+            recursive: None,
+            watch: None,
+            ignore: None,
+            suggestions: None,
+            enabled: None,
+            system_files: None,
+            hidden_files: None,
+        };
+        let right = TemporaryOptions::default();
+        let result = left.to_owned() + right.to_owned();
+        if result == right {
+            Ok(())
+        } else {
+            eprintln!("{:?}, {:?}", left, right);
+            Err(Error::from(ErrorKind::Other))
+        }
+    }
+
+    #[test]
+    fn random_combine() -> Result<(), Error> {
+        let left = TemporaryOptions {
+            recursive: None,
+            watch: Some(true),
+            ignore: Some(vec![PathBuf::from("/home/cabero/Downloads/ignored_dir")]),
+            suggestions: None,
+            enabled: None,
+            system_files: None,
+            hidden_files: Some(false),
+        };
+        let right = TemporaryOptions {
+            recursive: None,
+            watch: Some(false),
+            ignore: None,
+            suggestions: None,
+            enabled: None,
+            system_files: None,
+            hidden_files: Some(true),
+        };
+        let expected = TemporaryOptions {
+            recursive: Some(false),
+            watch: Some(false),
+            ignore: Some(vec![PathBuf::from("/home/cabero/Downloads/ignored_dir")]),
+            suggestions: Some(false),
+            enabled: Some(true),
+            system_files: Some(false),
+            hidden_files: Some(true),
+        };
+
+        if left.to_owned() + right.to_owned() == expected {
+            Ok(())
+        } else {
+            eprintln!("{:?}, {:?}", left, right);
+            Err(Error::from(ErrorKind::Other))
+        }
+    }
 }

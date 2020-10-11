@@ -1,7 +1,7 @@
 use crate::{
     configuration::{
         actions::process_actions,
-        Rule,
+        rules::Rule,
     },
     file::File,
 };
@@ -11,6 +11,7 @@ use std::{
 };
 
 pub fn run(rules: Vec<Rule>) -> Result<(), Error> {
+    // TODO optimize
     for rule in rules.iter() {
         let actions = &rule.actions;
         for folder in rule.folders.iter() {
@@ -19,7 +20,7 @@ pub fn run(rules: Vec<Rule>) -> Result<(), Error> {
 
             'files: for file in files {
                 let path = file.unwrap().path();
-                let mut file = File::from(&path)?;
+                let mut file = File::from(path);
                 if file.path.is_file() {
                     if file.is_hidden && !allow_hidden_files {
                         continue 'files;

@@ -1,15 +1,14 @@
-use crate::{
-    daemon::Daemon,
-    lock_file::LockFile,
-    subcommands::{
-        edit::{
-            utils,
-            UserConfig,
-        },
-        run::run,
-        watch::Watcher,
-        SubCommands,
+use crate::subcommands::{
+    edit::{
+        utils,
+        UserConfig,
     },
+    run::run,
+    watch::{
+        daemon::Daemon,
+        watch,
+    },
+    SubCommands,
 };
 use clap::{
     load_yaml,
@@ -18,29 +17,31 @@ use clap::{
 };
 use std::{
     env,
-    io::{
-        Error,
-        ErrorKind,
-    },
-};
-use sysinfo::{
-    System,
-    SystemExt,
+    io::Error,
 };
 
 #[derive(Clone, Debug)]
 pub struct Cli {
     pub subcommand: (SubCommands, ArgMatches),
-    pub running_daemon: bool, /* running `organizer` with the --daemon option involves running the `run` function twice, so we need this attribute to keep track of which iteration we're in */
+    pub daemon: Daemon,
+    pub is_running: bool,
+    /* running `organizer` with the --daemon option involves running the `run` function twice,
+     * so we need this attribute to keep track of which iteration we're in */
 }
 
 impl Default for Cli {
     fn default() -> Self {
+        Cli::new()
+    }
+}
+
+impl Cli {
+    pub fn new() -> Self {
         let yaml = load_yaml!("../cli.yml");
         let app = App::from(yaml);
         let matches = app.get_matches();
         let (name, cmd) = matches.subcommand().unwrap();
-        let cmd = cmd.clone(); // safe unwrap, a subcommand is mandatory
+        let cmd = cmd.clone();
         let name = match name {
             "edit" => SubCommands::Edit,
             "run" => SubCommands::Run,
@@ -53,20 +54,9 @@ impl Default for Cli {
 
         Cli {
             subcommand: (name, cmd),
-            running_daemon: false,
+            daemon: Daemon::new(),
+            is_running: false,
         }
-    }
-}
-
-impl Cli {
-    pub fn is_running(&self) -> bool {
-        let lock_file = LockFile::new();
-        let pid = lock_file.get_pid();
-        if pid.is_err() {
-            panic!("no lock file found");
-        }
-        let sys = System::new_all();
-        sys.get_processes().get(&pid.unwrap()).is_some() && !self.running_daemon
     }
 
     pub fn run(&mut self, config: UserConfig) -> Result<(), Error> {
@@ -83,38 +73,12 @@ impl Cli {
                 }
             }
             SubCommands::Run => {
-                // let config = config.validate()?;
                 run(config.rules)?;
             }
             SubCommands::Suggest => todo!(),
-            SubCommands::Watch => {
-                if self.subcommand.1.is_present("replace") && self.subcommand.1.is_present("daemon") {
-                    Daemon::new().restart()?;
-                }
-
-                let lock_file = LockFile::new();
-                if self.is_running() {
-                    return Err(
-                        Error::new(
-                            ErrorKind::Other,
-                            "a running instance already exists. Use `organizer stop` to stop this instance or `organizer watch --daemon --replace` to restart the daemon"
-                        )
-                    );
-                }
-                if self.subcommand.1.is_present("daemon") {
-                    let pid = Daemon::new().start()?;
-                    lock_file.write_pid(pid)?;
-                    self.running_daemon = true;
-                } else {
-                    let mut watcher = Watcher::new();
-                    watcher.watch(&config.rules, config.path);
-                }
-            }
+            SubCommands::Watch => watch(self, &config)?,
             SubCommands::Logs => todo!(),
-            SubCommands::Stop => {
-                let daemon = Daemon::new();
-                daemon.kill()?;
-            }
+            SubCommands::Stop => self.daemon.kill()?,
         };
         Ok(())
     }

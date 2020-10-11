@@ -1,38 +1,33 @@
 use crate::configuration::filters::Filters;
 use std::{
-    io::{
-        Error,
-        ErrorKind,
-    },
-    path::{
-        Path,
-        PathBuf,
-    },
+    io::Error,
+    path::PathBuf,
 };
 
 #[allow(dead_code)]
-pub struct File<'a> {
-    pub filename: &'a str,
-    pub stem: &'a str,
-    pub extension: &'a str,
+pub struct File {
+    pub filename: String,
+    pub stem: String,
+    pub extension: String,
     pub path: PathBuf,
     pub is_hidden: bool,
 }
 
-#[allow(dead_code)]
-impl<'a> File<'a> {
-    pub fn from(path: &'a Path) -> Result<Self, Error> {
-        let (stem, extension) = get_stem_and_extension(path)?;
-        let filename = path.file_name().unwrap().to_str().unwrap();
-        Ok(File {
+impl From<PathBuf> for File {
+    fn from(path: PathBuf) -> Self {
+        let (stem, extension) = get_stem_and_extension(path.clone()).unwrap();
+        let filename = String::from(path.file_name().unwrap().to_str().unwrap());
+        File {
+            is_hidden: filename.starts_with('.'),
             filename,
             stem,
             extension,
-            path: path.to_path_buf(),
-            is_hidden: filename.starts_with('.'),
-        })
+            path,
+        }
     }
+}
 
+impl File {
     pub fn matches_filters(&self, filters: &Filters) -> bool {
         // TODO test this function
         let path = self.path.to_str().unwrap();
@@ -44,7 +39,7 @@ impl<'a> File<'a> {
         }
         if !filters.extensions.is_empty() {
             for extension in filters.extensions.iter() {
-                if self.extension == extension {
+                if self.extension.eq(extension) {
                     return true;
                 }
             }
@@ -57,17 +52,9 @@ impl<'a> File<'a> {
 /// * `path`: A reference to a std::path::PathBuf
 /// # Return
 /// Returns the stem and extension of `path` if they exist and can be parsed, otherwise returns an Error
-pub fn get_stem_and_extension(path: &Path) -> Result<(&str, &str), Error> {
-    let stem = path
-        .file_stem()
-        .ok_or_else(|| Error::new(ErrorKind::InvalidData, "file does not have a file stem (?)"))?
-        .to_str()
-        .ok_or_else(|| Error::new(ErrorKind::InvalidData, "cannot convert OsStr to &str"))?;
-    let extension = path
-        .extension()
-        .unwrap_or_else(|| "".as_ref()) // some files don't have extensions
-        .to_str()
-        .ok_or_else(|| Error::new(ErrorKind::InvalidData, "cannot convert OsStr to str"))?;
+pub fn get_stem_and_extension(path: PathBuf) -> Result<(String, String), Error> {
+    let stem = path.file_stem().unwrap().to_str().unwrap().to_owned();
+    let extension = path.extension().unwrap_or_default().to_str().unwrap().to_owned();
 
     Ok((stem, extension))
 }

@@ -54,29 +54,17 @@ impl Default for Actions {
 pub fn process_actions(actions: &Actions, file: &mut File) -> Result<(), Error> {
     if let Some(action) = &actions.copy {
         let dst = &action.to;
-        copy(
-            &file.path,
-            dst,
-            action.if_exists.as_ref().unwrap_or_else(|| &ConflictOption::rename),
-        )?;
+        copy(&file.path, dst, action.if_exists.as_ref().unwrap_or_default())?;
     }
 
     // TODO the following three are conflicting operations - validate this
     if let Some(action) = &actions.r#move {
         let dst = &action.to;
-        file.path = r#move(
-            &file.path,
-            dst,
-            action.if_exists.as_ref().unwrap_or_else(|| &ConflictOption::rename),
-        )?;
+        file.path = r#move(&file.path, dst, action.if_exists.as_ref().unwrap_or_default())?;
     };
     if let Some(action) = &actions.rename {
         let dst = &action.to;
-        file.path = rename(
-            &file.path,
-            dst,
-            action.if_exists.as_ref().unwrap_or_else(|| &ConflictOption::rename),
-        )?;
+        file.path = rename(&file.path, dst, action.if_exists.as_ref().unwrap_or_default())?;
     }
     if actions.delete.is_some() {
         delete(&file.path)?;
@@ -135,7 +123,7 @@ pub fn new_filepath(from: &Path, to: &Path, conflict_option: &ConflictOption) ->
         return match conflict_option {
             ConflictOption::skip => Ok(from.to_path_buf()),
             ConflictOption::rename => {
-                let (stem, extension) = get_stem_and_extension(to)?;
+                let (stem, extension) = get_stem_and_extension(to.to_path_buf())?;
                 let new_dir = to.parent().unwrap();
                 let mut new_path = to.to_path_buf();
 

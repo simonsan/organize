@@ -1,4 +1,4 @@
-use crate::configuration::options::combine_options;
+use crate::configuration::combine_options;
 use serde::Deserialize;
 use std::{
     ops::Add,
@@ -76,11 +76,17 @@ pub enum ConflictOption {
     overwrite,
     skip,
     rename,
-    ask,
+    ask, // not available when watching
 }
 
 impl Default for ConflictOption {
     fn default() -> Self {
         ConflictOption::rename
+    }
+}
+
+impl Default for &ConflictOption {
+    fn default() -> Self {
+        &ConflictOption::rename
     }
 }

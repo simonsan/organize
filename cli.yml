@@ -1,6 +1,6 @@
 name: d-organizer
 author: Andres Cabero <cabero96@protonmail.com>
-version: "1.0"
+version: "2.0"
 about: a productivity tool for tidiness lovers
 settings:
   - SubcommandRequiredElseHelp
@@ -11,7 +11,7 @@ subcommands:
       args:
         - with_config: &with-config
             long: with-config
-            help: Provide a different configuration
+            help: Provide a different configuration file
             takes_value: true
             value_name: file
 
@@ -29,21 +29,16 @@ subcommands:
   - suggest:
       about: Show improved workflow suggestions (must be enabled in config; experimental feature)
   - watch:
-      about: Watch folders with the `watch` config option
+      about: Watch for changes and apply rules
       args:
         - with_config: *with-config
-        - delay:
-            short: d
-            long: delay
-            value_name: seconds
-            help: Delay time before files are moved
-            takes_value: true
-            default_value: "3"
         - daemon:
             long: daemon
+            display_order: 1
             takes_value: false
             help: Start watching as a background process
         - replace:
+            requires: daemon
             long: replace
             takes_value: false
             help: Restarts the running daemon

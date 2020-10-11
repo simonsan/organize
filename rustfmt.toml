@@ -14,5 +14,3 @@ tab_spaces = 4
 trailing_comma = "Vertical"
 trailing_semicolon = true
 use_field_init_shorthand = true
-#fn_call_width = 140
-#struct_variant_width = 140

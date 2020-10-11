@@ -1,9 +1,8 @@
 pub mod cli;
 pub mod configuration;
-pub mod daemon;
 pub mod file;
-pub mod lock_file;
 pub mod subcommands;
+pub mod lock_file;
 
 use crate::{
     cli::Cli,
@@ -12,10 +11,9 @@ use crate::{
 use colored::Colorize;
 use std::io::Error;
 
-// TODO remove panics
 fn main() -> Result<(), Error> {
-    let mut cli = Cli::default();
-    let config = UserConfig::new(&cli);
+    let mut cli = Cli::new();
+    let config = UserConfig::new(&cli.subcommand.1);
     match config {
         Ok(config) => match cli.run(config) {
             Ok(_) => {}

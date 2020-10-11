@@ -1,23 +1,15 @@
-use crate::{
-    cli::Cli,
-    configuration::{
-        Rule,
-        TemporaryRule,
-    },
+use crate::configuration::{
+    rules::Rule,
+    temporary::rules::TemporaryRules,
 };
+use clap::ArgMatches;
 use std::{
-    collections::HashMap,
-    fs,
     io::{
         Error,
         ErrorKind,
     },
-    path::{
-        Path,
-        PathBuf,
-    },
+    path::PathBuf,
     process::Command,
-    slice::Iter,
 };
 
 /// Represents the user's configuration file
@@ -29,65 +21,7 @@ pub struct UserConfig {
     pub rules: Vec<Rule>,
 }
 
-#[derive(Debug)]
-pub struct TemporaryRules(Vec<TemporaryRule>);
 pub struct Rules(Vec<Rule>);
-
-impl TemporaryRules {
-    /// Returns a new object containing the parsed rules from the user's config file.
-    /// ### Errors
-    /// This function will return an error in the following cases:
-    /// - The config file does not contain a `rules` field
-    /// - The path does not already exist.
-    /// Other errors may also be returned according to OpenOptions::open.
-    /// - It encounters while reading an error of a kind
-    /// other than ErrorKind::Interrupted, or if the contents of the file are not valid UTF-8.
-    pub fn new(path: &Path) -> Result<Self, Error> {
-        let content = fs::read_to_string(path)?;
-        let rules: HashMap<String, Vec<TemporaryRule>> =
-            serde_yaml::from_str(&content).expect("could not parse config file");
-        let mut rules = TemporaryRules(
-            rules
-                .get("rules")
-                .ok_or_else(|| Error::new(ErrorKind::InvalidData, "ERROR: field 'rules' is missing"))
-                .unwrap()
-                .clone(),
-        );
-        rules.fill_missing_fields();
-        Ok(rules)
-    }
-
-    /// Fills the missing fields of the user's config. Since most fields are optional,
-    /// we need a safe way to ensure all needed fields are defined in the internal representation.
-    ///
-    /// We combine global options with default options, preserving (when possible) the global options.
-    /// We then combine each folder's options with these modified global options, giving a higher
-    /// priority to these folder-level options, since they're more specific.
-    /// ### Return
-    /// This function does not return anything. All mutations are done in place.
-    pub(in crate::subcommands::edit) fn fill_missing_fields(&mut self) -> Vec<Rule> {
-        let mut rules = Vec::new();
-        for rule in self.0.iter_mut() {
-            // rule.options = Some(default_options + rule.options.as_ref().unwrap_or_else(|| default_options));
-            // for folder in rule.folders.iter_mut() {
-            //     match &folder.options {
-            //         Some(options) => folder.options = Some(rule.options.as_ref().unwrap() + options),
-            //         None => folder.options = rule.options.clone(),
-            //     }
-            // }
-            rules.push(rule.unwrap())
-        }
-        rules
-    }
-
-    pub fn iter(&self) -> Iter<TemporaryRule> {
-        self.0.iter()
-    }
-
-    pub fn validate(&self) {
-        todo!()
-    }
-}
 
 impl UserConfig {
     /// Creates a new UserConfig instance.
@@ -98,8 +32,8 @@ impl UserConfig {
     /// ### Errors
     /// This constructor fails in the following cases:
     /// - The configuration file does not exist
-    pub fn new(args: &Cli) -> Result<Self, Error> {
-        let path = match args.subcommand.1.value_of("with_config") {
+    pub fn new(args: &ArgMatches) -> Result<Self, Error> {
+        let path = match args.value_of("with_config") {
             Some(path) => PathBuf::from(path),
             None => dirs::home_dir()
                 .expect("ERROR: cannot determine home directory")
