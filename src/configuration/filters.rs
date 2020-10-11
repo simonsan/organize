@@ -1,7 +1,3 @@
-use crate::configuration::{
-    TemporaryConfigElement,
-    TemporaryRule,
-};
 use regex::Regex;
 use serde::Deserialize;
 use std::str::FromStr;

@@ -6,7 +6,6 @@ use crate::{
         Rule,
     },
     file::File,
-    subcommands::edit::TemporaryRules,
 };
 use notify::{
     op,

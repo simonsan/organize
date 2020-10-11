@@ -13,8 +13,7 @@ pub struct LockFile {
 
 impl LockFile {
     pub fn new() -> Self {
-        let mut path = temp_dir();
-        path.push("organizer.lock");
+        let path = temp_dir().join("organizer.lock");
         Self {
             path,
         }

@@ -4,23 +4,20 @@ pub mod filters;
 pub mod folders;
 pub mod options;
 
-use crate::{
-    configuration::{
-        actions::Actions,
-        filters::{
-            Filters,
-            TemporaryFilters,
-        },
-        folders::{
-            Folder,
-            TemporaryFolder,
-        },
-        options::{
-            Options,
-            TemporaryOptions,
-        },
+use crate::configuration::{
+    actions::Actions,
+    filters::{
+        Filters,
+        TemporaryFilters,
     },
-    subcommands::edit::TemporaryRules,
+    folders::{
+        Folder,
+        TemporaryFolder,
+    },
+    options::{
+        Options,
+        TemporaryOptions,
+    },
 };
 use serde::Deserialize;
 use std::{

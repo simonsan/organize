@@ -1,7 +1,6 @@
 use crate::{
-    kill_daemon,
+    daemon::Daemon,
     lock_file::LockFile,
-    start_daemon,
     subcommands::{
         edit::{
             utils,
@@ -19,12 +18,20 @@ use clap::{
 };
 use std::{
     env,
-    io::Error,
+    io::{
+        Error,
+        ErrorKind,
+    },
+};
+use sysinfo::{
+    System,
+    SystemExt,
 };
 
 #[derive(Clone, Debug)]
 pub struct Cli {
     pub subcommand: (SubCommands, ArgMatches),
+    pub running_daemon: bool, /* running `organizer` with the --daemon option involves running the `run` function twice, so we need this attribute to keep track of which iteration we're in */
 }
 
 impl Default for Cli {
@@ -46,12 +53,23 @@ impl Default for Cli {
 
         Cli {
             subcommand: (name, cmd),
+            running_daemon: false,
         }
     }
 }
 
 impl Cli {
-    pub fn run(self, config: UserConfig) -> Result<(), Error> {
+    pub fn is_running(&self) -> bool {
+        let lock_file = LockFile::new();
+        let pid = lock_file.get_pid();
+        if pid.is_err() {
+            panic!("no lock file found");
+        }
+        let sys = System::new_all();
+        sys.get_processes().get(&pid.unwrap()).is_some() && !self.running_daemon
+    }
+
+    pub fn run(&mut self, config: UserConfig) -> Result<(), Error> {
         match self.subcommand.0 {
             SubCommands::Edit => {
                 if self.subcommand.1.is_present("show_path") {
@@ -71,23 +89,22 @@ impl Cli {
             SubCommands::Suggest => todo!(),
             SubCommands::Watch => {
                 if self.subcommand.1.is_present("replace") && self.subcommand.1.is_present("daemon") {
-                    match kill_daemon() {
-                        Ok(_) => {
-                            let lock_file = LockFile::new();
-                            lock_file.delete()?;
-                            start_daemon()?;
-                        }
-                        Err(_) => {
-                            println!("no running instance was found\nrun without --replace to start a new instance")
-                        }
-                    }
-                } else if self.subcommand.1.is_present("daemon") && !self.subcommand.1.is_present("replace") {
-                    let lock_file = LockFile::new();
-                    if lock_file.path.exists() {
-                        println!("a running instance already exists. Use `organizer stop` to stop this instance or `organizer watch --daemon --replace` to restart the daemon")
-                    } else {
-                        start_daemon()?;
-                    }
+                    Daemon::new().restart()?;
+                }
+
+                let lock_file = LockFile::new();
+                if self.is_running() {
+                    return Err(
+                        Error::new(
+                            ErrorKind::Other,
+                            "a running instance already exists. Use `organizer stop` to stop this instance or `organizer watch --daemon --replace` to restart the daemon"
+                        )
+                    );
+                }
+                if self.subcommand.1.is_present("daemon") {
+                    let pid = Daemon::new().start()?;
+                    lock_file.write_pid(pid)?;
+                    self.running_daemon = true;
                 } else {
                     let mut watcher = Watcher::new();
                     watcher.watch(&config.rules, config.path);
@@ -95,9 +112,8 @@ impl Cli {
             }
             SubCommands::Logs => todo!(),
             SubCommands::Stop => {
-                kill_daemon()?;
-                let lock_file = LockFile::new();
-                lock_file.delete()?;
+                let daemon = Daemon::new();
+                daemon.kill()?;
             }
         };
         Ok(())

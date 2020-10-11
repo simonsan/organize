@@ -1,7 +1,6 @@
 use crate::{
     cli::Cli,
     configuration::{
-        options::TemporaryOptions,
         Rule,
         TemporaryRule,
     },

@@ -1,13 +1,9 @@
-use crate::{
-    configuration::{
-        TemporaryConfigElement,
-        TemporaryRule,
-    },
-    file::File,
+use crate::configuration::{
+    TemporaryConfigElement,
+    TemporaryRule,
 };
 use serde::Deserialize;
 use std::{
-    error::Error,
     ops::Add,
     path::PathBuf,
 };
