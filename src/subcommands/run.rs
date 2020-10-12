@@ -1,8 +1,5 @@
 use crate::{
-    configuration::{
-        actions::process_actions,
-        rules::Rule,
-    },
+    configuration::rules::Rule,
     file::File,
 };
 use std::{
@@ -13,7 +10,6 @@ use std::{
 pub fn run(rules: Vec<Rule>) -> Result<(), Error> {
     // TODO optimize
     for rule in rules.iter() {
-        let actions = &rule.actions;
         for folder in rule.folders.iter() {
             let allow_hidden_files = folder.options.hidden_files;
             let files = fs::read_dir(&folder.path)?;
@@ -26,7 +22,7 @@ pub fn run(rules: Vec<Rule>) -> Result<(), Error> {
                         continue 'files;
                     }
                     if file.matches_filters(&rule.filters) {
-                        process_actions(actions, &mut file)?;
+                        rule.actions.run(&mut file)?;
                     }
                 }
             }

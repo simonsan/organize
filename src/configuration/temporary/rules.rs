@@ -1,7 +1,7 @@
 use crate::configuration::{
-    actions::Actions,
     rules::Rule,
     temporary::{
+        actions::TemporaryActions,
         filters::TemporaryFilters,
         folders::TemporaryFolder,
         options::TemporaryOptions,
@@ -14,6 +14,7 @@ use core::{
 };
 use serde::Deserialize;
 use std::{
+    borrow::Borrow,
     collections::HashMap,
     fs,
     io::{
@@ -26,23 +27,23 @@ use std::{
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct TemporaryRule {
-    pub actions: Actions,
+    pub actions: TemporaryActions,
     pub filters: TemporaryFilters,
     pub folders: Vec<TemporaryFolder>,
     pub options: Option<TemporaryOptions>,
 }
 
 impl TemporaryRule {
-    pub fn unwrap(&self) -> Rule {
+    pub fn unwrap(self) -> Rule {
         let mut folders = Vec::new();
         for folder in self.folders.iter() {
-            folders.push(folder.clone().fill(self).unwrap())
+            folders.push(folder.clone().fill(&self).unwrap())
         }
         Rule {
-            actions: self.actions.clone(),
-            filters: self.filters.clone().unwrap(),
+            options: self.options.clone().unwrap_or_default().fill(&self).unwrap(),
+            actions: self.actions.unwrap(),
+            filters: self.filters.unwrap(),
             folders,
-            options: self.options.clone().unwrap_or_default().fill(self).unwrap(),
         }
     }
 }
@@ -95,8 +96,8 @@ impl TemporaryRules {
     /// This function does not return anything. All mutations are done in place.
     pub fn fill_missing_fields(&mut self) -> Vec<Rule> {
         let mut rules = Vec::new();
-        for rule in self.0.iter_mut() {
-            rules.push(rule.unwrap())
+        for rule in self.0.iter() {
+            rules.push(rule.clone().unwrap())
         }
         rules
     }

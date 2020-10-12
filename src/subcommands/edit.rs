@@ -55,7 +55,7 @@ impl UserConfig {
         let temp_rules = TemporaryRules::new(&path)?;
         let mut rules = Vec::new();
         for temp_rule in temp_rules.iter() {
-            rules.push(temp_rule.unwrap())
+            rules.push(temp_rule.clone().unwrap())
         }
 
         Ok(UserConfig {

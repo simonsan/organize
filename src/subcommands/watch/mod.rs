@@ -3,7 +3,6 @@ pub mod daemon;
 use crate::{
     cli::Cli,
     configuration::{
-        actions::process_actions,
         folder2rules,
         options::Options,
         rules::Rule,
@@ -90,6 +89,9 @@ impl Watcher {
             }
         }
         let folder2rules = folder2rules(&rules);
+        for rule in rules.iter() {
+            println!("{:?}", rule.actions);
+        }
 
         // THERE CAN ONLY BE ONE WATCHER, WHICH CAN WATCH MULTIPLE FOLDERS
         // create a folder2rule hash table to map folders to their corresponding rules
@@ -116,7 +118,7 @@ impl Watcher {
                             } = folder.options;
 
                             if watch && file.matches_filters(&rule.filters) {
-                                process_actions(&rule.actions, &mut file).unwrap();
+                                rule.actions.run(&mut file).unwrap();
                                 break;
                             }
                         }
