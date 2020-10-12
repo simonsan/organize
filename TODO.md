@@ -1,3 +1,3 @@
 - Make tests
 - Optimize `run` subcommand
-- Implement logging`
+- Implement logging
