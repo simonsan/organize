@@ -16,16 +16,9 @@ static PROJECT_NAME: &str = crate_name!();
 
 fn main() -> Result<(), Error> {
     let mut cli = Cli::new();
-    let config = UserConfig::new(&cli.subcommand.1);
-    match config {
-        Ok(config) => match cli.run(config) {
-            Ok(_) => {}
-            Err(e) => eprintln!("{}", e),
-        },
-        Err(e) => {
-            eprint!("{}", "ERROR: ".red());
-            eprintln!("{}", e);
-        }
+    match cli.run() {
+        Ok(_) => {}
+        Err(e) => eprintln!("{}", e),
     }
     Ok(())
 }

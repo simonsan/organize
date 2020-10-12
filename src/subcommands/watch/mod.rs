@@ -89,9 +89,6 @@ impl Watcher {
             }
         }
         let folder2rules = folder2rules(&rules);
-        for rule in rules.iter() {
-            println!("{:?}", rule.actions);
-        }
 
         // THERE CAN ONLY BE ONE WATCHER, WHICH CAN WATCH MULTIPLE FOLDERS
         // create a folder2rule hash table to map folders to their corresponding rules

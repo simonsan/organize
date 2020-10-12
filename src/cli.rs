@@ -62,24 +62,30 @@ impl Cli {
         }
     }
 
-    pub fn run(&mut self, config: UserConfig) -> Result<(), Error> {
+    pub fn run(&mut self) -> Result<(), Error> {
         match self.subcommand.0 {
             SubCommands::Edit => {
                 if self.subcommand.1.is_present("show_path") {
+                    let config = UserConfig::new(&self.subcommand.1)?;
                     println!("{}", config.path.display());
                 } else if self.subcommand.1.is_present("new") {
                     let config_file = env::current_dir()?.join(format!("{}.yml", PROJECT_NAME));
                     utils::create_config_file(&config_file)?;
                     println!("New config file created at {}", config_file.display());
                 } else {
+                    let config = UserConfig::new(&self.subcommand.1)?;
                     config.edit()?;
                 }
             }
             SubCommands::Run => {
+                let config = UserConfig::new(&self.subcommand.1)?;
                 run(config.rules)?;
             }
             SubCommands::Suggest => todo!(),
-            SubCommands::Watch => watch(self, &config)?,
+            SubCommands::Watch => {
+                let config = UserConfig::new(&self.subcommand.1)?;
+                watch(self, &config)?
+            }
             SubCommands::Logs => todo!(),
             SubCommands::Stop => self.daemon.kill()?,
         };
