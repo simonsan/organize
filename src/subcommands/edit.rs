@@ -38,14 +38,10 @@ impl UserConfig {
     pub fn new(args: &ArgMatches) -> Result<Self, Error> {
         let path = match args.value_of("with_config") {
             Some(path) => PathBuf::from(path),
-            None => {
-                let mut project_dir = ".".to_string();
-                project_dir.push_str(PROJECT_NAME);
-                dirs::home_dir()
-                    .expect("ERROR: cannot determine home directory")
-                    .join(project_dir)
-                    .join("config.yml")
-            }
+            None => dirs::home_dir()
+                .expect("ERROR: cannot determine home directory")
+                .join(format!(".{}", PROJECT_NAME))
+                .join("config.yml"),
         };
 
         if !path.exists() {
