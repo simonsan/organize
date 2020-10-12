@@ -3,7 +3,6 @@ pub mod daemon;
 use crate::{
     cli::Cli,
     configuration::{
-        folder2rules,
         options::Options,
         path2rules,
         rules::Rule,

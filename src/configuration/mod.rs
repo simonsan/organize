@@ -19,7 +19,7 @@ pub mod temporary;
 pub fn folder2rules(rules: &[Rule]) -> HashMap<&Folder, Vec<&Rule>> {
     let mut map = HashMap::new();
     for rule in rules.iter() {
-        for (i, folder) in rule.folders.iter().enumerate() {
+        for folder in rule.folders.iter() {
             if !map.contains_key(folder) {
                 map.insert(folder, Vec::new());
             }

@@ -89,7 +89,7 @@ pub fn new_filepath(from: &Path, to: &Path, conflict_option: &ConflictOption) ->
         return match conflict_option {
             ConflictOption::skip => Ok(from.to_path_buf()),
             ConflictOption::rename => {
-                let (stem, extension) = get_stem_and_extension(to.to_path_buf())?;
+                let (stem, extension) = get_stem_and_extension(to)?;
                 let new_dir = to.parent().unwrap();
                 let mut new_path = to.to_path_buf();
 

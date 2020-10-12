@@ -25,7 +25,7 @@ impl From<&Path> for File {
             filename,
             stem,
             extension,
-            path,
+            path: path.to_path_buf(),
         }
     }
 }

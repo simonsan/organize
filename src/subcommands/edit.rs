@@ -4,7 +4,6 @@ use crate::{
         rules::Rule,
         temporary::rules::TemporaryRules,
     },
-    PROJECT_NAME,
 };
 use clap::ArgMatches;
 use std::{
