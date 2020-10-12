@@ -1,9 +1,9 @@
 use crate::{
+    config_directory,
     configuration::{
         rules::Rule,
         temporary::rules::TemporaryRules,
     },
-    project_dir,
     PROJECT_NAME,
 };
 use clap::ArgMatches;
@@ -39,7 +39,7 @@ impl UserConfig {
     pub fn new(args: &ArgMatches) -> Result<Self, Error> {
         let path = match args.value_of("with_config") {
             Some(path) => PathBuf::from(path),
-            None => project_dir().join("config.yml"),
+            None => config_directory().join("config.yml"),
         };
 
         if !path.exists() {

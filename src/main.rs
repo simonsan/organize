@@ -14,7 +14,7 @@ use std::{
 
 static PROJECT_NAME: &str = crate_name!();
 
-pub fn project_dir() -> PathBuf {
+pub fn config_directory() -> PathBuf {
     home_dir()
         .expect("ERROR: cannot determine home directory")
         .join(format!(".{}", PROJECT_NAME))
