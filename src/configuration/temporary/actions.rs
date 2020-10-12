@@ -1,26 +1,17 @@
 use crate::{
     configuration::{
         actions::Actions,
-        temporary::{
-            conflicts::{
-                ConflictOption,
-                ConflictingActions,
-                ConflictingFileOperation,
-                TemporaryConflictingFileOperation,
-            },
-            folders::expand_env_vars,
+        temporary::conflicts::{
+            ConflictOption,
+            ConflictingFileOperation,
+            TemporaryConflictingFileOperation,
         },
     },
-    file::{
-        get_stem_and_extension,
-        File,
-    },
+    file::get_stem_and_extension,
 };
 use colored::Colorize;
 use serde::Deserialize;
 use std::{
-    borrow::BorrowMut,
-    fs::create_dir_all,
     io,
     io::{
         Error,

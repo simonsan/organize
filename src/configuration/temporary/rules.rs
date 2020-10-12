@@ -14,7 +14,6 @@ use core::{
 };
 use serde::Deserialize;
 use std::{
-    borrow::Borrow,
     collections::HashMap,
     fs,
     io::{

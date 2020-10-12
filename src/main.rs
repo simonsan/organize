@@ -4,12 +4,8 @@ pub mod file;
 pub mod lock_file;
 pub mod subcommands;
 
-use crate::{
-    cli::Cli,
-    subcommands::edit::UserConfig,
-};
+use crate::cli::Cli;
 use clap::crate_name;
-use colored::Colorize;
 use std::io::Error;
 
 static PROJECT_NAME: &str = crate_name!();
