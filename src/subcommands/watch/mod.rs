@@ -105,7 +105,7 @@ impl Watcher {
                     if file.path.is_file() {
                         let parent_dir = file.path.parent().unwrap().to_path_buf();
                         let values = path2rules.get(&parent_dir).unwrap().to_owned();
-                        for (rule, i) in values {
+                        'rules: for (rule, i) in values {
                             if rule.options.ignore.contains(&parent_dir) {
                                 continue;
                             }
@@ -116,7 +116,7 @@ impl Watcher {
 
                             if watch && file.matches_filters(&rule.filters) {
                                 rule.actions.run(&mut file).unwrap();
-                                break;
+                                break 'rules;
                             }
                         }
                     }
