@@ -1,2 +1,3 @@
 - Make tests
-- Support environment variables in config paths
+- Optimize `run` subcommand
+- Implement logging`
