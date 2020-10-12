@@ -44,8 +44,8 @@ impl Actions {
             file.path = self.r#move(&file.path)?;
         }
 
-        if let Some(rename) = &self.rename {
-            file.path = self.rename(&file.path, &rename.to, &rename.if_exists)?;
+        if self.rename.is_some() {
+            file.path = self.rename(&file.path)?;
         }
         if self.delete.is_some() {
             self.delete(&file.path)?;
