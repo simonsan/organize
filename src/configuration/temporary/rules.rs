@@ -59,7 +59,7 @@ impl Default for TemporaryRule {
 }
 
 #[derive(Debug)]
-pub struct TemporaryRules(Vec<TemporaryRule>);
+pub struct TemporaryRules(pub(crate) Vec<TemporaryRule>);
 
 impl TemporaryRules {
     /// Returns a new object containing the parsed rules from the user's config file.
