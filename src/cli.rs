@@ -62,7 +62,7 @@ impl Cli {
         }
     }
 
-    pub fn run(&mut self) -> Result<(), Error> {
+    pub fn run(self) -> Result<(), Error> {
         match self.subcommand.0 {
             SubCommands::Edit => {
                 if self.subcommand.1.is_present("show_path") {

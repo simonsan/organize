@@ -11,7 +11,7 @@ use std::io::Error;
 static PROJECT_NAME: &str = crate_name!();
 
 fn main() -> Result<(), Error> {
-    let mut cli = Cli::new();
+    let cli = Cli::new();
     match cli.run() {
         Ok(_) => {}
         Err(e) => eprintln!("{}", e),

@@ -26,7 +26,7 @@ impl Daemon {
         Daemon
     }
 
-    pub fn start(&mut self) -> Result<i32, Error> {
+    pub fn start(&self) -> Result<i32, Error> {
         let mut args = env::args();
         let command = args.next().unwrap(); // must've been started through a command
         let args: Vec<_> = args.filter(|arg| arg != "--daemon" && arg != "--replace").collect();
@@ -41,7 +41,7 @@ impl Daemon {
         Ok(pid)
     }
 
-    pub fn kill(&mut self) -> Result<(), Error> {
+    pub fn kill(&self) -> Result<(), Error> {
         let pid = self.running_instance();
         if let Some(pid) = pid {
             let sys = System::new_with_specifics(RefreshKind::with_processes(RefreshKind::new()));
@@ -52,7 +52,7 @@ impl Daemon {
         }
     }
 
-    pub fn restart(&mut self) -> Result<i32, Error> {
+    pub fn restart(&self) -> Result<i32, Error> {
         match self.kill() {
             Ok(_) => {
                 let pid = self.start()?;

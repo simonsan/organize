@@ -33,7 +33,7 @@ use std::{
     },
 };
 
-pub fn watch(cli: &mut Cli, config: &UserConfig) -> Result<(), Error> {
+pub fn watch(cli: Cli, config: &UserConfig) -> Result<(), Error> {
     if cli.subcommand.1.is_present("replace") {
         cli.daemon.restart()?;
     } else if cli.daemon.is_runnable() {
