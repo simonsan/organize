@@ -1,7 +1,10 @@
 use crate::configuration::filters::Filters;
 use std::{
     io::Error,
-    path::PathBuf,
+    path::{
+        Path,
+        PathBuf,
+    },
 };
 
 #[allow(dead_code)]
@@ -13,9 +16,9 @@ pub struct File {
     pub is_hidden: bool,
 }
 
-impl From<PathBuf> for File {
-    fn from(path: PathBuf) -> Self {
-        let (stem, extension) = get_stem_and_extension(path.clone()).unwrap();
+impl From<&Path> for File {
+    fn from(path: &Path) -> Self {
+        let (stem, extension) = get_stem_and_extension(path).unwrap();
         let filename = String::from(path.file_name().unwrap().to_str().unwrap());
         File {
             is_hidden: filename.starts_with('.'),
@@ -52,7 +55,7 @@ impl File {
 /// * `path`: A reference to a std::path::PathBuf
 /// # Return
 /// Returns the stem and extension of `path` if they exist and can be parsed, otherwise returns an Error
-pub fn get_stem_and_extension(path: PathBuf) -> Result<(String, String), Error> {
+pub fn get_stem_and_extension(path: &Path) -> Result<(String, String), Error> {
     let stem = path.file_stem().unwrap().to_str().unwrap().to_owned();
     let extension = path.extension().unwrap_or_default().to_str().unwrap().to_owned();
 

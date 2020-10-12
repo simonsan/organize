@@ -5,6 +5,7 @@ use crate::{
     configuration::{
         folder2rules,
         options::Options,
+        path2rules,
         rules::Rule,
     },
     file::File,
@@ -88,7 +89,7 @@ impl Watcher {
                 self.watcher.watch(&folder.path, is_recursive).unwrap();
             }
         }
-        let folder2rules = folder2rules(&rules);
+        let path2rules = path2rules(&rules);
 
         // THERE CAN ONLY BE ONE WATCHER, WHICH CAN WATCH MULTIPLE FOLDERS
         // create a folder2rule hash table to map folders to their corresponding rules
@@ -101,10 +102,10 @@ impl Watcher {
             }) = self.receiver.recv()
             {
                 if let op::CREATE = op {
-                    let mut file = File::from(abs_path);
+                    let mut file = File::from(abs_path.as_path());
                     if file.path.is_file() {
                         let parent_dir = file.path.parent().unwrap().to_path_buf();
-                        let values = folder2rules.get(&parent_dir).unwrap().to_owned();
+                        let values = path2rules.get(&parent_dir).unwrap().to_owned();
                         for (rule, i) in values {
                             if rule.options.ignore.contains(&parent_dir) {
                                 continue;

@@ -1,4 +1,7 @@
-use crate::configuration::rules::Rule;
+use crate::configuration::{
+    folders::Folder,
+    rules::Rule,
+};
 use std::{
     collections::HashMap,
     path::PathBuf,
@@ -11,9 +14,24 @@ pub mod options;
 pub mod rules;
 pub mod temporary;
 
+/// returns a hashmap where the keys are folders and the values are tuples of rules
+/// and indices that indicate the index of the key's corresponding folder in the rule's folders' list
+pub fn folder2rules(rules: &[Rule]) -> HashMap<&Folder, Vec<&Rule>> {
+    let mut map = HashMap::new();
+    for rule in rules.iter() {
+        for (i, folder) in rule.folders.iter().enumerate() {
+            if !map.contains_key(folder) {
+                map.insert(folder, Vec::new());
+            }
+            map.get_mut(folder).unwrap().push(rule);
+        }
+    }
+    map
+}
+
 /// returns a hashmap where the keys are paths and the values are tuples of rules
 /// and indices that indicate the index of the key's corresponding folder in the rule's folders' list
-pub fn folder2rules(rules: &[Rule]) -> HashMap<&PathBuf, Vec<(&Rule, usize)>> {
+pub fn path2rules(rules: &[Rule]) -> HashMap<&PathBuf, Vec<(&Rule, usize)>> {
     let mut map = HashMap::new();
     for rule in rules.iter() {
         for (i, folder) in rule.folders.iter().enumerate() {

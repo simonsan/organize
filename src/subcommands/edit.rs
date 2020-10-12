@@ -78,10 +78,7 @@ impl UserConfig {
                     .expect("ERROR: command was not running");
                 Ok(self)
             }
-            Err(_) => {
-                let error_msg = utils::prompt_editor_env_var();
-                Err(Error::new(ErrorKind::NotFound, error_msg))
-            }
+            Err(_) => Err(Error::new(ErrorKind::NotFound, utils::prompt_editor_env_var())),
         }
     }
 
