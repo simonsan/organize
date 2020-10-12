@@ -12,6 +12,7 @@ use crate::{
         edit::UserConfig,
         run::run,
     },
+    PROJECT_NAME,
 };
 use notify::{
     op,
@@ -48,7 +49,7 @@ pub fn watch(cli: Cli, config: &UserConfig) -> Result<(), Error> {
         return Err(
                 Error::new(
                     ErrorKind::Other,
-                    "a running instance already exists. Use `organizer stop` to stop this instance or `organizer watch --daemon --replace` to restart the daemon"
+                    format!("a running instance already exists. Use `{} stop` to stop this instance or `{} watch --daemon --replace` to restart the daemon", PROJECT_NAME, PROJECT_NAME)
                 )
             );
     }

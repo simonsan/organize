@@ -26,10 +26,6 @@ use std::{
 #[derive(Clone, Debug)]
 pub struct Cli {
     pub subcommand: (SubCommands, ArgMatches),
-    pub daemon: Daemon,
-    pub is_running: bool,
-    /* running `organizer` with the --daemon option involves running the `run` function twice,
-     * so we need this attribute to keep track of which iteration we're in */
 }
 
 impl Default for Cli {
