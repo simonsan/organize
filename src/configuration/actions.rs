@@ -1,6 +1,7 @@
 use crate::{
     configuration::temporary::{
         actions,
+        actions::new_filepath,
         conflicts::{
             ConflictOption,
             ConflictingActions,
@@ -87,13 +88,17 @@ impl Actions {
         Ok(())
     }
 
-    fn rename(&self, from: &Path, to: &Path, if_exists: &ConflictOption) -> Result<PathBuf, Error> {
+    fn rename(&self, from: &Path) -> Result<PathBuf, Error> {
         // this method takes all three parameters so it can be used by the move() method
         // should check that it's some before calling this method
         if self.rename.as_ref().unwrap().if_exists == ConflictOption::skip || from == self.rename.as_ref().unwrap().to {
             return Ok(from.to_path_buf());
         }
-        let dst = actions::new_filepath(from, &to, &if_exists)?;
+        let dst = actions::new_filepath(
+            from,
+            &self.copy.as_ref().unwrap().to,
+            &self.copy.as_ref().unwrap().if_exists,
+        )?;
         std::fs::rename(from, dst.as_path()).expect("couldn't rename file");
         Ok(dst)
     }
@@ -106,8 +111,13 @@ impl Actions {
         if !self.r#move.as_ref().unwrap().to.exists() {
             fs::create_dir_all(&self.r#move.as_ref().unwrap().to)?;
         }
-        let dst = self.r#move.as_ref().unwrap().to.join(from.file_name().unwrap());
-        self.rename(from, &dst, &self.r#move.as_ref().unwrap().if_exists)?;
+        let dst = new_filepath(
+            from,
+            &self.r#move.as_ref().unwrap().to.join(from.file_name().unwrap()),
+            &self.r#move.as_ref().unwrap().if_exists,
+        )?;
+
+        std::fs::rename(from, dst.as_path()).expect("couldn't rename file");
         Ok(dst)
     }
 
