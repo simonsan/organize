@@ -25,7 +25,7 @@ pub fn run(rules: Vec<Rule>) -> Result<(), Error> {
                     }
                     let filters = &rule.filters;
                     if file.matches_filters(filters) {
-                        rule.actions.run(&mut file)?;
+                        rule.actions.run(&mut file, false)?;
                         continue 'files;
                     }
                 }

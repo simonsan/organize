@@ -34,18 +34,18 @@ pub struct Actions {
 }
 
 impl Actions {
-    pub fn run(&self, file: &mut File) -> Result<(), Error> {
+    pub fn run(&self, file: &mut File, watching: bool) -> Result<(), Error> {
         if self.copy.is_some() {
-            self.copy(&file.path)?;
+            self.copy(&file.path, watching)?;
         }
 
         // TODO the following three are conflicting operations - validate this
         if self.r#move.is_some() {
-            file.path = self.r#move(&file.path)?;
+            file.path = self.r#move(&file.path, watching)?;
         }
 
         if self.rename.is_some() {
-            file.path = self.rename(&file.path)?;
+            file.path = self.rename(&file.path, watching)?;
         }
         if self.delete.is_some() {
             self.delete(&file.path)?;
@@ -73,22 +73,24 @@ impl Actions {
         }
     }
 
-    fn copy(&self, from: &Path) -> Result<(), Error> {
+    fn copy(&self, from: &Path, watching: bool) -> Result<(), Error> {
         // should check that it's some before calling this method
         if self.copy.as_ref().unwrap().if_exists == ConflictOption::skip || from == self.copy.as_ref().unwrap().to {
             return Ok(());
         }
+
         let new_path = actions::new_filepath(
             from,
             &self.copy.as_ref().unwrap().to,
             &self.copy.as_ref().unwrap().if_exists,
+            watching,
         )?;
         println!("{}", new_path.display());
         std::fs::copy(from, new_path.as_path()).expect("cannot write file (permission denied)");
         Ok(())
     }
 
-    fn rename(&self, from: &Path) -> Result<PathBuf, Error> {
+    fn rename(&self, from: &Path, watching: bool) -> Result<PathBuf, Error> {
         // this method takes all three parameters so it can be used by the move() method
         // should check that it's some before calling this method
         if self.rename.as_ref().unwrap().if_exists == ConflictOption::skip || from == self.rename.as_ref().unwrap().to {
@@ -98,12 +100,13 @@ impl Actions {
             from,
             &self.copy.as_ref().unwrap().to,
             &self.copy.as_ref().unwrap().if_exists,
+            watching,
         )?;
         std::fs::rename(from, dst.as_path()).expect("couldn't rename file");
         Ok(dst)
     }
 
-    fn r#move(&self, from: &Path) -> Result<PathBuf, Error> {
+    fn r#move(&self, from: &Path, watching: bool) -> Result<PathBuf, Error> {
         // should check that it's some before calling this method
         if self.r#move.as_ref().unwrap().if_exists == ConflictOption::skip || from == self.r#move.as_ref().unwrap().to {
             return Ok(from.to_path_buf());
@@ -115,6 +118,7 @@ impl Actions {
             from,
             &self.r#move.as_ref().unwrap().to.join(from.file_name().unwrap()),
             &self.r#move.as_ref().unwrap().if_exists,
+            watching,
         )?;
 
         std::fs::rename(from, dst.as_path()).expect("couldn't rename file");

@@ -118,7 +118,7 @@ impl Watcher {
                             } = folder.options;
 
                             if watch && file.matches_filters(&rule.filters) {
-                                rule.actions.run(&mut file).unwrap();
+                                rule.actions.run(&mut file, true).unwrap();
                                 break 'rules;
                             }
                         }

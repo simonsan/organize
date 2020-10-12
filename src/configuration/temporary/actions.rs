@@ -79,12 +79,17 @@ impl TemporaryActions {
 /// to avoid unwanted overwrites.
 /// # Args
 /// * `from`: path representing the original file's path
-/// * `to`: path representing the target path (can be a file or a directory)
+/// * `to`: path representing the target path (must represent a file, which may or may not exist)
 /// * `conflict_option`: configuration option that helps adapt the new path
 /// # Errors
 /// This function will return an error in the following case:
 /// * The target path exists and `conflict_option` is set to skip
-pub fn new_filepath(from: &Path, to: &Path, conflict_option: &ConflictOption) -> Result<PathBuf, Error> {
+pub fn new_filepath(
+    from: &Path,
+    to: &Path,
+    conflict_option: &ConflictOption,
+    watching: bool,
+) -> Result<PathBuf, Error> {
     if to.exists() {
         return match conflict_option {
             ConflictOption::skip => Ok(from.to_path_buf()),
@@ -113,8 +118,12 @@ pub fn new_filepath(from: &Path, to: &Path, conflict_option: &ConflictOption) ->
                 }
             }
             ConflictOption::ask => {
-                let input = resolve_name_conflict(to)?;
-                new_filepath(from, to, &input)
+                if watching {
+                    new_filepath(from, to, Default::default(), false)
+                } else {
+                    let input = resolve_name_conflict(to)?;
+                    new_filepath(from, to, &input, watching)
+                }
             }
         };
     }
