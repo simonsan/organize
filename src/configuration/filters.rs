@@ -6,3 +6,14 @@ pub struct Filters {
     pub filename: String,
     pub extensions: Vec<String>,
 }
+
+#[allow(clippy::trivial_regex)]
+impl Default for Filters {
+    fn default() -> Self {
+        Filters {
+            regex: Regex::new("").unwrap(),
+            filename: String::new(),
+            extensions: Vec::new(),
+        }
+    }
+}

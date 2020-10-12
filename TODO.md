@@ -1,3 +1,4 @@
+- Write documentation
 - Make tests
 - Implement logging
 - Validate config (check out https://github.com/paazmaya/grunt-yaml-validator or https://github.com/MathiasPius/yaml-validator)

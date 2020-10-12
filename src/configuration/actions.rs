@@ -91,7 +91,6 @@ impl Actions {
     }
 
     fn rename(&self, from: &Path, watching: bool) -> Result<PathBuf, Error> {
-        // this method takes all three parameters so it can be used by the move() method
         // should check that it's some before calling this method
         if self.rename.as_ref().unwrap().if_exists == ConflictOption::skip || from == self.rename.as_ref().unwrap().to {
             return Ok(from.to_path_buf());
