@@ -3,6 +3,7 @@ use crate::{
         rules::Rule,
         temporary::rules::TemporaryRules,
     },
+    project_dir,
     PROJECT_NAME,
 };
 use clap::ArgMatches;
@@ -38,10 +39,7 @@ impl UserConfig {
     pub fn new(args: &ArgMatches) -> Result<Self, Error> {
         let path = match args.value_of("with_config") {
             Some(path) => PathBuf::from(path),
-            None => dirs::home_dir()
-                .expect("ERROR: cannot determine home directory")
-                .join(format!(".{}", PROJECT_NAME))
-                .join("config.yml"),
+            None => project_dir().join("config.yml"),
         };
 
         if !path.exists() {
