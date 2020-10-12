@@ -53,8 +53,6 @@ impl Cli {
 
         Cli {
             subcommand: (name, cmd),
-            daemon: Daemon::new(),
-            is_running: false,
         }
     }
 
@@ -83,7 +81,10 @@ impl Cli {
                 watch(self, &config)?
             }
             SubCommands::Logs => todo!(),
-            SubCommands::Stop => self.daemon.kill()?,
+            SubCommands::Stop => {
+                let daemon = Daemon::new();
+                daemon.kill()?
+            }
         };
         Ok(())
     }

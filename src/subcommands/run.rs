@@ -1,6 +1,5 @@
 use crate::{
     configuration::{
-        folder2rules,
         path2rules,
         rules::Rule,
     },

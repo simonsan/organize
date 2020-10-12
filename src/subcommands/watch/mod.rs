@@ -11,6 +11,7 @@ use crate::{
     subcommands::{
         edit::UserConfig,
         run::run,
+        watch::daemon::Daemon,
     },
     PROJECT_NAME,
 };
@@ -35,11 +36,12 @@ use std::{
 };
 
 pub fn watch(cli: Cli, config: &UserConfig) -> Result<(), Error> {
+    let daemon = Daemon::new();
     if cli.subcommand.1.is_present("replace") {
-        cli.daemon.restart()?;
-    } else if cli.daemon.is_runnable() {
+        daemon.restart()?;
+    } else if daemon.is_runnable() {
         if cli.subcommand.1.is_present("daemon") {
-            cli.daemon.start()?;
+            daemon.start()?;
         } else {
             run(config.rules.to_owned())?;
             let mut watcher = Watcher::new();
