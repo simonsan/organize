@@ -1,6 +1,6 @@
 use crate::{
     config_path,
-    subcommands::{
+    commands::{
         config::edit,
         run::run,
         watch::{

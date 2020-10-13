@@ -3,7 +3,7 @@ pub mod daemon;
 use crate::{
     cli::Cli,
     file::File,
-    subcommands::{
+    commands::{
         run::run,
         watch::daemon::Daemon,
     },
