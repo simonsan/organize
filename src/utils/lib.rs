@@ -103,3 +103,24 @@ mod new_filepath {
         }
     }
 }
+
+#[cfg(test)]
+mod expand_env_var {
+    use std::io::{
+        Error,
+        ErrorKind
+    };
+    use crate::utils::expand_env_vars;
+    use std::path::{Path, PathBuf};
+
+    #[test]
+    fn home() -> Result<(), Error> {
+       let tested = PathBuf::from("$HOME/Documents");
+        let expected = PathBuf::from("/home/cabero/Documents");
+        if expand_env_vars(Path::new(&tested)) == expected {
+            Ok(())
+        } else {
+            Err(Error::new(ErrorKind::InvalidData, "the environment variable wasn't properly expanded"))
+        }
+    }
+}
