@@ -1,5 +1,3 @@
-mod filename;
-
 use serde::{
     Deserialize,
     Serialize,
@@ -13,8 +11,6 @@ pub struct Filters {
     pub extensions: Vec<String>,
 }
 
-
-
 impl Default for Filters {
     fn default() -> Self {
         Filters {
@@ -23,4 +19,11 @@ impl Default for Filters {
             extensions: Vec::new(),
         }
     }
+}
+
+struct Filename {
+    startswith: Option<String>,
+    endswith: Option<String>,
+    contains: Option<String>,
+    case_sensitive: Option<bool>
 }
