@@ -1,9 +1,8 @@
-use crate::configuration::{
+use crate::user_config::rules::{
     actions::Actions,
     filters::Filters,
-    folders::Folder,
+    folder::Folder,
 };
-
 use serde::{
     Deserialize,
     Serialize,

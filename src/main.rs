@@ -1,8 +1,8 @@
 pub mod cli;
-pub mod configuration;
 pub mod file;
 pub mod lock_file;
 pub mod subcommands;
+pub mod user_config;
 pub mod utils;
 
 use crate::cli::Cli;

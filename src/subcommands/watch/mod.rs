@@ -2,15 +2,17 @@ pub mod daemon;
 
 use crate::{
     cli::Cli,
-    configuration::{
-        options::Options,
-        rules::Rule,
-        UserConfig,
-    },
     file::File,
     subcommands::{
         run::run,
         watch::daemon::Daemon,
+    },
+    user_config::{
+        rules::{
+            folder::Options,
+            rule::Rule,
+        },
+        user_config::UserConfig,
     },
     utils::path2rules,
     PROJECT_NAME,
@@ -107,7 +109,8 @@ impl Watcher {
                             let folder = rule.folders.get(i).unwrap();
                             let Options {
                                 watch,
-                                ignore, ..
+                                ignore,
+                                ..
                             } = &folder.options;
                             if ignore.contains(&parent_dir) {
                                 continue;

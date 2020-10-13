@@ -1,6 +1,6 @@
 use crate::{
-    configuration::rules::Rule,
     file::File,
+    user_config::rules::rule::Rule,
     utils::path2rules,
 };
 use std::{

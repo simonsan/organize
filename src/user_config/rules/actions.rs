@@ -1,9 +1,4 @@
 use crate::{
-    configuration::conflicts::{
-        ConflictOption,
-        ConflictingActions,
-        ConflictingFileOperation,
-    },
     file::File,
     utils::new_filepath,
 };
@@ -53,7 +48,6 @@ impl Actions {
         if self.copy.is_some() {
             self.copy(&file.path, watching)?;
         }
-
         // TODO the following three are conflicting operations - validate this
         if self.r#move.is_some() {
             file.path = self.r#move(&file.path, watching)?;
@@ -136,5 +130,57 @@ impl Actions {
 
     fn delete(&self, path: &Path) -> Result<(), Error> {
         std::fs::remove_file(path)
+    }
+}
+
+#[derive(Clone)]
+pub enum ConflictingActions {
+    Move,
+    Rename,
+    Delete,
+    None,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ConflictingFileOperation {
+    pub to: PathBuf,
+    #[serde(default)]
+    pub if_exists: ConflictOption,
+    #[serde(default)]
+    pub counter_separator: String,
+}
+
+impl Default for ConflictingFileOperation {
+    fn default() -> Self {
+        Self {
+            to: PathBuf::new(), // shouldn't get to this if 'to' isn't specified
+            if_exists: Default::default(),
+            counter_separator: " ".to_string(),
+        }
+    }
+}
+
+/// Defines the options available to resolve a naming conflict,
+/// i.e. how the application should proceed when a file exists
+/// but it should move/rename/copy some file to that existing path
+// write their configs with this format due to how serde deserializes files
+#[derive(Eq, PartialEq, Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all(serialize = "lowercase", deserialize = "lowercase"))]
+pub enum ConflictOption {
+    Overwrite,
+    Skip,
+    Rename,
+    Ask, // not available when watching
+}
+
+impl Default for ConflictOption {
+    fn default() -> Self {
+        ConflictOption::Rename
+    }
+}
+
+impl Default for &ConflictOption {
+    fn default() -> Self {
+        &ConflictOption::Rename
     }
 }

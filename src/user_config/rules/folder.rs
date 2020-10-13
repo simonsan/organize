@@ -4,6 +4,13 @@ use serde::{
 };
 use std::path::PathBuf;
 
+#[derive(Deserialize, Serialize, Debug, PartialEq, Eq, Clone)]
+pub struct Folder {
+    pub path: PathBuf,
+    #[serde(default)]
+    pub options: Options,
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
 pub struct Options {
     /// defines whether or not subdirectories must be scanned
@@ -19,12 +26,11 @@ pub struct Options {
     pub hidden_files: bool,
 }
 
-// TODO revise this implementation after the defaults' section is implemented
 impl Default for Options {
     fn default() -> Self {
         Self {
             recursive: false,
-            watch: false,
+            watch: true,
             hidden_files: false,
             suggestions: false,
             ignore: Vec::new(),

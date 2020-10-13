@@ -1,24 +1,30 @@
 mod lib;
 
 use crate::{
-    configuration::{
-        conflicts::ConflictOption,
-        rules::Rule,
-    },
     file::get_stem_and_extension,
+    user_config::rules::{
+        actions::ConflictOption,
+        rule::Rule,
+    },
     PROJECT_NAME,
 };
 use clap::load_yaml;
 use colored::Colorize;
-use std::{collections::HashMap, io, io::{
-    Error,
-    ErrorKind,
-    Read,
-    Write,
-}, path::{
-    Path,
-    PathBuf,
-}, env};
+use std::{
+    collections::HashMap,
+    env,
+    io,
+    io::{
+        Error,
+        ErrorKind,
+        Read,
+        Write,
+    },
+    path::{
+        Path,
+        PathBuf,
+    },
+};
 use yaml_rust::YamlEmitter;
 
 /// Helper function for the 'rename' and 'move' actions.

@@ -1,8 +1,8 @@
 #[cfg(test)]
 mod tests {
     use crate::{
-        configuration::filters::Filters,
         file::File,
+        user_config::rules::filters::Filters,
     };
     use std::io::{
         Error,
@@ -12,7 +12,7 @@ mod tests {
     #[test]
     fn test_filters_extensions() -> Result<(), Error> {
         let file = File::from("/home/cabero/Documents/matricula.pdf");
-        let mut filters: Filters = Default::default();
+        let mut filters = Filters::default();
         filters.extensions.push("pdf".to_string());
         if file.matches_filters(&filters) {
             Ok(())
@@ -26,7 +26,7 @@ mod tests {
     #[test]
     fn test_filters_regex() -> Result<(), Error> {
         let file = File::from("/home/cabero/Documents/matricula.pdf");
-        let filters: Filters = Default::default();
+        let filters = Filters::default();
         if file.matches_filters(&filters) {
             // the default regex is an empty one, so it should match everything
             // but we check for this possibility before trying to match
@@ -38,7 +38,7 @@ mod tests {
     #[test]
     fn test_filters_filename() -> Result<(), Error> {
         let file = File::from("/home/cabero/Documents/matricula.pdf");
-        let mut filters: Filters = Default::default();
+        let mut filters = Filters::default();
         filters.filename = "matricula.pdf".to_string();
         if file.matches_filters(&filters) {
             // the default regex is an empty one, so it should match everything

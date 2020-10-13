@@ -1,6 +1,6 @@
 mod lib;
 
-use crate::configuration::filters::Filters;
+use crate::user_config::rules::filters::Filters;
 use regex::Regex;
 use std::{
     io::Error,
