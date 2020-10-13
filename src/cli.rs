@@ -24,6 +24,7 @@ use std::{
 };
 
 #[derive(Clone, Debug)]
+/// Struct that initializes the application and stores the main information about the subcommands and options introduced by the user
 pub struct Cli {
     pub subcommand: (SubCommands, ArgMatches),
 }
@@ -35,6 +36,7 @@ impl Default for Cli {
 }
 
 impl Cli {
+    /// Creates a new CLI instance that initializes the app
     pub fn new() -> Self {
         let yaml = load_yaml!("../cli.yml");
         let app = App::from(yaml);
@@ -73,7 +75,7 @@ impl Cli {
             }
             SubCommands::Run => {
                 let config = UserConfig::new(&self.subcommand.1)?;
-                run(config.rules)?;
+                run(config.rules, false)?
             }
             SubCommands::Suggest => todo!(),
             SubCommands::Watch => {

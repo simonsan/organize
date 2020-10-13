@@ -43,7 +43,7 @@ pub fn watch(cli: Cli, config: &UserConfig) -> Result<(), Error> {
         if cli.subcommand.1.is_present("daemon") {
             daemon.start()?;
         } else {
-            run(config.rules.to_owned())?;
+            run(config.rules.to_owned(), false)?;
             let mut watcher = Watcher::new();
             watcher.watch(&config.rules, &config.path);
         }

@@ -10,7 +10,7 @@ use std::{
     io::Error,
 };
 
-pub fn run(rules: Vec<Rule>) -> Result<(), Error> {
+pub fn run(rules: Vec<Rule>, watching: bool) -> Result<(), Error> {
     let path2rules = path2rules(&rules);
     for (path, rules) in path2rules.iter() {
         let files = fs::read_dir(&path)?;
@@ -25,7 +25,7 @@ pub fn run(rules: Vec<Rule>) -> Result<(), Error> {
                     }
                     let filters = &rule.filters;
                     if file.matches_filters(filters) {
-                        rule.actions.run(&mut file, false)?;
+                        rule.actions.run(&mut file, watching)?;
                         continue 'files;
                     }
                 }
