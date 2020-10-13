@@ -24,6 +24,7 @@ use std::{
     env,
     io::Error,
 };
+use crate::configuration::UserConfig;
 
 #[derive(Clone, Debug)]
 /// Struct that initializes the application and stores the main information about the subcommands and options introduced by the user
@@ -67,7 +68,7 @@ impl Cli {
                     println!("{}", config_path().display());
                 } else if self.subcommand.1.is_present("new") {
                     let config_file = env::current_dir()?.join(format!("{}.yml", PROJECT_NAME));
-                    utils::create_config_file(&config_file)?;
+                    crate::utils::create_config_file(&config_file)?;
                     println!("New config file created at {}", config_file.display());
                 } else {
                     let path = config_path();

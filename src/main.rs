@@ -3,6 +3,7 @@ pub mod configuration;
 pub mod file;
 pub mod lock_file;
 pub mod subcommands;
+pub mod utils;
 
 use crate::cli::Cli;
 use clap::crate_name;

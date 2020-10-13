@@ -6,6 +6,10 @@ use std::{
     collections::HashMap,
     path::PathBuf,
 };
+use clap::ArgMatches;
+use std::io::{Error, ErrorKind};
+use crate::config_path;
+use crate::configuration::temporary::rules::TemporaryRules;
 
 pub mod actions;
 pub mod filters;
@@ -14,116 +18,79 @@ pub mod options;
 pub mod rules;
 pub mod temporary;
 
-/// returns a hashmap where the keys are folders and the values are tuples of rules
-/// and indices that indicate the index of the key's corresponding folder in the rule's folders' list
-pub fn folder2rules(rules: &[Rule]) -> HashMap<&Folder, Vec<&Rule>> {
-    let mut map = HashMap::new();
-    for rule in rules.iter() {
-        for folder in rule.folders.iter() {
-            if !map.contains_key(folder) {
-                map.insert(folder, Vec::new());
+/// Represents the user's configuration file
+/// ### Fields
+/// * `path`: the path the user's config, either the default one or some other passed with the --with-config argument
+/// * `rules`: a list of parsed rules defined by the user
+pub struct UserConfig {
+    pub rules: Vec<Rule>,
+}
+
+impl UserConfig {
+    /// Creates a new UserConfig instance.
+    /// It parses the configuration file
+    /// and fills missing fields with either the defaults, in the case of global options,
+    /// or with the global options, in the case of folder-level options.
+    /// If the config file does not exist, it is created.
+    /// ### Errors
+    /// This constructor fails in the following cases:
+    /// - The configuration file does not exist
+    pub fn new(args: &ArgMatches) -> Result<Self, Error> {
+        let path = match args.value_of("with_config") {
+            Some(path) => PathBuf::from(path),
+            None => config_path(),
+        };
+
+        if !path.exists() {
+            crate::utils::create_config_file(&path)?;
+        }
+
+        let temp_rules = TemporaryRules::new(&path)?;
+        let mut rules = Vec::new();
+        for temp_rule in temp_rules.0 {
+            rules.push(temp_rule.unwrap())
+        }
+
+        Ok(UserConfig {
+            rules,
+        })
+    }
+
+    /// Validates the user's config.
+    /// ### Errors
+    /// This function returns an error in the following cases:
+    /// - An empty string was provided as the path to a folder
+    /// - The path supplied to a folder does not exist
+    /// - The path supplied to a folder is not a directory
+    /// - No path was supplied to a folder
+    pub fn validate(self) -> Result<Self, Error> {
+        for (i, rule) in self.rules.iter().enumerate() {
+            rule.actions.check_conflicting_actions()?;
+            for (j, folder) in rule.folders.iter().enumerate() {
+                if folder.path.display().to_string().eq("") {
+                    return Err(Error::new(
+                        ErrorKind::InvalidData,
+                        format!(
+                            "path defined in field 'path' cannot be an empty value (rule {}, folder {})",
+                            j, i
+                        ),
+                    ));
+                } else if !folder.path.exists() {
+                    return Err(Error::new(
+                        ErrorKind::InvalidData,
+                        format!("path defined in field 'path' does not exist (rule {}, folder {})", j, i),
+                    ));
+                } else if !folder.path.is_dir() {
+                    return Err(Error::new(
+                        ErrorKind::InvalidData,
+                        format!(
+                            "path defined in field 'path' is not a directory (rule {}, folder {})",
+                            j, i
+                        ),
+                    ));
+                }
             }
-            map.get_mut(folder).unwrap().push(rule);
         }
-    }
-    map
-}
-
-/// returns a hashmap where the keys are paths and the values are tuples of rules
-/// and indices that indicate the index of the key's corresponding folder in the rule's folders' list
-pub fn path2rules(rules: &[Rule]) -> HashMap<&PathBuf, Vec<(&Rule, usize)>> {
-    let mut map = HashMap::new();
-    for rule in rules.iter() {
-        for (i, folder) in rule.folders.iter().enumerate() {
-            if !map.contains_key(&folder.path) {
-                map.insert(&folder.path, Vec::new());
-            }
-            map.get_mut(&folder.path).unwrap().push((rule, i));
-        }
-    }
-    map
-}
-
-pub fn combine_options<T>(lhs: Option<T>, rhs: Option<T>, default: Option<T>) -> Option<T> {
-    if lhs.is_some() && rhs.is_none() {
-        lhs
-    } else if lhs.is_none() && rhs.is_some() {
-        rhs
-    } else if lhs.is_none() && rhs.is_none() {
-        default
-    } else {
-        // both are some
-        rhs
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::configuration::temporary::options::TemporaryOptions;
-    use std::{
-        io::{
-            Error,
-            ErrorKind,
-        },
-        path::PathBuf,
-    };
-
-    #[test]
-    fn none_plus_default() -> Result<(), Error> {
-        let left = TemporaryOptions {
-            recursive: None,
-            watch: None,
-            ignore: None,
-            suggestions: None,
-            enabled: None,
-            system_files: None,
-            hidden_files: None,
-        };
-        let right = TemporaryOptions::default();
-        let result = left.to_owned() + right.to_owned();
-        if result == right {
-            Ok(())
-        } else {
-            eprintln!("{:?}, {:?}", left, right);
-            Err(Error::from(ErrorKind::Other))
-        }
-    }
-
-    #[test]
-    fn random_combine() -> Result<(), Error> {
-        let left = TemporaryOptions {
-            recursive: None,
-            watch: Some(true),
-            ignore: Some(vec![PathBuf::from("/home/cabero/Downloads/ignored_dir")]),
-            suggestions: None,
-            enabled: None,
-            system_files: None,
-            hidden_files: Some(false),
-        };
-        let right = TemporaryOptions {
-            recursive: None,
-            watch: Some(false),
-            ignore: None,
-            suggestions: None,
-            enabled: None,
-            system_files: None,
-            hidden_files: Some(true),
-        };
-        let expected = TemporaryOptions {
-            recursive: Some(false),
-            watch: Some(false),
-            ignore: Some(vec![PathBuf::from("/home/cabero/Downloads/ignored_dir")]),
-            suggestions: Some(false),
-            enabled: Some(true),
-            system_files: Some(false),
-            hidden_files: Some(true),
-        };
-
-        if left.to_owned() + right.to_owned() == expected {
-            Ok(())
-        } else {
-            eprintln!("{:?}, {:?}", left, right);
-            Err(Error::from(ErrorKind::Other))
-        }
+        Ok(self)
     }
 }

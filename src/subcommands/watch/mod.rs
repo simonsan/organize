@@ -33,6 +33,8 @@ use std::{
         Receiver,
     },
 };
+use crate::utils::path2rules;
+use crate::configuration::UserConfig;
 
 pub fn watch(cli: Cli, config: &UserConfig) -> Result<(), Error> {
     let daemon = Daemon::new();

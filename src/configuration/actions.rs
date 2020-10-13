@@ -1,6 +1,5 @@
 use crate::{
     configuration::temporary::{
-        actions::new_filepath,
         conflicts::{
             ConflictOption,
             ConflictingActions,
@@ -21,6 +20,7 @@ use std::{
         PathBuf,
     },
 };
+use crate::utils::new_filepath;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Actions {

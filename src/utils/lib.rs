@@ -1,104 +1,10 @@
-use crate::{
-    configuration::temporary::conflicts::ConflictOption,
-    file::get_stem_and_extension,
-};
-use colored::Colorize;
-use std::{
-    io,
-    io::{
-        Error,
-        ErrorKind,
-        Read,
-        Write,
-    },
-    path::{
-        Path,
-        PathBuf,
-    },
-};
-
-/// Helper function for the 'rename' and 'move' actions.
-/// It computes the appropriate new path for the file wanting to be renamed or moved.
-/// In case of a name conflict, it will decide what new path to return based on a resolver parameter
-/// to avoid unwanted overwrites.
-/// # Args
-/// * `from`: path representing the original file's path
-/// * `to`: path representing the target path (must represent a file, which may or may not exist)
-/// * `conflict_option`: configuration option that helps adapt the new path
-/// # Errors
-/// This function will return an error in the following case:
-/// * The target path exists and `conflict_option` is set to skip
-pub fn new_filepath(
-    from: &Path,
-    to: &Path,
-    conflict_option: &ConflictOption,
-    watching: bool,
-) -> Result<PathBuf, Error> {
-    if to.exists() {
-        return match conflict_option {
-            ConflictOption::Skip => Ok(from.to_path_buf()),
-            ConflictOption::Rename => {
-                let (stem, extension) = get_stem_and_extension(to)?;
-                let new_dir = to.parent().unwrap();
-                let mut new_path = to.to_path_buf();
-
-                if new_path.exists() {
-                    let mut n = 1;
-                    while new_path.exists() {
-                        let new_filename = format!("{} ({:?}).{}", stem, n, extension);
-                        new_path = new_dir.join(new_filename);
-                        n += 1;
-                    }
-                }
-                Ok(new_path)
-            }
-            ConflictOption::Overwrite => {
-                if to.is_file() {
-                    Ok(to.to_path_buf())
-                } else if to.is_dir() {
-                    Ok(to.join(from.file_name().unwrap()))
-                } else {
-                    panic!("file is neither a file nor a dir?")
-                }
-            }
-            ConflictOption::Ask => {
-                if watching {
-                    new_filepath(from, to, Default::default(), false)
-                } else {
-                    let input = resolve_name_conflict(to)?;
-                    new_filepath(from, to, &input, watching)
-                }
-            }
-        };
-    }
-    Ok(to.to_path_buf())
-}
-
-pub fn resolve_name_conflict(dst: &Path) -> Result<ConflictOption, Error> {
-    print!(
-        "A file named {} already exists in the destination.\n [(o)verwrite / (r)ename / (s)kip]: ",
-        dst.file_name().unwrap().to_str().unwrap().underline().bold()
-    );
-    io::stdout().flush().unwrap();
-
-    let mut buf = [0; 1];
-    io::stdin().read_exact(&mut buf).unwrap();
-    let buf = buf[0];
-
-    if buf == 111 {
-        Ok(ConflictOption::Overwrite)
-    } else if buf == 114 {
-        Ok(ConflictOption::Rename)
-    } else if buf == 115 {
-        Ok(ConflictOption::Skip)
-    } else {
-        Err(Error::new(ErrorKind::InvalidInput, "ERROR: invalid option"))
-    }
-}
-
 #[cfg(test)]
-mod tests {
-    use super::*;
+mod new_filepath {
+    use crate::utils::new_filepath;
+    use std::io::{ErrorKind, Error};
+    use crate::configuration::temporary::conflicts::ConflictOption;
+    use std::path::PathBuf;
+
     static WATCHING: bool = false;
     #[test]
     fn rename_with_rename_conflict() -> Result<(), Error> {
@@ -187,6 +93,77 @@ mod tests {
             Ok(())
         } else {
             Err(Error::new(ErrorKind::Other, "filepath after move is not as expected"))
+        }
+    }
+}
+
+#[cfg(test)]
+mod combine_options {
+    use crate::configuration::temporary::options::TemporaryOptions;
+    use std::{
+        io::{
+            Error,
+            ErrorKind,
+        },
+        path::PathBuf,
+    };
+
+    #[test]
+    fn none_plus_default() -> Result<(), Error> {
+        let left = TemporaryOptions {
+            recursive: None,
+            watch: None,
+            ignore: None,
+            suggestions: None,
+            enabled: None,
+            system_files: None,
+            hidden_files: None,
+        };
+        let right = TemporaryOptions::default();
+        let result = left.to_owned() + right.to_owned();
+        if result == right {
+            Ok(())
+        } else {
+            eprintln!("{:?}, {:?}", left, right);
+            Err(Error::from(ErrorKind::Other))
+        }
+    }
+
+    #[test]
+    fn random_combine() -> Result<(), Error> {
+        let left = TemporaryOptions {
+            recursive: None,
+            watch: Some(true),
+            ignore: Some(vec![PathBuf::from("/home/cabero/Downloads/ignored_dir")]),
+            suggestions: None,
+            enabled: None,
+            system_files: None,
+            hidden_files: Some(false),
+        };
+        let right = TemporaryOptions {
+            recursive: None,
+            watch: Some(false),
+            ignore: None,
+            suggestions: None,
+            enabled: None,
+            system_files: None,
+            hidden_files: Some(true),
+        };
+        let expected = TemporaryOptions {
+            recursive: Some(false),
+            watch: Some(false),
+            ignore: Some(vec![PathBuf::from("/home/cabero/Downloads/ignored_dir")]),
+            suggestions: Some(false),
+            enabled: Some(true),
+            system_files: Some(false),
+            hidden_files: Some(true),
+        };
+
+        if left.to_owned() + right.to_owned() == expected {
+            Ok(())
+        } else {
+            eprintln!("{:?}, {:?}", left, right);
+            Err(Error::from(ErrorKind::Other))
         }
     }
 }
