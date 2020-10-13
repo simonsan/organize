@@ -46,7 +46,9 @@ pub fn new_filepath(
 ) -> Result<PathBuf, Error> {
     if action.to.exists() {
         return match action.if_exists {
-            ConflictOption::Skip => Ok(from.to_path_buf()),
+            ConflictOption::Skip => {
+                Ok(from.to_path_buf())
+            },
             ConflictOption::Rename => {
                 let mut new_path = action.to.to_path_buf();
                 let (stem, extension) = if action.to.is_dir() {

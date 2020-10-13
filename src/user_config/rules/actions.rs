@@ -149,6 +149,14 @@ pub struct ConflictingFileOperation {
     pub counter_separator: String,
 }
 
+impl From<&str> for ConflictingFileOperation {
+    fn from(path: &str) -> Self {
+        let mut op = ConflictingFileOperation::default();
+        op.to = PathBuf::from(path);
+        op
+    }
+}
+
 impl Default for ConflictingFileOperation {
     fn default() -> Self {
         Self {

@@ -16,11 +16,7 @@ mod new_filepath {
     static WATCHING: bool = false;
     #[test]
     fn rename_with_rename_conflict() -> Result<(), Error> {
-        let mut action = ConflictingFileOperation {
-            to: PathBuf::from("/home/cabero/Code/Rust/organize/tests/files/test2.txt"),
-            if_exists: ConflictOption::Rename,
-            counter_separator: " ".to_string(),
-        };
+        let mut action = ConflictingFileOperation::from("/home/cabero/Code/Rust/organize/tests/files/test2.txt");
         let file = PathBuf::from("/home/cabero/Code/Rust/organize/tests/files/test1.txt");
         let new_path = new_filepath(&file, &mut action, WATCHING)?;
         let expected = PathBuf::from(format!("{}/test2 (1).txt", action.to.parent().unwrap().to_str().unwrap()));
@@ -33,11 +29,8 @@ mod new_filepath {
 
     #[test]
     fn rename_with_rename_conflict_and_different_sep() -> Result<(), Error> {
-        let mut action = ConflictingFileOperation {
-            to: PathBuf::from("/home/cabero/Code/Rust/organize/tests/files/test2.txt"),
-            if_exists: ConflictOption::Rename,
-            counter_separator: "-".to_string(),
-        };
+        let mut action = ConflictingFileOperation::from("/home/cabero/Code/Rust/organize/tests/files/test2.txt");
+        action.counter_separator = "-".to_string();
         let file = PathBuf::from("/home/cabero/Code/Rust/organize/tests/files/test1.txt");
         let new_path = new_filepath(&file, &mut action, WATCHING)?;
         let expected = PathBuf::from(format!("{}/test2-(1).txt", action.to.parent().unwrap().to_str().unwrap()));
@@ -50,11 +43,7 @@ mod new_filepath {
 
     #[test]
     fn move_with_rename_conflict() -> Result<(), Error> {
-        let mut action = ConflictingFileOperation {
-            to: PathBuf::from("/home/cabero/Code/Rust/organize/tests/files/test_dir"),
-            if_exists: ConflictOption::Rename,
-            counter_separator: " ".to_string(),
-        };
+        let mut action = ConflictingFileOperation::from("/home/cabero/Code/Rust/organize/tests/files/test_dir");
         let file = PathBuf::from("/home/cabero/Code/Rust/organize/tests/files/test1.txt");
         let new_path = new_filepath(&file, &mut action, WATCHING)?;
         let expected = PathBuf::from(format!("{}/test1 (1).txt", action.to.to_str().unwrap()));
@@ -67,11 +56,8 @@ mod new_filepath {
 
     #[test]
     fn rename_with_overwrite_conflict() -> Result<(), Error> {
-        let mut action = ConflictingFileOperation {
-            to: PathBuf::from("/home/cabero/Code/Rust/organize/tests/files/test2.txt"),
-            if_exists: ConflictOption::Overwrite,
-            counter_separator: " ".to_string(),
-        };
+        let mut action = ConflictingFileOperation::from("/home/cabero/Code/Rust/organize/tests/files/test2.txt");
+        action.if_exists = ConflictOption::Overwrite;
         let file = PathBuf::from("/home/cabero/Code/Rust/organize/tests/files/test1.txt");
         let new_path = new_filepath(&file, &mut action, WATCHING)?;
         if new_path == action.to {
@@ -82,12 +68,8 @@ mod new_filepath {
     }
     #[test]
     fn move_with_overwrite_conflict() -> Result<(), Error> {
-        let mut action = ConflictingFileOperation {
-            to: PathBuf::from("/home/cabero/Code/Rust/organize/tests/files/test_dir"),
-            if_exists: ConflictOption::Overwrite,
-            counter_separator: " ".to_string(),
-        };
-
+        let mut action = ConflictingFileOperation::from("/home/cabero/Code/Rust/organize/tests/files/test_dir");
+        action.if_exists = ConflictOption::Overwrite;
         let file = PathBuf::from("/home/cabero/Code/Rust/organize/tests/files/test1.txt");
         let new_path = new_filepath(&file, &mut action, WATCHING)?;
         let expected = PathBuf::from(format!("{}/test1.txt", action.to.to_str().unwrap()));
@@ -100,11 +82,8 @@ mod new_filepath {
 
     #[test]
     fn rename_with_skip_conflict() -> Result<(), Error> {
-        let mut action = ConflictingFileOperation {
-            to: PathBuf::from("/home/cabero/Code/Rust/organize/tests/files/test2.txt"),
-            if_exists: ConflictOption::Skip,
-            counter_separator: " ".to_string(),
-        };
+        let mut action = ConflictingFileOperation::from("/home/cabero/Code/Rust/organize/tests/files/test2.txt");
+        action.if_exists = ConflictOption::Skip;
         let original = PathBuf::from("/home/cabero/Code/Rust/organize/tests/files/test1.txt");
         let new = new_filepath(&original, &mut action, WATCHING)?;
         if original == new {
@@ -116,12 +95,8 @@ mod new_filepath {
 
     #[test]
     fn move_with_skip_conflict() -> Result<(), Error> {
-        let mut action = ConflictingFileOperation {
-            to: PathBuf::from("/home/cabero/Code/Rust/organize/tests/files/test_dir"),
-            if_exists: ConflictOption::Skip,
-            counter_separator: " ".to_string(),
-        };
-
+        let mut action = ConflictingFileOperation::from("/home/cabero/Code/Rust/organize/tests/files/test_dir");
+        action.if_exists = ConflictOption::Skip;
         let original = PathBuf::from("/home/cabero/Code/Rust/organize/tests/files/test1.txt");
         let new = new_filepath(&original, &mut action, WATCHING)?;
         if original == new {
