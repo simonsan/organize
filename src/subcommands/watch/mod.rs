@@ -4,15 +4,15 @@ use crate::{
     cli::Cli,
     configuration::{
         options::Options,
-        path2rules,
         rules::Rule,
+        UserConfig,
     },
     file::File,
     subcommands::{
-        edit::UserConfig,
         run::run,
         watch::daemon::Daemon,
     },
+    utils::path2rules,
     PROJECT_NAME,
 };
 use notify::{
@@ -33,8 +33,6 @@ use std::{
         Receiver,
     },
 };
-use crate::utils::path2rules;
-use crate::configuration::UserConfig;
 
 pub fn watch(cli: Cli, config: &UserConfig) -> Result<(), Error> {
     let daemon = Daemon::new();
@@ -106,15 +104,15 @@ impl Watcher {
                         let parent_dir = file.path.parent().unwrap().to_path_buf();
                         let values = path2rules.get(&parent_dir).unwrap().to_owned();
                         'rules: for (rule, i) in values {
-                            if rule.options.ignore.contains(&parent_dir) {
-                                continue;
-                            }
                             let folder = rule.folders.get(i).unwrap();
                             let Options {
-                                watch, ..
-                            } = folder.options;
-
-                            if watch && file.matches_filters(&rule.filters) {
+                                watch,
+                                ignore, ..
+                            } = &folder.options;
+                            if ignore.contains(&parent_dir) {
+                                continue;
+                            }
+                            if *watch && file.matches_filters(&rule.filters) {
                                 rule.actions.run(&mut file, true).unwrap();
                                 break 'rules;
                             }

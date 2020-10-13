@@ -1,9 +1,16 @@
 #[cfg(test)]
 mod new_filepath {
-    use crate::utils::new_filepath;
-    use std::io::{ErrorKind, Error};
-    use crate::configuration::temporary::conflicts::ConflictOption;
-    use std::path::PathBuf;
+    use crate::{
+        configuration::conflicts::ConflictOption,
+        utils::new_filepath,
+    };
+    use std::{
+        io::{
+            Error,
+            ErrorKind,
+        },
+        path::PathBuf,
+    };
 
     static WATCHING: bool = false;
     #[test]
@@ -96,74 +103,72 @@ mod new_filepath {
         }
     }
 }
-
-#[cfg(test)]
-mod combine_options {
-    use crate::configuration::temporary::options::TemporaryOptions;
-    use std::{
-        io::{
-            Error,
-            ErrorKind,
-        },
-        path::PathBuf,
-    };
-
-    #[test]
-    fn none_plus_default() -> Result<(), Error> {
-        let left = TemporaryOptions {
-            recursive: None,
-            watch: None,
-            ignore: None,
-            suggestions: None,
-            enabled: None,
-            system_files: None,
-            hidden_files: None,
-        };
-        let right = TemporaryOptions::default();
-        let result = left.to_owned() + right.to_owned();
-        if result == right {
-            Ok(())
-        } else {
-            eprintln!("{:?}, {:?}", left, right);
-            Err(Error::from(ErrorKind::Other))
-        }
-    }
-
-    #[test]
-    fn random_combine() -> Result<(), Error> {
-        let left = TemporaryOptions {
-            recursive: None,
-            watch: Some(true),
-            ignore: Some(vec![PathBuf::from("/home/cabero/Downloads/ignored_dir")]),
-            suggestions: None,
-            enabled: None,
-            system_files: None,
-            hidden_files: Some(false),
-        };
-        let right = TemporaryOptions {
-            recursive: None,
-            watch: Some(false),
-            ignore: None,
-            suggestions: None,
-            enabled: None,
-            system_files: None,
-            hidden_files: Some(true),
-        };
-        let expected = TemporaryOptions {
-            recursive: Some(false),
-            watch: Some(false),
-            ignore: Some(vec![PathBuf::from("/home/cabero/Downloads/ignored_dir")]),
-            suggestions: Some(false),
-            enabled: Some(true),
-            system_files: Some(false),
-            hidden_files: Some(true),
-        };
-
-        if left.to_owned() + right.to_owned() == expected {
-            Ok(())
-        } else {
-            eprintln!("{:?}, {:?}", left, right);
-            Err(Error::from(ErrorKind::Other))
-        }
-    }
-}
+// #[cfg(test)]
+// mod combine_options {
+//     use std::{
+//         io::{
+//             Error,
+//             ErrorKind,
+//         },
+//         path::PathBuf,
+//     };
+//
+//     #[test]
+//     fn none_plus_default() -> Result<(), Error> {
+//         let left = TemporaryOptions {
+//             recursive: None,
+//             watch: None,
+//             ignore: None,
+//             suggestions: None,
+//             enabled: None,
+//             system_files: None,
+//             hidden_files: None,
+//         };
+//         let right = TemporaryOptions::default();
+//         let result = left.to_owned() + right.to_owned();
+//         if result == right {
+//             Ok(())
+//         } else {
+//             eprintln!("{:?}, {:?}", left, right);
+//             Err(Error::from(ErrorKind::Other))
+//         }
+//     }
+//
+//     #[test]
+//     fn random_combine() -> Result<(), Error> {
+//         let left = TemporaryOptions {
+//             recursive: None,
+//             watch: Some(true),
+//             ignore: Some(vec![PathBuf::from("/home/cabero/Downloads/ignored_dir")]),
+//             suggestions: None,
+//             enabled: None,
+//             system_files: None,
+//             hidden_files: Some(false),
+//         };
+//         let right = TemporaryOptions {
+//             recursive: None,
+//             watch: Some(false),
+//             ignore: None,
+//             suggestions: None,
+//             enabled: None,
+//             system_files: None,
+//             hidden_files: Some(true),
+//         };
+//         let expected = TemporaryOptions {
+//             recursive: Some(false),
+//             watch: Some(false),
+//             ignore: Some(vec![PathBuf::from("/home/cabero/Downloads/ignored_dir")]),
+//             suggestions: Some(false),
+//             enabled: Some(true),
+//             system_files: Some(false),
+//             hidden_files: Some(true),
+//         };
+//
+//         if left.to_owned() + right.to_owned() == expected {
+//             Ok(())
+//         } else {
+//             eprintln!("{:?}, {:?}", left, right);
+//             Err(Error::from(ErrorKind::Other))
+//         }
+//     }
+// }

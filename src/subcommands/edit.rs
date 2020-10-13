@@ -1,11 +1,3 @@
-use crate::{
-    config_path,
-    configuration::{
-        rules::Rule,
-        temporary::rules::TemporaryRules,
-    },
-};
-use clap::ArgMatches;
 use std::{
     io::{
         Error,

@@ -1,15 +1,25 @@
 mod lib;
 
-use std::path::{Path, PathBuf};
-use crate::configuration::temporary::conflicts::ConflictOption;
-use std::io::{Error, ErrorKind, Read, Write};
-use crate::file::get_stem_and_extension;
-use std::io;
+use crate::{
+    configuration::{
+        conflicts::ConflictOption,
+        rules::Rule,
+    },
+    file::get_stem_and_extension,
+    PROJECT_NAME,
+};
+use clap::load_yaml;
 use colored::Colorize;
-use crate::configuration::rules::Rule;
-use std::collections::HashMap;
+use std::{collections::HashMap, io, io::{
+    Error,
+    ErrorKind,
+    Read,
+    Write,
+}, path::{
+    Path,
+    PathBuf,
+}, env};
 use yaml_rust::YamlEmitter;
-use crate::PROJECT_NAME;
 
 /// Helper function for the 'rename' and 'move' actions.
 /// It computes the appropriate new path for the file wanting to be renamed or moved.
@@ -161,4 +171,24 @@ pub(crate) fn prompt_editor_env_var() -> String {
     } else {
         format!("{} platform not supported", platform)
     }
+}
+
+pub fn expand_env_vars(path: &Path) -> PathBuf {
+    let components = path.components();
+    let mut new_path = PathBuf::new();
+
+    for component in components.into_iter() {
+        let component: &Path = component.as_ref();
+        if component.to_str().unwrap().starts_with('$') {
+            let env_var = env::var(component.to_str().unwrap().replace('$', ""));
+            if let Ok(env_var) = env_var {
+                new_path.push(env_var);
+            } else {
+                panic!(format!("an environment variable ({}) was found in the configuration file but it couldn't be read. Are you sure it exists?", new_path.display()))
+            }
+        } else {
+            new_path.push(component);
+        }
+    }
+    new_path
 }

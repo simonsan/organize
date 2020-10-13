@@ -3,7 +3,7 @@ use serde::{
     Serialize,
 };
 
-#[derive(Deserialize, Serialize, Debug, Clone)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(default)]
 pub struct Filters {
     pub regex: String,
@@ -21,9 +21,10 @@ impl Default for Filters {
     }
 }
 
+#[allow(dead_code)]
 struct Filename {
     startswith: Option<String>,
     endswith: Option<String>,
     contains: Option<String>,
-    case_sensitive: Option<bool>
+    case_sensitive: Option<bool>,
 }

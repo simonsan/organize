@@ -1,15 +1,12 @@
 use crate::{
-    configuration::{
-        path2rules,
-        rules::Rule,
-    },
+    configuration::rules::Rule,
     file::File,
+    utils::path2rules,
 };
 use std::{
     fs,
     io::Error,
 };
-use crate::utils::path2rules;
 
 pub fn run(rules: Vec<Rule>, watching: bool) -> Result<(), Error> {
     let path2rules = path2rules(&rules);

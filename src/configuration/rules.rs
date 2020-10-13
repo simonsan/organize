@@ -2,13 +2,16 @@ use crate::configuration::{
     actions::Actions,
     filters::Filters,
     folders::Folder,
-    options::Options,
 };
 
-#[derive(Debug, Clone)]
+use serde::{
+    Deserialize,
+    Serialize,
+};
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Rule {
     pub actions: Actions,
     pub filters: Filters,
     pub folders: Vec<Folder>,
-    pub options: Options,
 }

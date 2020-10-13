@@ -1,22 +1,26 @@
-use crate::configuration::{
-    folders::Folder,
-    rules::Rule,
-};
-use std::{
-    collections::HashMap,
-    path::PathBuf,
+use crate::{
+    utils,
+    config_path,
+    configuration::rules::Rule,
 };
 use clap::ArgMatches;
-use std::io::{Error, ErrorKind};
-use crate::config_path;
-use crate::configuration::temporary::rules::TemporaryRules;
+use std::{
+    collections::HashMap,
+    fs,
+    io::{
+        Error,
+        ErrorKind,
+    },
+    path::PathBuf,
+};
+use crate::utils::expand_env_vars;
 
 pub mod actions;
+pub mod conflicts;
 pub mod filters;
 pub mod folders;
 pub mod options;
 pub mod rules;
-pub mod temporary;
 
 /// Represents the user's configuration file
 /// ### Fields
@@ -42,13 +46,17 @@ impl UserConfig {
         };
 
         if !path.exists() {
-            crate::utils::create_config_file(&path)?;
+            utils::create_config_file(&path)?;
         }
 
-        let temp_rules = TemporaryRules::new(&path)?;
-        let mut rules = Vec::new();
-        for temp_rule in temp_rules.0 {
-            rules.push(temp_rule.unwrap())
+        let content = fs::read_to_string(&path)?;
+        let config: HashMap<String, Vec<Rule>> = serde_yaml::from_str(&content).expect("could not parse config file");
+        let mut rules = config.get("rules").expect("ERROR: field 'rules' missing").clone();
+
+        for rule in rules.iter_mut() {
+            for folder in rule.folders.iter_mut() {
+                folder.path = expand_env_vars(&folder.path);
+            }
         }
 
         Ok(UserConfig {

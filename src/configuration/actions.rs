@@ -1,14 +1,16 @@
 use crate::{
-    configuration::temporary::{
-        conflicts::{
-            ConflictOption,
-            ConflictingActions,
-            ConflictingFileOperation,
-        },
+    configuration::conflicts::{
+        ConflictOption,
+        ConflictingActions,
+        ConflictingFileOperation,
     },
     file::File,
+    utils::new_filepath,
 };
-use serde::Deserialize;
+use serde::{
+    Deserialize,
+    Serialize,
+};
 use std::{
     fs,
     io::{
@@ -20,9 +22,8 @@ use std::{
         PathBuf,
     },
 };
-use crate::utils::new_filepath;
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Actions {
     pub echo: Option<String>,
     pub shell: Option<String>,

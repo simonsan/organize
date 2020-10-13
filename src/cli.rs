@@ -1,11 +1,8 @@
 use crate::{
     config_path,
+    configuration::UserConfig,
     subcommands::{
-        edit::{
-            edit,
-            utils,
-            UserConfig,
-        },
+        edit::edit,
         run::run,
         watch::{
             daemon::Daemon,
@@ -24,7 +21,6 @@ use std::{
     env,
     io::Error,
 };
-use crate::configuration::UserConfig;
 
 #[derive(Clone, Debug)]
 /// Struct that initializes the application and stores the main information about the subcommands and options introduced by the user
