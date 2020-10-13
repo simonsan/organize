@@ -32,6 +32,13 @@ impl From<&Path> for File {
     }
 }
 
+impl From<&str> for File {
+    fn from(path: &str) -> Self {
+        let path = Path::new(path);
+        Self::from(path)
+    }
+}
+
 impl File {
     pub fn matches_filters(&self, filters: &Filters) -> bool {
         // TODO test this function
