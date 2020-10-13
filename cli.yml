@@ -15,17 +15,21 @@ subcommands:
             takes_value: true
             value_name: file
 
-  - edit:
+  - config:
       about: Edit configuration
       args:
+        # all three of these sub-arguments conflict with each other
         - show_path:
             long: show-path
             help: Shows the default configuration path
             conflicts_with: new
         - new:
             long: new
-            conflicts_with: show_path
+            conflicts_with: show_defaults
             help: create a new config file in the current directory
+        - show_defaults:
+            long: show-defaults
+            conflicts_with: show_path
   - suggest:
       about: Show improved workflow suggestions (must be enabled in config; experimental feature)
   - watch:

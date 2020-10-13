@@ -1,14 +1,17 @@
 use crate::{
     config_path,
-    configuration::UserConfig,
     subcommands::{
-        edit::edit,
+        config::edit,
         run::run,
         watch::{
             daemon::Daemon,
             watch,
         },
         SubCommands,
+    },
+    user_config::{
+        rules::folder::Options,
+        user_config::UserConfig,
     },
     PROJECT_NAME,
 };
@@ -21,6 +24,7 @@ use std::{
     env,
     io::Error,
 };
+use colored::Colorize;
 
 #[derive(Clone, Debug)]
 /// Struct that initializes the application and stores the main information about the subcommands and options introduced by the user
@@ -43,7 +47,7 @@ impl Cli {
         let (name, cmd) = matches.subcommand().unwrap();
         let cmd = cmd.clone();
         let name = match name {
-            "edit" => SubCommands::Edit,
+            "config" => SubCommands::Config,
             "run" => SubCommands::Run,
             "suggest" => SubCommands::Suggest,
             "watch" => SubCommands::Watch,
@@ -59,9 +63,16 @@ impl Cli {
 
     pub fn run(self) -> Result<(), Error> {
         match self.subcommand.0 {
-            SubCommands::Edit => {
+            SubCommands::Config => {
                 if self.subcommand.1.is_present("show_path") {
                     println!("{}", config_path().display());
+                } else if self.subcommand.1.is_present("show_defaults") {
+                    let Options{ recursive, watch, ignore, suggestions, hidden_files } = Options::default();
+                    println!("recursive: {}", recursive.to_string().purple());
+                    println!("watch: {}", watch.to_string().purple());
+                    println!("suggestions: {}", suggestions.to_string().purple());
+                    println!("hidden_files: {}", hidden_files.to_string().purple());
+                    println!("ignored_directories: {:?}", ignore);
                 } else if self.subcommand.1.is_present("new") {
                     let config_file = env::current_dir()?.join(format!("{}.yml", PROJECT_NAME));
                     crate::utils::create_config_file(&config_file)?;
