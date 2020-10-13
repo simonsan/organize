@@ -26,6 +26,7 @@ use std::{
     },
 };
 use yaml_rust::YamlEmitter;
+use crate::user_config::rules::actions::ConflictingFileOperation;
 
 /// Helper function for the 'rename' and 'move' actions.
 /// It computes the appropriate new path for the file wanting to be renamed or moved.
@@ -40,22 +41,26 @@ use yaml_rust::YamlEmitter;
 /// * The target path exists and `conflict_option` is set to skip
 pub fn new_filepath(
     from: &Path,
-    to: &Path,
-    conflict_option: &ConflictOption,
+    action: &ConflictingFileOperation,
     watching: bool,
 ) -> Result<PathBuf, Error> {
-    if to.exists() {
-        return match conflict_option {
+    if action.to.exists() {
+        return match action.if_exists {
             ConflictOption::Skip => Ok(from.to_path_buf()),
             ConflictOption::Rename => {
-                let (stem, extension) = get_stem_and_extension(to)?;
-                let new_dir = to.parent().unwrap();
-                let mut new_path = to.to_path_buf();
+                let mut new_path = action.to.to_path_buf();
+                let (stem, extension) = if action.to.is_dir() {
+                    new_path.push(from.file_name().unwrap());
+                    get_stem_and_extension(from)?
+                } else {
+                    get_stem_and_extension(&action.to)?
+                };
+                let new_dir = new_path.parent().unwrap().to_path_buf();
 
                 if new_path.exists() {
                     let mut n = 1;
                     while new_path.exists() {
-                        let new_filename = format!("{} ({:?}).{}", stem, n, extension);
+                        let new_filename = format!("{}{}({:?}).{}", stem, action.counter_separator, n, extension);
                         new_path = new_dir.join(new_filename);
                         n += 1;
                     }
@@ -63,25 +68,29 @@ pub fn new_filepath(
                 Ok(new_path)
             }
             ConflictOption::Overwrite => {
-                if to.is_file() {
-                    Ok(to.to_path_buf())
-                } else if to.is_dir() {
-                    Ok(to.join(from.file_name().unwrap()))
+                if action.to.is_file() {
+                    Ok(action.to.to_path_buf())
+                } else if action.to.is_dir() {
+                    Ok(action.to.join(from.file_name().unwrap()))
                 } else {
                     panic!("file is neither a file nor a dir?")
                 }
             }
             ConflictOption::Ask => {
                 if watching {
-                    new_filepath(from, to, Default::default(), false)
+                    new_filepath(from, action, false)
                 } else {
-                    let input = resolve_name_conflict(to)?;
-                    new_filepath(from, to, &input, watching)
+                    let action = ConflictingFileOperation {
+                        if_exists: resolve_name_conflict(&action.to)?,
+                        to: action.to.clone(),
+                        counter_separator: action.counter_separator.clone(),
+                    };
+                    new_filepath(from, &action, watching)
                 }
             }
         };
     }
-    Ok(to.to_path_buf())
+    Ok(action.to.to_path_buf())
 }
 
 pub fn resolve_name_conflict(dst: &Path) -> Result<ConflictOption, Error> {

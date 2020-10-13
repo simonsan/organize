@@ -84,31 +84,31 @@ impl Actions {
 
     fn copy(&self, from: &Path, watching: bool) -> Result<(), Error> {
         assert!(self.copy.is_some()); // should check that it's some before calling this method
-        let copy = self.copy.as_ref().unwrap();
+        let mut copy = self.copy.as_ref().unwrap();
         if copy.if_exists == ConflictOption::Skip || from == copy.to {
             return Ok(());
         }
 
-        let dst = new_filepath(from, &copy.to, &copy.if_exists, watching)?;
+        let dst = new_filepath(from, &mut copy, watching)?;
         std::fs::copy(from, dst.as_path()).expect("cannot write file (permission denied)");
         Ok(())
     }
 
     fn rename(&self, from: &Path, watching: bool) -> Result<PathBuf, Error> {
         assert!(self.rename.is_some()); // should check that it's some before calling this method
-        let rename = self.rename.as_ref().unwrap();
+        let mut rename = self.rename.as_ref().unwrap();
 
         if rename.if_exists == ConflictOption::Skip || from == rename.to {
             return Ok(from.to_path_buf());
         }
-        let dst = new_filepath(from, &rename.to, &rename.if_exists, watching)?;
+        let dst = new_filepath(from, &mut rename, watching)?;
         std::fs::rename(from, &dst).expect("couldn't rename file");
         Ok(dst)
     }
 
     fn r#move(&self, from: &Path, watching: bool) -> Result<PathBuf, Error> {
         assert!(self.r#move.is_some()); // should check that it's some before calling this method
-        let r#move = self.r#move.as_ref().unwrap();
+        let mut r#move = self.r#move.as_ref().unwrap();
 
         if r#move.if_exists == ConflictOption::Skip || from == r#move.to {
             return Ok(from.to_path_buf());
@@ -119,8 +119,7 @@ impl Actions {
 
         let dst = new_filepath(
             from,
-            &r#move.to.join(from.file_name().unwrap()),
-            &r#move.if_exists,
+            &mut r#move,
             watching,
         )?;
 
