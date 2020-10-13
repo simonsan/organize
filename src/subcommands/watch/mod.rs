@@ -45,7 +45,7 @@ pub fn watch(cli: Cli, config: &UserConfig) -> Result<(), Error> {
         } else {
             run(config.rules.to_owned(), false)?;
             let mut watcher = Watcher::new();
-            watcher.watch(&config.rules, &config.path);
+            watcher.watch(&config.rules);
         }
     } else {
         return Err(
@@ -65,6 +65,12 @@ pub struct Watcher {
 
 impl Default for Watcher {
     fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Watcher {
+    pub fn new() -> Self {
         let (sender, receiver) = channel();
         let watcher = raw_watcher(sender).unwrap();
         Watcher {
@@ -72,26 +78,17 @@ impl Default for Watcher {
             receiver,
         }
     }
-}
 
-impl Watcher {
-    pub fn new() -> Self {
-        Watcher::default()
-    }
-
-    pub fn watch(&mut self, rules: &[Rule], config_file: &PathBuf) {
-        self.watcher.watch(&config_file, RecursiveMode::NonRecursive).unwrap();
-        for rule in rules.iter() {
-            for folder in rule.folders.iter() {
-                let is_recursive = if folder.options.recursive {
-                    RecursiveMode::Recursive
-                } else {
-                    RecursiveMode::NonRecursive
-                };
-                self.watcher.watch(&folder.path, is_recursive).unwrap();
-            }
-        }
+    pub fn watch(&mut self, rules: &[Rule]) {
         let path2rules = path2rules(&rules);
+        for (folder, _) in path2rules {
+            let is_recursive = if folder.options.recursive {
+                RecursiveMode::Recursive
+            } else {
+                RecursiveMode::NonRecursive
+            };
+            self.watcher.watch(&folder.path, is_recursive).unwrap();
+        }
 
         // THERE CAN ONLY BE ONE WATCHER, WHICH CAN WATCH MULTIPLE FOLDERS
         // create a folder2rule hash table to map folders to their corresponding rules
