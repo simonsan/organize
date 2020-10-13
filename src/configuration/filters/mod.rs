@@ -1,11 +1,17 @@
 use regex::Regex;
 
+pub mod temporary;
+mod filename;
+mod lib;
+
 #[derive(Debug, Clone)]
 pub struct Filters {
     pub regex: Regex,
     pub filename: String,
     pub extensions: Vec<String>,
 }
+
+
 
 #[allow(clippy::trivial_regex)]
 impl Default for Filters {
