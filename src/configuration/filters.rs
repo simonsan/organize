@@ -1,6 +1,8 @@
 use regex::Regex;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
+#[serde(default)]
 pub struct Filters {
     pub regex: Regex,
     pub filename: String,

@@ -2,7 +2,7 @@ use crate::configuration::{
     rules::Rule,
     temporary::{
         actions::TemporaryActions,
-        filters::TemporaryFilters,
+        filters::Filters,
         folders::TemporaryFolder,
         options::TemporaryOptions,
         TemporaryConfigElement,
@@ -27,7 +27,7 @@ use std::{
 #[derive(Debug, Clone, Deserialize)]
 pub struct TemporaryRule {
     pub actions: TemporaryActions,
-    pub filters: TemporaryFilters,
+    pub filters: Filters,
     pub folders: Vec<TemporaryFolder>,
     pub options: Option<TemporaryOptions>,
 }
