@@ -9,7 +9,6 @@ mod tests {
             Error,
             ErrorKind,
         },
-        path::Path,
     };
 
     #[test]

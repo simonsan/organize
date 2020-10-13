@@ -1,7 +1,5 @@
 use crate::{
     configuration::temporary::{
-        actions,
-        actions::new_filepath,
         conflicts::{
             ConflictOption,
             ConflictingActions,
@@ -21,8 +19,10 @@ use std::{
         PathBuf,
     },
 };
+use crate::configuration::temporary::actions::new_filepath;
+use serde::Deserialize;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Actions {
     pub echo: Option<String>,
     pub shell: Option<String>,
@@ -31,6 +31,20 @@ pub struct Actions {
     pub copy: Option<ConflictingFileOperation>,
     pub r#move: Option<ConflictingFileOperation>,
     pub rename: Option<ConflictingFileOperation>,
+}
+
+impl Default for Actions {
+    fn default() -> Self {
+        Self {
+            echo: None,
+            shell: None,
+            trash: None,
+            delete: None,
+            copy: None,
+            rename: None,
+            r#move: None
+        }
+    }
 }
 
 impl Actions {
@@ -74,49 +88,49 @@ impl Actions {
     }
 
     fn copy(&self, from: &Path, watching: bool) -> Result<(), Error> {
-        // should check that it's some before calling this method
-        if self.copy.as_ref().unwrap().if_exists == ConflictOption::Skip || from == self.copy.as_ref().unwrap().to {
+        assert!(self.copy.is_some()); // should check that it's some before calling this method
+        let copy = self.copy.as_ref().unwrap();
+        if copy.options.if_exists == ConflictOption::Skip || from == copy.to {
             return Ok(());
         }
 
-        let new_path = actions::new_filepath(
-            from,
-            &self.copy.as_ref().unwrap().to,
-            &self.copy.as_ref().unwrap().if_exists,
-            watching,
-        )?;
-        println!("{}", new_path.display());
-        std::fs::copy(from, new_path.as_path()).expect("cannot write file (permission denied)");
+        let dst = new_filepath(from, &copy.to,&copy.options.if_exists, watching)?;
+        std::fs::copy(from, dst.as_path()).expect("cannot write file (permission denied)");
         Ok(())
     }
 
     fn rename(&self, from: &Path, watching: bool) -> Result<PathBuf, Error> {
-        // should check that it's some before calling this method
-        if self.rename.as_ref().unwrap().if_exists == ConflictOption::Skip || from == self.rename.as_ref().unwrap().to {
+        assert!(self.rename.is_some()); // should check that it's some before calling this method
+        let rename = self.rename.as_ref().unwrap();
+
+        if rename.options.if_exists == ConflictOption::Skip || from == rename.to {
             return Ok(from.to_path_buf());
         }
-        let dst = actions::new_filepath(
+        let dst = new_filepath(
             from,
-            &self.copy.as_ref().unwrap().to,
-            &self.copy.as_ref().unwrap().if_exists,
+            &rename.to,
+            &rename.options.if_exists,
             watching,
         )?;
-        std::fs::rename(from, dst.as_path()).expect("couldn't rename file");
+        std::fs::rename(from, &dst).expect("couldn't rename file");
         Ok(dst)
     }
 
     fn r#move(&self, from: &Path, watching: bool) -> Result<PathBuf, Error> {
-        // should check that it's some before calling this method
-        if self.r#move.as_ref().unwrap().if_exists == ConflictOption::Skip || from == self.r#move.as_ref().unwrap().to {
+        assert!(self.r#move.is_some()); // should check that it's some before calling this method
+        let r#move = self.r#move.as_ref().unwrap();
+
+        if r#move.options.if_exists == ConflictOption::Skip || from == r#move.to {
             return Ok(from.to_path_buf());
         }
-        if !self.r#move.as_ref().unwrap().to.exists() {
-            fs::create_dir_all(&self.r#move.as_ref().unwrap().to)?;
+        if !r#move.to.exists() {
+            fs::create_dir_all(&r#move.to)?;
         }
+
         let dst = new_filepath(
             from,
-            &self.r#move.as_ref().unwrap().to.join(from.file_name().unwrap()),
-            &self.r#move.as_ref().unwrap().if_exists,
+            &r#move.to.join(from.file_name().unwrap()),
+            &r#move.options.if_exists,
             watching,
         )?;
 

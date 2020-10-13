@@ -1,7 +1,6 @@
 use crate::configuration::{
     rules::Rule,
     temporary::{
-        actions::TemporaryActions,
         folders::TemporaryFolder,
         options::TemporaryOptions,
         TemporaryConfigElement,
@@ -23,10 +22,11 @@ use std::{
     slice::Iter,
 };
 use crate::configuration::filters::Filters;
+use crate::configuration::actions::Actions;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct TemporaryRule {
-    pub actions: TemporaryActions,
+    pub actions: Actions,
     pub filters: Filters,
     pub folders: Vec<TemporaryFolder>,
     pub options: Option<TemporaryOptions>,
@@ -40,7 +40,7 @@ impl TemporaryRule {
         }
         Rule {
             options: self.options.clone().unwrap_or_default().fill(&self).unwrap(),
-            actions: self.actions.unwrap(),
+            actions: self.actions,
             filters: self.filters,
             folders,
         }

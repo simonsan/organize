@@ -1,78 +1,10 @@
-use crate::{
-    configuration::{
-        actions::Actions,
-        temporary::conflicts::{
-            ConflictOption,
-            ConflictingFileOperation,
-            TemporaryConflictingFileOperation,
-        },
-    },
-    file::get_stem_and_extension,
-};
+use std::path::{Path, PathBuf};
+use crate::configuration::temporary::conflicts::ConflictOption;
+use std::io::{Error, ErrorKind, Write, Read};
+use crate::file::get_stem_and_extension;
 use colored::Colorize;
-use serde::Deserialize;
-use std::{
-    io,
-    io::{
-        Error,
-        ErrorKind,
-        Read,
-        Write,
-    },
-    path::{
-        Path,
-        PathBuf,
-    },
-};
+use std::io;
 
-#[derive(PartialEq, Debug, Clone, Deserialize)]
-pub struct TemporaryActions {
-    pub echo: Option<String>,
-    pub shell: Option<String>,
-    pub trash: Option<bool>,
-    pub delete: Option<bool>,
-    pub copy: Option<TemporaryConflictingFileOperation>,
-    pub r#move: Option<TemporaryConflictingFileOperation>,
-    pub rename: Option<TemporaryConflictingFileOperation>,
-}
-
-impl Default for TemporaryActions {
-    fn default() -> Self {
-        TemporaryActions {
-            echo: Some("".to_string()),
-            shell: Some("".to_string()),
-            trash: Some(false),
-            delete: Some(false),
-            copy: Some(Default::default()),
-            r#move: Some(Default::default()),
-            rename: Some(Default::default()),
-        }
-    }
-}
-
-impl TemporaryActions {
-    fn unwrap_action(&self, action: &Option<TemporaryConflictingFileOperation>) -> Option<ConflictingFileOperation> {
-        match action.clone() {
-            Some(mut action) => {
-                action.fill();
-                Some(action.unwrap())
-            }
-            None => None,
-        }
-    }
-
-    pub fn unwrap(self) -> Actions {
-        Actions {
-            r#move: self.unwrap_action(&self.r#move),
-            copy: self.unwrap_action(&self.copy),
-            rename: self.unwrap_action(&self.rename),
-            echo: self.echo,
-            shell: self.shell,
-            trash: self.trash,
-            delete: self.delete,
-        }
-    }
-}
 /// Helper function for the 'rename' and 'move' actions.
 /// It computes the appropriate new path for the file wanting to be renamed or moved.
 /// In case of a name conflict, it will decide what new path to return based on a resolver parameter
@@ -130,7 +62,6 @@ pub fn new_filepath(
     Ok(to.to_path_buf())
 }
 
-impl TemporaryActions {}
 
 pub fn resolve_name_conflict(dst: &Path) -> Result<ConflictOption, Error> {
     print!(

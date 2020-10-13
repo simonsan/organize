@@ -28,7 +28,6 @@ use std::{
         Error,
         ErrorKind,
     },
-    path::PathBuf,
     sync::mpsc::{
         channel,
         Receiver,
