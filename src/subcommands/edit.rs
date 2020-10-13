@@ -1,10 +1,7 @@
-use crate::{
-    config_directory,
-    configuration::{
-        rules::Rule,
-        temporary::rules::TemporaryRules,
-    },
-};
+use crate::{config_directory, configuration::{
+    rules::Rule,
+    temporary::rules::TemporaryRules,
+}, config_path};
 use clap::ArgMatches;
 use std::{
     io::{
@@ -15,12 +12,38 @@ use std::{
     process::Command,
 };
 
+/// Launches an editor to modify the default config.
+ /// This function represents the `config` subcommand without any arguments.
+ /// ### Errors
+ /// This functions returns an error in the following cases:
+ /// - There is no $EDITOR environment variable.
+ /// ### Panics
+ /// This functions panics in the following cases:
+ /// - The $EDITOR env. variable was found but its process could not be started.
+pub fn edit(path: PathBuf) -> Result<(), Error> {
+    match std::env::var("EDITOR") {
+        Ok(editor) => {
+            let mut editor = Command::new(editor);
+            editor
+                .arg(path.to_str().unwrap())
+                .spawn()
+                .expect("ERROR: failed to run editor")
+                .wait()
+                .expect("ERROR: command was not running");
+            Ok(())
+        }
+        Err(_) => Err(Error::new(ErrorKind::NotFound, utils::prompt_editor_env_var())),
+    }
+}
+
+
+
+
 /// Represents the user's configuration file
 /// ### Fields
 /// * `path`: the path the user's config, either the default one or some other passed with the --with-config argument
 /// * `rules`: a list of parsed rules defined by the user
 pub struct UserConfig {
-    pub path: PathBuf,
     pub rules: Vec<Rule>,
 }
 
@@ -38,7 +61,7 @@ impl UserConfig {
     pub fn new(args: &ArgMatches) -> Result<Self, Error> {
         let path = match args.value_of("with_config") {
             Some(path) => PathBuf::from(path),
-            None => config_directory().join("config.yml"),
+            None => config_path()
         };
 
         if !path.exists() {
@@ -52,34 +75,11 @@ impl UserConfig {
         }
 
         Ok(UserConfig {
-            path,
             rules,
         })
     }
 
-    /// Launches an editor to modify the default config.
-    /// This function represents the `config` subcommand without any arguments.
-    /// ### Errors
-    /// This functions returns an error in the following cases:
-    /// - There is no $EDITOR environment variable.
-    /// ### Panics
-    /// This functions panics in the following cases:
-    /// - The $EDITOR env. variable was found but its process could not be started.
-    pub fn edit(&self) -> Result<&Self, Error> {
-        match std::env::var("EDITOR") {
-            Ok(editor) => {
-                let mut editor = Command::new(editor);
-                editor
-                    .arg(self.path.display().to_string())
-                    .spawn()
-                    .expect("ERROR: failed to run editor")
-                    .wait()
-                    .expect("ERROR: command was not running");
-                Ok(self)
-            }
-            Err(_) => Err(Error::new(ErrorKind::NotFound, utils::prompt_editor_env_var())),
-        }
-    }
+
 
     /// Validates the user's config.
     /// ### Errors

@@ -20,6 +20,10 @@ pub fn config_directory() -> PathBuf {
         .join(format!(".{}", PROJECT_NAME))
 }
 
+pub fn config_path() -> PathBuf {
+    config_directory().join("config.yml")
+}
+
 fn main() -> Result<(), Error> {
     let cli = Cli::new();
     match cli.run() {

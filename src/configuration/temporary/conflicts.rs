@@ -33,8 +33,8 @@ impl Default for ConflictingFileOperationOptions {
 }
 
 #[derive(PartialEq, Debug, Clone, Deserialize)]
+#[serde(default)]
 pub struct ConflictingFileOperation {
-    // #[serde(deserialize_with = "expand_env_vars")]
     pub to: PathBuf,
     pub options: ConflictingFileOperationOptions,
 }

@@ -1,18 +1,15 @@
-use crate::{
-    subcommands::{
-        edit::{
-            utils,
-            UserConfig,
-        },
-        run::run,
-        watch::{
-            daemon::Daemon,
-            watch,
-        },
-        SubCommands,
+use crate::{subcommands::{
+    edit::{
+        utils,
+        UserConfig,
     },
-    PROJECT_NAME,
-};
+    run::run,
+    watch::{
+        daemon::Daemon,
+        watch,
+    },
+    SubCommands,
+}, PROJECT_NAME, config_path};
 use clap::{
     load_yaml,
     App,
@@ -22,6 +19,7 @@ use std::{
     env,
     io::Error,
 };
+use crate::subcommands::edit::edit;
 
 #[derive(Clone, Debug)]
 /// Struct that initializes the application and stores the main information about the subcommands and options introduced by the user
@@ -62,15 +60,14 @@ impl Cli {
         match self.subcommand.0 {
             SubCommands::Edit => {
                 if self.subcommand.1.is_present("show_path") {
-                    let config = UserConfig::new(&self.subcommand.1)?;
-                    println!("{}", config.path.display());
+                    println!("{}", config_path().display());
                 } else if self.subcommand.1.is_present("new") {
                     let config_file = env::current_dir()?.join(format!("{}.yml", PROJECT_NAME));
                     utils::create_config_file(&config_file)?;
                     println!("New config file created at {}", config_file.display());
                 } else {
-                    let config = UserConfig::new(&self.subcommand.1)?;
-                    config.edit()?;
+                    let path = config_path();
+                    edit(path)?;
                 }
             }
             SubCommands::Run => {
