@@ -4,11 +4,9 @@ mod tests {
         configuration::filters::Filters,
         file::File,
     };
-    use std::{
-        io::{
-            Error,
-            ErrorKind,
-        },
+    use std::io::{
+        Error,
+        ErrorKind,
     };
 
     #[test]

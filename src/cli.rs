@@ -1,15 +1,20 @@
-use crate::{subcommands::{
-    edit::{
-        utils,
-        UserConfig,
+use crate::{
+    config_path,
+    subcommands::{
+        edit::{
+            edit,
+            utils,
+            UserConfig,
+        },
+        run::run,
+        watch::{
+            daemon::Daemon,
+            watch,
+        },
+        SubCommands,
     },
-    run::run,
-    watch::{
-        daemon::Daemon,
-        watch,
-    },
-    SubCommands,
-}, PROJECT_NAME, config_path};
+    PROJECT_NAME,
+};
 use clap::{
     load_yaml,
     App,
@@ -19,7 +24,6 @@ use std::{
     env,
     io::Error,
 };
-use crate::subcommands::edit::edit;
 
 #[derive(Clone, Debug)]
 /// Struct that initializes the application and stores the main information about the subcommands and options introduced by the user

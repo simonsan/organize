@@ -1,6 +1,7 @@
 mod lib;
 
 use crate::configuration::filters::Filters;
+use regex::Regex;
 use std::{
     io::Error,
     path::{
@@ -8,7 +9,6 @@ use std::{
         PathBuf,
     },
 };
-use regex::Regex;
 
 #[allow(dead_code)]
 pub struct File {
@@ -47,7 +47,7 @@ impl File {
         if !filters.regex.is_empty() {
             let regex = Regex::new(&filters.regex).unwrap();
             if regex.is_match(&path) {
-                return true
+                return true;
             }
         }
         if !filters.filename.is_empty() && self.filename == filters.filename {

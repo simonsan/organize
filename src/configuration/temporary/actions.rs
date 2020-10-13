@@ -1,9 +1,21 @@
-use std::path::{Path, PathBuf};
-use crate::configuration::temporary::conflicts::ConflictOption;
-use std::io::{Error, ErrorKind, Write, Read};
-use crate::file::get_stem_and_extension;
+use crate::{
+    configuration::temporary::conflicts::ConflictOption,
+    file::get_stem_and_extension,
+};
 use colored::Colorize;
-use std::io;
+use std::{
+    io,
+    io::{
+        Error,
+        ErrorKind,
+        Read,
+        Write,
+    },
+    path::{
+        Path,
+        PathBuf,
+    },
+};
 
 /// Helper function for the 'rename' and 'move' actions.
 /// It computes the appropriate new path for the file wanting to be renamed or moved.
@@ -61,7 +73,6 @@ pub fn new_filepath(
     }
     Ok(to.to_path_buf())
 }
-
 
 pub fn resolve_name_conflict(dst: &Path) -> Result<ConflictOption, Error> {
     print!(

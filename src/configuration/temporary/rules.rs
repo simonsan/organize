@@ -1,4 +1,6 @@
 use crate::configuration::{
+    actions::Actions,
+    filters::Filters,
     rules::Rule,
     temporary::{
         folders::TemporaryFolder,
@@ -21,8 +23,6 @@ use std::{
     path::Path,
     slice::Iter,
 };
-use crate::configuration::filters::Filters;
-use crate::configuration::actions::Actions;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct TemporaryRule {

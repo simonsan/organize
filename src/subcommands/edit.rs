@@ -1,7 +1,10 @@
-use crate::{config_directory, configuration::{
-    rules::Rule,
-    temporary::rules::TemporaryRules,
-}, config_path};
+use crate::{
+    config_path,
+    configuration::{
+        rules::Rule,
+        temporary::rules::TemporaryRules,
+    },
+};
 use clap::ArgMatches;
 use std::{
     io::{
@@ -13,13 +16,13 @@ use std::{
 };
 
 /// Launches an editor to modify the default config.
- /// This function represents the `config` subcommand without any arguments.
- /// ### Errors
- /// This functions returns an error in the following cases:
- /// - There is no $EDITOR environment variable.
- /// ### Panics
- /// This functions panics in the following cases:
- /// - The $EDITOR env. variable was found but its process could not be started.
+/// This function represents the `config` subcommand without any arguments.
+/// ### Errors
+/// This functions returns an error in the following cases:
+/// - There is no $EDITOR environment variable.
+/// ### Panics
+/// This functions panics in the following cases:
+/// - The $EDITOR env. variable was found but its process could not be started.
 pub fn edit(path: PathBuf) -> Result<(), Error> {
     match std::env::var("EDITOR") {
         Ok(editor) => {
@@ -35,9 +38,6 @@ pub fn edit(path: PathBuf) -> Result<(), Error> {
         Err(_) => Err(Error::new(ErrorKind::NotFound, utils::prompt_editor_env_var())),
     }
 }
-
-
-
 
 /// Represents the user's configuration file
 /// ### Fields
@@ -61,7 +61,7 @@ impl UserConfig {
     pub fn new(args: &ArgMatches) -> Result<Self, Error> {
         let path = match args.value_of("with_config") {
             Some(path) => PathBuf::from(path),
-            None => config_path()
+            None => config_path(),
         };
 
         if !path.exists() {
@@ -78,8 +78,6 @@ impl UserConfig {
             rules,
         })
     }
-
-
 
     /// Validates the user's config.
     /// ### Errors

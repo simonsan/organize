@@ -1,5 +1,6 @@
 use crate::{
     configuration::temporary::{
+        actions::new_filepath,
         conflicts::{
             ConflictOption,
             ConflictingActions,
@@ -8,6 +9,7 @@ use crate::{
     },
     file::File,
 };
+use serde::Deserialize;
 use std::{
     fs,
     io::{
@@ -19,8 +21,6 @@ use std::{
         PathBuf,
     },
 };
-use crate::configuration::temporary::actions::new_filepath;
-use serde::Deserialize;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Actions {
@@ -42,7 +42,7 @@ impl Default for Actions {
             delete: None,
             copy: None,
             rename: None,
-            r#move: None
+            r#move: None,
         }
     }
 }
@@ -94,7 +94,7 @@ impl Actions {
             return Ok(());
         }
 
-        let dst = new_filepath(from, &copy.to,&copy.if_exists, watching)?;
+        let dst = new_filepath(from, &copy.to, &copy.if_exists, watching)?;
         std::fs::copy(from, dst.as_path()).expect("cannot write file (permission denied)");
         Ok(())
     }
@@ -106,12 +106,7 @@ impl Actions {
         if rename.if_exists == ConflictOption::Skip || from == rename.to {
             return Ok(from.to_path_buf());
         }
-        let dst = new_filepath(
-            from,
-            &rename.to,
-            &rename.if_exists,
-            watching,
-        )?;
+        let dst = new_filepath(from, &rename.to, &rename.if_exists, watching)?;
         std::fs::rename(from, &dst).expect("couldn't rename file");
         Ok(dst)
     }

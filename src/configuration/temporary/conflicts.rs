@@ -1,10 +1,8 @@
 use serde::{
     Deserialize,
-    Serialize
+    Serialize,
 };
-use std::{
-    path::PathBuf,
-};
+use std::path::PathBuf;
 
 #[derive(Clone)]
 pub enum ConflictingActions {
