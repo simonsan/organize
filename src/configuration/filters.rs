@@ -1,19 +1,18 @@
 use regex::Regex;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, Deserializer};
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(default)]
 pub struct Filters {
-    pub regex: Regex,
+    pub regex: String,
     pub filename: String,
     pub extensions: Vec<String>,
 }
 
-#[allow(clippy::trivial_regex)]
 impl Default for Filters {
     fn default() -> Self {
         Filters {
-            regex: Regex::new("").unwrap(),
+            regex: String::new(),
             filename: String::new(),
             extensions: Vec::new(),
         }

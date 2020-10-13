@@ -8,6 +8,7 @@ use std::{
         PathBuf,
     },
 };
+use regex::Regex;
 
 #[allow(dead_code)]
 pub struct File {
@@ -43,8 +44,11 @@ impl File {
     pub fn matches_filters(&self, filters: &Filters) -> bool {
         // TODO test this function
         let path = self.path.to_str().unwrap();
-        if !filters.regex.as_str().is_empty() && filters.regex.is_match(path) {
-            return true;
+        if !filters.regex.is_empty() {
+            let regex = Regex::new(&filters.regex).unwrap();
+            if regex.is_match(&path) {
+                return true
+            }
         }
         if !filters.filename.is_empty() && self.filename == filters.filename {
             return true;

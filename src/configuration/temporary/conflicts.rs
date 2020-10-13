@@ -2,7 +2,10 @@ use crate::configuration::{
     combine_options,
     temporary::folders::expand_env_vars,
 };
-use serde::Deserialize;
+use serde::{
+    Deserialize,
+    Serialize
+};
 use std::{
     ops::Add,
     path::PathBuf,
@@ -97,26 +100,24 @@ impl Add for &TemporaryConflictingFileOperation {
 /// Defines the options available to resolve a naming conflict,
 /// i.e. how the application should proceed when a file exists
 /// but it should move/rename/copy some file to that existing path
-#[allow(non_camel_case_types)]
-// if set with camelCase or PascalCase the user would have to
 // write their configs with this format due to how serde deserializes files
-// and so it would be inconsistent with the rest of the config file
-#[derive(PartialEq, Debug, Clone, Deserialize)]
+#[derive(Eq, PartialEq, Debug, Copy, Clone, Deserialize, Serialize)]
+#[serde(rename_all(serialize = "lowercase", deserialize = "lowercase"))]
 pub enum ConflictOption {
-    overwrite,
-    skip,
-    rename,
-    ask, // not available when watching
+    Overwrite,
+    Skip,
+    Rename,
+    Ask, // not available when watching
 }
 
 impl Default for ConflictOption {
     fn default() -> Self {
-        ConflictOption::rename
+        ConflictOption::Rename
     }
 }
 
 impl Default for &ConflictOption {
     fn default() -> Self {
-        &ConflictOption::rename
+        &ConflictOption::Rename
     }
 }

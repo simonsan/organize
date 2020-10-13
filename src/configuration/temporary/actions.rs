@@ -92,8 +92,8 @@ pub fn new_filepath(
 ) -> Result<PathBuf, Error> {
     if to.exists() {
         return match conflict_option {
-            ConflictOption::skip => Ok(from.to_path_buf()),
-            ConflictOption::rename => {
+            ConflictOption::Skip => Ok(from.to_path_buf()),
+            ConflictOption::Rename => {
                 let (stem, extension) = get_stem_and_extension(to)?;
                 let new_dir = to.parent().unwrap();
                 let mut new_path = to.to_path_buf();
@@ -108,7 +108,7 @@ pub fn new_filepath(
                 }
                 Ok(new_path)
             }
-            ConflictOption::overwrite => {
+            ConflictOption::Overwrite => {
                 if to.is_file() {
                     Ok(to.to_path_buf())
                 } else if to.is_dir() {
@@ -117,7 +117,7 @@ pub fn new_filepath(
                     panic!("file is neither a file nor a dir?")
                 }
             }
-            ConflictOption::ask => {
+            ConflictOption::Ask => {
                 if watching {
                     new_filepath(from, to, Default::default(), false)
                 } else {
@@ -144,11 +144,11 @@ pub fn resolve_name_conflict(dst: &Path) -> Result<ConflictOption, Error> {
     let buf = buf[0];
 
     if buf == 111 {
-        Ok(ConflictOption::overwrite)
+        Ok(ConflictOption::Overwrite)
     } else if buf == 114 {
-        Ok(ConflictOption::rename)
+        Ok(ConflictOption::Rename)
     } else if buf == 115 {
-        Ok(ConflictOption::skip)
+        Ok(ConflictOption::Skip)
     } else {
         Err(Error::new(ErrorKind::InvalidInput, "ERROR: invalid option"))
     }
@@ -162,7 +162,7 @@ mod tests {
     fn rename_with_rename_conflict() -> Result<(), Error> {
         let file1 = PathBuf::from("/home/cabero/Code/Rust/organize/tests/files/test1.txt");
         let file2 = PathBuf::from("/home/cabero/Code/Rust/organize/tests/files/test2.txt");
-        let new_path = new_filepath(&file1, &file2, &ConflictOption::rename, WATCHING)?;
+        let new_path = new_filepath(&file1, &file2, &ConflictOption::Rename, WATCHING)?;
         let expected = PathBuf::from(format!("{}/test2 (1).txt", file2.parent().unwrap().to_str().unwrap()));
         if new_path == expected {
             Ok(())
@@ -178,7 +178,7 @@ mod tests {
         let new_path = new_filepath(
             &file,
             &dir.join(file.file_name().unwrap()),
-            &ConflictOption::rename,
+            &ConflictOption::Rename,
             WATCHING,
         )?;
         let expected = PathBuf::from(format!("{}/test1 (1).txt", dir.to_str().unwrap()));
@@ -193,7 +193,7 @@ mod tests {
     fn rename_with_overwrite_conflict() -> Result<(), Error> {
         let file1 = PathBuf::from("/home/cabero/Code/Rust/organize/tests/files/test1.txt");
         let file2 = PathBuf::from("/home/cabero/Code/Rust/organize/tests/files/test2.txt");
-        let new_path = new_filepath(&file1, &file2, &ConflictOption::overwrite, WATCHING)?;
+        let new_path = new_filepath(&file1, &file2, &ConflictOption::Overwrite, WATCHING)?;
         if new_path == file2 {
             Ok(())
         } else {
@@ -207,7 +207,7 @@ mod tests {
         let new_path = new_filepath(
             &file,
             &dir.join(file.file_name().unwrap()),
-            &ConflictOption::overwrite,
+            &ConflictOption::Overwrite,
             WATCHING,
         )?;
         let expected = PathBuf::from(format!("{}/test1.txt", dir.to_str().unwrap()));
@@ -222,7 +222,7 @@ mod tests {
     fn rename_with_skip_conflict() -> Result<(), Error> {
         let file1 = PathBuf::from("/home/cabero/Code/Rust/organize/tests/files/test1.txt");
         let file2 = PathBuf::from("/home/cabero/Code/Rust/organize/tests/files/test2.txt");
-        let expected = new_filepath(&file1, &file2, &ConflictOption::skip, false).unwrap();
+        let expected = new_filepath(&file1, &file2, &ConflictOption::Skip, false).unwrap();
         if file1 == expected {
             Ok(())
         } else {
@@ -237,7 +237,7 @@ mod tests {
         let expected = new_filepath(
             &file,
             &dir.join(file.file_name().unwrap()),
-            &ConflictOption::skip,
+            &ConflictOption::Skip,
             false,
         )
         .unwrap();

@@ -75,7 +75,7 @@ impl Actions {
 
     fn copy(&self, from: &Path, watching: bool) -> Result<(), Error> {
         // should check that it's some before calling this method
-        if self.copy.as_ref().unwrap().if_exists == ConflictOption::skip || from == self.copy.as_ref().unwrap().to {
+        if self.copy.as_ref().unwrap().if_exists == ConflictOption::Skip || from == self.copy.as_ref().unwrap().to {
             return Ok(());
         }
 
@@ -92,7 +92,7 @@ impl Actions {
 
     fn rename(&self, from: &Path, watching: bool) -> Result<PathBuf, Error> {
         // should check that it's some before calling this method
-        if self.rename.as_ref().unwrap().if_exists == ConflictOption::skip || from == self.rename.as_ref().unwrap().to {
+        if self.rename.as_ref().unwrap().if_exists == ConflictOption::Skip || from == self.rename.as_ref().unwrap().to {
             return Ok(from.to_path_buf());
         }
         let dst = actions::new_filepath(
@@ -107,7 +107,7 @@ impl Actions {
 
     fn r#move(&self, from: &Path, watching: bool) -> Result<PathBuf, Error> {
         // should check that it's some before calling this method
-        if self.r#move.as_ref().unwrap().if_exists == ConflictOption::skip || from == self.r#move.as_ref().unwrap().to {
+        if self.r#move.as_ref().unwrap().if_exists == ConflictOption::Skip || from == self.r#move.as_ref().unwrap().to {
             return Ok(from.to_path_buf());
         }
         if !self.r#move.as_ref().unwrap().to.exists() {
