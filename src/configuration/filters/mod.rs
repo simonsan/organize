@@ -5,8 +5,6 @@ use serde::{
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(default)]
-mod lib;
-
 pub struct Filters {
     pub regex: String,
     pub filename: String,
