@@ -80,19 +80,18 @@ impl Watcher {
     }
 
     pub fn watch(&mut self, rules: &[Rule]) {
-        let path2rules = path2rules(&rules);
-        for (folder, _) in path2rules {
-            let is_recursive = if folder.options.recursive {
-                RecursiveMode::Recursive
-            } else {
-                RecursiveMode::NonRecursive
-            };
-            self.watcher.watch(&folder.path, is_recursive).unwrap();
+        for rule in rules.iter() {
+            for folder in rule.folders.iter() {
+                let is_recursive = if folder.options.recursive {
+                    RecursiveMode::Recursive
+                } else {
+                    RecursiveMode::NonRecursive
+                };
+                self.watcher.watch(&folder.path, is_recursive).unwrap();
+            }
         }
 
-        // THERE CAN ONLY BE ONE WATCHER, WHICH CAN WATCH MULTIPLE FOLDERS
-        // create a folder2rule hash table to map folders to their corresponding rules
-        // and maybe a path2folder hash table, where folder is the custom struct we defined
+        let path2rules = path2rules(&rules);
         loop {
             if let Ok(RawEvent {
                 path: Some(abs_path),
