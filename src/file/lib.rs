@@ -14,7 +14,7 @@ mod tests {
 
     #[test]
     fn test_filters_extensions() -> Result<(), Error> {
-        let file = File::from(Path::new("/home/cabero/Documents/matricula.pdf"));
+        let file = File::from("/home/cabero/Documents/matricula.pdf");
         let mut filters: Filters = Default::default();
         filters.extensions.push("pdf".to_string());
         if file.matches_filters(&filters) {
@@ -28,7 +28,7 @@ mod tests {
     }
     #[test]
     fn test_filters_regex() -> Result<(), Error> {
-        let file = File::from(Path::new("/home/cabero/Documents/matricula.pdf"));
+        let file = File::from("/home/cabero/Documents/matricula.pdf");
         let filters: Filters = Default::default();
         if file.matches_filters(&filters) {
             // the default regex is an empty one, so it should match everything
@@ -40,7 +40,7 @@ mod tests {
     }
     #[test]
     fn test_filters_filename() -> Result<(), Error> {
-        let file = File::from(Path::new("/home/cabero/Documents/matricula.pdf"));
+        let file = File::from("/home/cabero/Documents/matricula.pdf");
         let mut filters: Filters = Default::default();
         filters.filename = "matricula.pdf".to_string();
         if file.matches_filters(&filters) {
