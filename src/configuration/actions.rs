@@ -90,11 +90,11 @@ impl Actions {
     fn copy(&self, from: &Path, watching: bool) -> Result<(), Error> {
         assert!(self.copy.is_some()); // should check that it's some before calling this method
         let copy = self.copy.as_ref().unwrap();
-        if copy.options.if_exists == ConflictOption::Skip || from == copy.to {
+        if copy.if_exists == ConflictOption::Skip || from == copy.to {
             return Ok(());
         }
 
-        let dst = new_filepath(from, &copy.to,&copy.options.if_exists, watching)?;
+        let dst = new_filepath(from, &copy.to,&copy.if_exists, watching)?;
         std::fs::copy(from, dst.as_path()).expect("cannot write file (permission denied)");
         Ok(())
     }
@@ -103,13 +103,13 @@ impl Actions {
         assert!(self.rename.is_some()); // should check that it's some before calling this method
         let rename = self.rename.as_ref().unwrap();
 
-        if rename.options.if_exists == ConflictOption::Skip || from == rename.to {
+        if rename.if_exists == ConflictOption::Skip || from == rename.to {
             return Ok(from.to_path_buf());
         }
         let dst = new_filepath(
             from,
             &rename.to,
-            &rename.options.if_exists,
+            &rename.if_exists,
             watching,
         )?;
         std::fs::rename(from, &dst).expect("couldn't rename file");
@@ -120,7 +120,7 @@ impl Actions {
         assert!(self.r#move.is_some()); // should check that it's some before calling this method
         let r#move = self.r#move.as_ref().unwrap();
 
-        if r#move.options.if_exists == ConflictOption::Skip || from == r#move.to {
+        if r#move.if_exists == ConflictOption::Skip || from == r#move.to {
             return Ok(from.to_path_buf());
         }
         if !r#move.to.exists() {
@@ -130,7 +130,7 @@ impl Actions {
         let dst = new_filepath(
             from,
             &r#move.to.join(from.file_name().unwrap()),
-            &r#move.options.if_exists,
+            &r#move.if_exists,
             watching,
         )?;
 
