@@ -4,6 +4,7 @@ use std::{
     io::Error,
     path::PathBuf,
 };
+use sysinfo::Pid;
 
 #[derive(Default)]
 pub struct LockFile {
@@ -17,13 +18,13 @@ impl LockFile {
         }
     }
 
-    pub fn write_pid(&self, pid: i32) -> Result<(), Error> {
+    pub fn write_pid(self, pid: Pid) -> Result<(), Error> {
         fs::write(&self.path, format!("{}", &pid))
     }
 
-    pub fn read_pid(&self) -> Result<i32, Error> {
+    pub fn read_pid(self) -> Result<Pid, Error> {
         let content = fs::read_to_string(&self.path)?;
-        let pid = content.parse::<i32>().unwrap();
+        let pid = content.parse::<Pid>().unwrap();
         Ok(pid)
     }
 }

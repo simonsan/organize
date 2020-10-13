@@ -1,6 +1,5 @@
 use crate::{
     lock_file::LockFile,
-    PROJECT_NAME,
 };
 use std::{
     env,
@@ -16,6 +15,7 @@ use sysinfo::{
     Signal,
     System,
     SystemExt,
+    Pid
 };
 
 #[derive(Default, Clone, Debug)]
@@ -26,7 +26,7 @@ impl Daemon {
         Daemon
     }
 
-    pub fn start(&self) -> Result<i32, Error> {
+    pub fn start(&self) -> Result<Pid, Error> {
         let mut args = env::args();
         let command = args.next().unwrap(); // must've been started through a command
         let args: Vec<_> = args.filter(|arg| arg != "--daemon" && arg != "--replace").collect();
@@ -36,23 +36,21 @@ impl Daemon {
             .expect("couldn't start daemon")
             .id() as i32;
         println!("[1] {}", pid);
-        let lock_file = LockFile::new();
-        lock_file.write_pid(pid)?;
         Ok(pid)
     }
 
     pub fn kill(&self) -> Result<(), Error> {
-        let pid = self.running_instance();
+        let (_, pid) = self.is_running();
         if let Some(pid) = pid {
             let sys = System::new_with_specifics(RefreshKind::with_processes(RefreshKind::new()));
-            sys.get_process(pid).unwrap().kill(Signal::Kill);
+            sys.get_process(pid as i32).unwrap().kill(Signal::Kill);
             Ok(())
         } else {
             Err(Error::new(ErrorKind::Other, "no running instance was found"))
         }
     }
 
-    pub fn restart(&self) -> Result<i32, Error> {
+    pub fn restart(&self) -> Result<Pid, Error> {
         match self.kill() {
             Ok(_) => {
                 let pid = self.start()?;
@@ -65,34 +63,15 @@ impl Daemon {
         }
     }
 
-    pub fn is_runnable(&self) -> bool {
+    pub fn is_running(&self) -> (bool, Option<Pid>) {
         let sys = System::new_with_specifics(RefreshKind::with_processes(RefreshKind::new()));
         let lock_file = LockFile::new();
         let pid = lock_file.read_pid();
         if pid.is_err() {
-            return true;
-        }
-        let process = sys.get_process(pid.unwrap());
-        if process.is_none() {
-            return true;
-        }
-        let processes = sys.get_process_by_name(PROJECT_NAME);
-        processes.len() <= 1
-    }
-
-    fn running_instance(&self) -> Option<i32> {
-        let lock_file = LockFile::new();
-        let sys = System::new_with_specifics(RefreshKind::with_processes(RefreshKind::new()));
-        let pid = lock_file.read_pid();
-        if pid.is_err() {
-            return None;
+            return (false, None);
         }
         let pid = pid.unwrap();
-        let process = sys.get_process(pid);
-        if process.is_some() {
-            Some(pid)
-        } else {
-            None
-        }
+        let process = sys.get_process(pid.clone());
+        (process.is_some(), Some(pid))
     }
 }

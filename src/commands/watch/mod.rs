@@ -25,22 +25,21 @@ use notify::{
     RecursiveMode,
     Watcher as OtherWatcher,
 };
-use std::{
-    io::{
-        Error,
-        ErrorKind,
-    },
-    sync::mpsc::{
-        channel,
-        Receiver,
-    },
-};
+use std::{io::{
+    Error,
+    ErrorKind,
+}, sync::mpsc::{
+    channel,
+    Receiver,
+}, process};
+use crate::lock_file::LockFile;
+use std::convert::TryInto;
 
 pub fn watch(cli: Cli, config: &UserConfig) -> Result<(), Error> {
     let daemon = Daemon::new();
     if cli.subcommand.1.is_present("replace") {
         daemon.restart()?;
-    } else if daemon.is_runnable() {
+    } else if !daemon.is_running().0 {
         if cli.subcommand.1.is_present("daemon") {
             daemon.start()?;
         } else {
@@ -91,7 +90,12 @@ impl Watcher {
                 self.watcher.watch(&folder.path, is_recursive).unwrap();
             }
         }
+        // REGISTER THE PID
+        let pid = process::id();
+        let lock_file = LockFile::new();
+        lock_file.write_pid(pid.try_into().unwrap()).unwrap();
 
+        // PROCESS SIGNALS
         let path2rules = path2rules(&rules);
         loop {
             if let Ok(RawEvent {
