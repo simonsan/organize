@@ -121,19 +121,6 @@ pub fn path2rules(rules: &[Rule]) -> HashMap<&PathBuf, Vec<(&Rule, usize)>> {
     map
 }
 
-pub fn combine_options<T>(lhs: Option<T>, rhs: Option<T>, default: Option<T>) -> Option<T> {
-    if lhs.is_some() && rhs.is_none() {
-        lhs
-    } else if lhs.is_none() && rhs.is_some() {
-        rhs
-    } else if lhs.is_none() && rhs.is_none() {
-        default
-    } else {
-        // both are some
-        rhs
-    }
-}
-
 pub fn create_config_file(path: &Path) -> Result<(), Error> {
     // safe unwrap, dir is created at $HOME or $UserProfile%,
     // so it exists and the user must have permissions
