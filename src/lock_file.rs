@@ -47,7 +47,7 @@ impl LockFile {
             Ok(content) => {
                 let content = content.split(&self.sep);
                 let mut sections = Vec::new();
-                for section in content.into_iter().filter(|x| !x.is_empty() && x != &"\n").into_iter() {
+                for section in content.into_iter().filter(|x| !x.is_empty() && x != &"\n") {
                     let section = section.lines().map(|x| x.to_string()).collect::<Vec<_>>();
                     let pid = section.get(0).unwrap().parse().unwrap();
                     let path = section.get(1).unwrap().parse().unwrap();

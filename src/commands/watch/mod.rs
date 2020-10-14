@@ -37,7 +37,6 @@ use crate::{
     utils::path2rules,
     PROJECT_NAME,
 };
-use crate::cli::config_path;
 
 pub mod daemon;
 
@@ -93,7 +92,7 @@ pub fn watch(cli: Cli, config: UserConfig) -> Result<(), Error> {
             daemon.start();
         } else {
             let mut watcher = Watcher::new();
-            watcher.watch(&cli, &config);
+            watcher.watch(&config);
         }
         // for (pid, path) in processes {
         //     let daemon = Daemon::new(&cli, pid);
@@ -140,7 +139,7 @@ impl Watcher {
         }
     }
 
-    pub fn watch(&mut self, cli: &Cli, config: &UserConfig) {
+    pub fn watch(&mut self, config: &UserConfig) {
         for rule in config.rules.iter() {
             for folder in rule.folders.iter() {
                 let is_recursive = if folder.options.recursive {
@@ -151,7 +150,8 @@ impl Watcher {
                 self.watcher.watch(&folder.path, is_recursive).unwrap();
             }
         }
-        // REGISTER THE PID
+
+        // REGISTER PID
         let pid = process::id();
         let lock_file = LockFile::new();
         lock_file.append(pid.try_into().unwrap(), &config.path).unwrap();

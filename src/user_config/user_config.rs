@@ -2,7 +2,6 @@ use std::{
     fs,
     io::{
         Error,
-        ErrorKind,
     },
 };
 
@@ -14,7 +13,6 @@ use serde::{
 use crate::{
     cli::{
         config_path,
-        default_config,
         Cli,
     },
     user_config::rules::rule::Rule,
