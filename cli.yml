@@ -44,13 +44,15 @@ subcommands:
         - replace:
             requires: daemon
             long: replace
-            takes_value: false
             help: Restarts the running daemon
         - allow_multiple_instances:
             long: allow-multiple-instances
             takes_value: false
             help: Makes it possible to watch for two different configurations
+            conflicts_with: replace
   - logs:
       about: Show logs
   - stop:
       about: Stop watching
+      args:
+        - with_config: *with-config

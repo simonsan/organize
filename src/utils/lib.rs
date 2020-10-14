@@ -10,8 +10,8 @@ mod new_filepath {
 
     use crate::{
         user_config::rules::actions::{
-            ConflictingFileOperation,
             ConflictOption,
+            ConflictingFileOperation,
         },
         utils::new_filepath,
     };

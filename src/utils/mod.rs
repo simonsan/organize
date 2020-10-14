@@ -20,14 +20,14 @@ use yaml_rust::YamlEmitter;
 
 use crate::{
     file::get_stem_and_extension,
-    PROJECT_NAME,
     user_config::rules::{
         actions::{
-            ConflictingFileOperation,
             ConflictOption,
+            ConflictingFileOperation,
         },
         rule::Rule,
     },
+    PROJECT_NAME,
 };
 
 mod lib;

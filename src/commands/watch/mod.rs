@@ -1,11 +1,15 @@
-use std::{io::{
-    Error,
-    ErrorKind,
-}, process, sync::mpsc::{
-    channel,
-    Receiver,
-}};
-use std::convert::TryInto;
+use std::{
+    convert::TryInto,
+    io::{
+        Error,
+        ErrorKind,
+    },
+    process,
+    sync::mpsc::{
+        channel,
+        Receiver,
+    },
+};
 
 use notify::{
     op,
@@ -17,45 +21,100 @@ use notify::{
 };
 
 use crate::{
-    cli::Cli,
+    cli::{
+        default_config,
+        Cli,
+    },
     commands::{
-        run::run,
         watch::daemon::Daemon,
     },
     file::File,
-    PROJECT_NAME,
+    lock_file::LockFile,
     user_config::{
-        rules::{
-            folder::Options,
-        },
+        rules::folder::Options,
         user_config::UserConfig,
     },
     utils::path2rules,
+    PROJECT_NAME,
 };
 use crate::cli::config_path;
-use crate::lock_file::LockFile;
 
 pub mod daemon;
 
 pub fn watch(cli: Cli, config: UserConfig) -> Result<(), Error> {
-    let daemon = Daemon::new(&cli);
+    let lock_file = LockFile::new();
+
     if cli.args.is_present("replace") {
-        daemon.restart()?;
-    } else if !daemon.is_running(config_path(&cli)).0 {
-        if cli.args.is_present("daemon") {
-            daemon.start()?;
-        } else {
-            run(config.rules.to_owned(), false)?;
-            let mut watcher = Watcher::new();
-            watcher.watch(cli, config);
-        }
+        let process = lock_file.find_process_by_path(&config.path);
+        return match process {
+            Some((pid, _)) => {
+                let daemon = Daemon::new(&cli, Some(pid));
+                daemon.restart();
+                Ok(())
+            }
+            None => {
+                // there is no running process
+                if config.path == default_config() {
+                    Err(Error::new(
+                        ErrorKind::Other,
+                        format!(
+                            "no running instance was found for the default configuration. \n\
+                        Run `{} watch` or '{} watch --daemon' to start a new instance with the default config\n\
+                        You can also run '{} watch --daemon --with-config <path>'",
+                            PROJECT_NAME, PROJECT_NAME, PROJECT_NAME
+                        ),
+                    ))
+                } else {
+                    Err(Error::new(
+                        ErrorKind::Other,
+                        format!("no running instance was found for the desired configuration. \n\
+                        Run `{} watch` or '{} watch --daemon --with-config {}' to start a new instance with this configuration",
+                                PROJECT_NAME, PROJECT_NAME, config.path.display()),
+                    ))
+                }
+            }
+        };
     } else {
-        return Err(
-            Error::new(
-                ErrorKind::Other,
-                format!("a running instance already exists. Use `{} stop` to stop this instance or `{} watch --daemon --replace` to restart the daemon", PROJECT_NAME, PROJECT_NAME),
-            )
-        );
+        let processes = lock_file.get_running_watchers();
+        for (_, path) in processes.iter() {
+            if path == &config.path || (path != &config.path && !cli.args.is_present("allow_multiple_instances")) {
+                return Err(
+                    Error::new(
+                        ErrorKind::Other,
+                        format!("a running instance already exists with the desired configuration. \
+                        Use `{} stop --with-config {}` to stop this instance, '{} stop' to stop all instances\
+                        or `{} watch --daemon --replace --with-config {}` to restart the daemon", PROJECT_NAME, &config.path.display(), PROJECT_NAME, PROJECT_NAME, &config.path.display()),
+                    )
+                );
+            }
+        }
+        if cli.args.is_present("daemon") {
+            let daemon = Daemon::new(&cli, None);
+            daemon.start();
+        } else {
+            let mut watcher = Watcher::new();
+            watcher.watch(&cli, &config);
+        }
+        // for (pid, path) in processes {
+        //     let daemon = Daemon::new(&cli, pid);
+        //     if path != config.path &&
+        //     {
+        //         if there is some other daemon running and it's allowed to watch with a different configuration
+        // if cli.args.is_present("daemon") {
+        //     daemon.start();
+        // } else {
+        //     run(config.rules.to_owned(), false)?;
+
+        // }
+        // } else {
+        //     return Err(
+        //         Error::new(
+        //             ErrorKind::Other,
+        //             format!("a running instance already exists. Use `{} stop` to stop this instance or `{} watch --daemon --replace` to restart the daemon", PROJECT_NAME, PROJECT_NAME),
+        //         )
+        //     );
+        // }
+        // }
     }
     Ok(())
 }
@@ -81,7 +140,7 @@ impl Watcher {
         }
     }
 
-    pub fn watch(&mut self, cli: Cli, config: UserConfig) {
+    pub fn watch(&mut self, cli: &Cli, config: &UserConfig) {
         for rule in config.rules.iter() {
             for folder in rule.folders.iter() {
                 let is_recursive = if folder.options.recursive {
@@ -94,18 +153,17 @@ impl Watcher {
         }
         // REGISTER THE PID
         let pid = process::id();
-        let config_path = config_path(&cli);
-        let lock_file = LockFile::new(&config_path);
-        lock_file.write(pid.try_into().unwrap()).unwrap();
+        let lock_file = LockFile::new();
+        lock_file.append(pid.try_into().unwrap(), &config.path).unwrap();
 
         // PROCESS SIGNALS
         let path2rules = path2rules(&config.rules);
         loop {
             if let Ok(RawEvent {
-                          path: Some(abs_path),
-                          op: Ok(op),
-                          ..
-                      }) = self.receiver.recv()
+                path: Some(abs_path),
+                op: Ok(op),
+                ..
+            }) = self.receiver.recv()
             {
                 if let op::CREATE = op {
                     let mut file = File::from(abs_path.as_path());

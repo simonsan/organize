@@ -1,22 +1,115 @@
----
 rules:
   - actions:
-      rename:
-        to: ""
-        if_exists: rename
-        counter_separator: " "
-      echo: ""
-      shell: ""
-      delete: true
-      trash: true
+      move:
+        to: $HOME/Documents/
     filters:
-      regex: ".*"
-    options:
-      ignore:
-        - /home/cabero/Downloads/ignored_dir
-      watch: true
+      extensions: 
+        - pdf
+        - docx
+        - odt
+        - djvu
+        - mobi
+        - epub
     folders:
-      - path: ""
-        options:
-          watch: false
-          
+      - path: $HOME/Downloads/
+      - path: $HOME
+      - path: $HOME/Desktop/
+
+  #PICTURES
+  - actions:
+      move:
+        to: $HOME/Pictures/
+    filters:
+      extensions:
+        - jpg
+        - jpeg
+        - svg
+    folders:
+      - path: $HOME/Downloads/
+
+  #KEEP THE DESKTOP CLEAN
+  - actions:
+      move:
+        to: $HOME
+    filters:
+      regex: .*
+    folders:
+      - path: $HOME/Desktop/
+
+  #PYTHON FILES
+  - actions:
+      move:
+        to: $HOME/Code/Python/
+    filters:
+      extensions:
+        - py
+        - pyx
+        - pyc
+    folders:
+      - path: $HOME
+      - path: $HOME/Documents/
+      - path: $HOME/Downloads/
+
+  #RUST FILES
+  - actions:
+      move:
+        to: $HOME/Code/Rust/
+    filters:
+      extensions:
+        - rs
+    folders:
+      - path: $HOME
+      - path: $HOME/Documents/
+      - path: $HOME/Downloads/
+
+  #WEBDEV FILES
+  - actions:
+      move:
+        to: $HOME/Code/Web-Development/
+    filters:
+      extensions:
+        - ts
+        - tsx
+        - js
+        - jsx
+        - css
+        - html
+        - scss
+    folders:
+      - path: $HOME
+      - path: $HOME/Documents/
+      - path: $HOME/Downloads/
+
+  #GO FILES
+  - actions:
+      move:
+        to: $HOME/Code/Go/src/
+    filters:
+      extensions:
+        - go
+    folders:
+      - path: $HOME
+      - path: $HOME/Documents/
+      - path: $HOME/Downloads/
+
+  #SHELL FILES
+  - actions:
+      move:
+        to: $HOME/Code/Bash/
+    filters:
+      extensions:
+        - sh
+    folders:
+      - path: $HOME
+      - path: $HOME/Documents/
+      - path: $HOME/Downloads/
+
+  #TORRENT FILES
+  - actions:
+      move:
+        to: $HOME/Downloads/Torrents/
+    filters:
+      extensions:
+        - torrent
+    folders:
+      - path: $HOME/Downloads/

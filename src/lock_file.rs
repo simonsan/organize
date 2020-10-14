@@ -1,17 +1,18 @@
 use std::{
     env::temp_dir,
     fs,
+    fs::OpenOptions,
     io::{
-        Error,
         prelude::*,
+        Error,
     },
     path::{
         Path,
         PathBuf,
     },
 };
-use std::fs::OpenOptions;
 
+use crate::{cli::Cli, commands::watch::daemon::Daemon, PROJECT_NAME};
 use sysinfo::Pid;
 
 pub struct LockFile {
@@ -22,13 +23,13 @@ pub struct LockFile {
 impl LockFile {
     pub fn new() -> Self {
         LockFile {
-            path: temp_dir().join("organizer.lock"),
+            path: temp_dir().join(format!("{}.lock", PROJECT_NAME)),
             sep: "---".to_string(),
         }
     }
 
-    pub fn write(self, pid: Pid, config: &Path) -> Result<(), Error> {
-        fs::write(&self.path, format!("{}\n{}\n{}", pid, config.display(), self.sep))
+    fn section(&self, pid: &Pid, config: &Path) -> String {
+        format!("{}\n{}\n{}", pid, config.display(), self.sep)
     }
 
     pub fn append(self, pid: Pid, config: &Path) -> Result<(), Error> {
@@ -36,16 +37,42 @@ impl LockFile {
         writeln!(f, "{}\n{}\n{}", pid, config.display(), self.sep)
     }
 
-    pub fn get_sections(&self) -> Result<Vec<(Pid, PathBuf)>, Error> {
-        let content = fs::read_to_string(&self.path)?;
-        let content = content.split(&self.sep);
-        let mut sections = Vec::new();
-        for section in content.into_iter() {
-            let section: Vec<String> = section.lines().map(|x| x.to_string()).collect();
-            let pid = section.get(0).unwrap().parse().unwrap();
-            let path = section.get(1).unwrap().parse().unwrap();
-            sections.push((pid, path))
+    pub fn get_running_watchers(&self) -> Vec<(Pid, PathBuf)> {
+        let content = fs::read_to_string(&self.path);
+        match content {
+            Ok(content) => {
+                let content = content.split(&self.sep);
+                let mut sections = Vec::new();
+                for section in content.into_iter().filter(|x| !x.is_empty()) {
+                    let section = section.lines().map(|x| x.to_string()).collect::<Vec<_>>();
+                    let pid = section.get(0).unwrap().parse().unwrap();
+                    let path = section.get(1).unwrap().parse().unwrap();
+                    sections.push((pid, path))
+                }
+                sections
+            }
+            Err(_) => Vec::new(),
         }
-        Ok(sections)
+    }
+
+    pub fn clear_dead_processes(&self, cli: &Cli) -> Result<(), Error> {
+        let mut running_processes = String::new();
+        for (pid, config) in self.get_running_watchers().iter() {
+            let daemon = Daemon::new(cli, Some(*pid));
+            if daemon.is_running() {
+                running_processes.push_str(&self.section(pid, config))
+            }
+        }
+        fs::write(&self.path, running_processes);
+        Ok(())
+    }
+
+    pub fn find_process_by_path(&self, path: &Path) -> Option<(Pid, PathBuf)> {
+        self.get_running_watchers()
+            .iter()
+            .filter(|(pid, config)| config == &path)
+            .collect::<Vec<_>>()
+            .first()
+            .map(|(pid, config)| (pid.clone(), config.clone()))
     }
 }

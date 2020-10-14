@@ -13,13 +13,15 @@ use serde::{
 
 use crate::{
     cli::{
-        Cli,
         config_path,
+        default_config,
+        Cli,
     },
     user_config::rules::rule::Rule,
     utils,
     utils::expand_env_vars,
 };
+use std::path::PathBuf;
 
 /// Represents the user's configuration file
 /// ### Fields
@@ -27,6 +29,8 @@ use crate::{
 /// * `rules`: a list of parsed rules defined by the user
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct UserConfig {
+    #[serde(default = "default_config")]
+    pub path: PathBuf,
     pub rules: Vec<Rule>,
 }
 
@@ -48,6 +52,7 @@ impl UserConfig {
 
         let content = fs::read_to_string(&path)?;
         let mut config: Self = serde_yaml::from_str(&content).expect("could not parse config file");
+        // config.path = path;
 
         for rule in config.rules.iter_mut() {
             for folder in rule.folders.iter_mut() {
@@ -56,43 +61,5 @@ impl UserConfig {
         }
 
         Ok(config)
-    }
-
-    /// Validates the user's config.
-    /// ### Errors
-    /// This function returns an error in the following cases:
-    /// - An empty string was provided as the path to a folder
-    /// - The path supplied to a folder does not exist
-    /// - The path supplied to a folder is not a directory
-    /// - No path was supplied to a folder
-    pub fn validate(self) -> Result<Self, Error> {
-        for (i, rule) in self.rules.iter().enumerate() {
-            rule.actions.check_conflicting_actions()?;
-            for (j, folder) in rule.folders.iter().enumerate() {
-                if folder.path.display().to_string().eq("") {
-                    return Err(Error::new(
-                        ErrorKind::InvalidData,
-                        format!(
-                            "path defined in field 'path' cannot be an empty value (rule {}, folder {})",
-                            j, i
-                        ),
-                    ));
-                } else if !folder.path.exists() {
-                    return Err(Error::new(
-                        ErrorKind::InvalidData,
-                        format!("path defined in field 'path' does not exist (rule {}, folder {})", j, i),
-                    ));
-                } else if !folder.path.is_dir() {
-                    return Err(Error::new(
-                        ErrorKind::InvalidData,
-                        format!(
-                            "path defined in field 'path' is not a directory (rule {}, folder {})",
-                            j, i
-                        ),
-                    ));
-                }
-            }
-        }
-        Ok(self)
     }
 }

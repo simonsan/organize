@@ -1,13 +1,16 @@
 use std::{
     env,
-    io::Error,
+    io::{
+        Error,
+        ErrorKind
+    },
+    path::PathBuf,
 };
-use std::path::PathBuf;
 
 use clap::{
+    load_yaml,
     App,
     ArgMatches,
-    load_yaml,
 };
 use colored::Colorize;
 use dirs::home_dir;
@@ -16,17 +19,18 @@ use crate::{
     commands::{
         config::edit,
         run::run,
-        SubCommands,
         watch::{
             daemon::Daemon,
             watch,
         },
+        SubCommands,
     },
-    PROJECT_NAME,
+    lock_file::LockFile,
     user_config::{
         rules::folder::Options,
         user_config::UserConfig,
     },
+    PROJECT_NAME,
 };
 
 pub fn config_directory() -> PathBuf {
@@ -35,10 +39,14 @@ pub fn config_directory() -> PathBuf {
         .join(format!(".{}", PROJECT_NAME))
 }
 
+pub fn default_config() -> PathBuf {
+    config_directory().join("config.yml")
+}
+
 pub fn config_path(cli: &Cli) -> PathBuf {
     match cli.args.value_of("with_config") {
         Some(path) => PathBuf::from(path),
-        None => config_directory().join("config.yml"),
+        None => default_config(),
     }
 }
 
@@ -80,12 +88,19 @@ impl Cli {
     }
 
     pub fn run(self) -> Result<(), Error> {
+
         match self.subcommand {
             SubCommands::Config => {
                 if self.args.is_present("show_path") {
                     println!("{}", config_path(&self).display());
                 } else if self.args.is_present("show_defaults") {
-                    let Options { recursive, watch, ignore, suggestions, hidden_files } = Options::default();
+                    let Options {
+                        recursive,
+                        watch,
+                        ignore,
+                        suggestions,
+                        hidden_files,
+                    } = Options::default();
                     println!("recursive: {}", recursive.to_string().purple());
                     println!("watch: {}", watch.to_string().purple());
                     println!("suggestions: {}", suggestions.to_string().purple());
@@ -100,19 +115,40 @@ impl Cli {
                     edit(path)?;
                 }
             }
-            SubCommands::Run => {
+            SubCommands::Run | SubCommands::Watch => {
                 let config = UserConfig::new(&self)?;
-                run(config.rules, false)?
+                run(&config.rules, false)?;
+                if self.subcommand == SubCommands::Watch {
+                    watch(self, config)?
+                }
             }
             SubCommands::Suggest => todo!(),
-            SubCommands::Watch => {
-                let config = UserConfig::new(&self)?;
-                watch(self, config)?
-            }
             SubCommands::Logs => todo!(),
             SubCommands::Stop => {
-                let daemon = Daemon::new(&self);
-                daemon.kill()?
+                let lock_file = LockFile::new();
+                let path = config_path(&self);
+                if self.args.is_present("with_config") {
+                    match lock_file.find_process_by_path(&path) {
+                        Some((pid, _)) => {
+                            let daemon = Daemon::new(&self, Some(pid));
+                            daemon.kill();
+                        }
+                        None => {
+                            return Err(Error::new(
+                                ErrorKind::Other,
+                                "no instance was found with the desired configuration\n\
+                            Run '{} stop' to stop all instances or rerun the last command with a different path",
+                            ))
+                        }
+                    }
+                } else {
+                    for (pid, _) in lock_file.get_running_watchers() {
+                        let daemon = Daemon::new(&self, Some(pid));
+                        if daemon.is_running() {
+                            daemon.kill()
+                        }
+                    }
+                }
             }
         };
         Ok(())
