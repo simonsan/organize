@@ -28,15 +28,13 @@ use crate::{
 pub struct Daemon<'a> {
     cli: &'a Cli,
     pid: Pid,
-    config: &'a Path,
 }
 
 impl<'a> Daemon<'a> {
-    pub fn new(cli: &'a Cli, pid: Pid, config: &'a Path) -> Self {
+    pub fn new(cli: &'a Cli, pid: Pid) -> Self {
         Daemon {
             cli,
             pid,
-            config,
         }
     }
 
@@ -54,7 +52,7 @@ impl<'a> Daemon<'a> {
 
     pub fn kill(&self) {
         let sys = System::new_with_specifics(RefreshKind::with_processes(RefreshKind::new()));
-        sys.get_process(pid as i32).unwrap().kill(Signal::Kill);
+        sys.get_process(self.pid as i32).unwrap().kill(Signal::Kill);
     }
 
     pub fn restart(&self) {
@@ -62,15 +60,8 @@ impl<'a> Daemon<'a> {
         self.start();
     }
 
-    pub fn is_running(&self, config: PathBuf) -> (bool, Option<Pid>) {
-        let sys = System::new_with_specifics(RefreshKind::with_processes(RefreshKind::new()));
-        let lock_file = LockFile::new(&config);
-        match lock_file.get_pid_and_config() {
-            Ok((pid, _)) => {
-                let process = sys.get_process(pid.clone());
-                (process.is_some(), Some(pid))
-            },
-            Err(_) => (false, None)
-        }
+    pub fn is_running(&self) -> bool {
+        let process = sys.get_process(&self.pid);
+        process.is_some()
     }
 }
