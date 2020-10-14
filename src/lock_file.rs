@@ -14,6 +14,7 @@ use std::{
 
 use crate::{cli::Cli, commands::watch::daemon::Daemon, PROJECT_NAME};
 use sysinfo::Pid;
+use std::fs::File;
 
 pub struct LockFile {
     path: PathBuf,
@@ -33,6 +34,9 @@ impl LockFile {
     }
 
     pub fn append(self, pid: Pid, config: &Path) -> Result<(), Error> {
+        if !self.path.exists() {
+            File::create(&self.path)?;
+        }
         let mut f = OpenOptions::new().append(true).open(self.path)?;
         writeln!(f, "{}\n{}\n{}", pid, config.display(), self.sep)
     }
@@ -43,7 +47,7 @@ impl LockFile {
             Ok(content) => {
                 let content = content.split(&self.sep);
                 let mut sections = Vec::new();
-                for section in content.into_iter().filter(|x| !x.is_empty()) {
+                for section in content.into_iter().filter(|x| !x.is_empty() && x != &"\n").into_iter() {
                     let section = section.lines().map(|x| x.to_string()).collect::<Vec<_>>();
                     let pid = section.get(0).unwrap().parse().unwrap();
                     let path = section.get(1).unwrap().parse().unwrap();
@@ -63,14 +67,14 @@ impl LockFile {
                 running_processes.push_str(&self.section(pid, config))
             }
         }
-        fs::write(&self.path, running_processes);
+        fs::write(&self.path, running_processes)?;
         Ok(())
     }
 
     pub fn find_process_by_path(&self, path: &Path) -> Option<(Pid, PathBuf)> {
         self.get_running_watchers()
             .iter()
-            .filter(|(pid, config)| config == &path)
+            .filter(|(_, config)| config == &path)
             .collect::<Vec<_>>()
             .first()
             .map(|(pid, config)| (pid.clone(), config.clone()))
