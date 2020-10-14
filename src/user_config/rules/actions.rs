@@ -155,6 +155,15 @@ impl From<&str> for ConflictingFileOperation {
     }
 }
 
+impl From<PathBuf> for ConflictingFileOperation {
+    fn from(path: PathBuf) -> Self {
+        let mut op = ConflictingFileOperation::default();
+        op.to = path;
+        op
+
+    }
+}
+
 impl Default for ConflictingFileOperation {
     fn default() -> Self {
         Self {
