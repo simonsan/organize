@@ -1,22 +1,22 @@
-use crate::{
-    config_path,
-    user_config::rules::rule::Rule,
-    utils,
-    utils::expand_env_vars,
-};
-use clap::ArgMatches;
-use serde::{
-    Deserialize,
-    Serialize,
-};
 use std::{
     fs,
     io::{
         Error,
         ErrorKind,
     },
-    path::PathBuf,
 };
+
+use serde::{
+    Deserialize,
+    Serialize,
+};
+
+use crate::{
+    user_config::rules::rule::Rule,
+    utils,
+    utils::expand_env_vars,
+};
+use crate::cli::{Cli, config_path};
 
 /// Represents the user's configuration file
 /// ### Fields
@@ -36,11 +36,8 @@ impl UserConfig {
     /// ### Errors
     /// This constructor fails in the following cases:
     /// - The configuration file does not exist
-    pub fn new(args: &ArgMatches) -> Result<Self, Error> {
-        let path = match args.value_of("with_config") {
-            Some(path) => PathBuf::from(path),
-            None => config_path(),
-        };
+    pub fn new(cli: &Cli) -> Result<Self, Error> {
+        let path = config_path(cli);
 
         if !path.exists() {
             utils::create_config_file(&path)?;

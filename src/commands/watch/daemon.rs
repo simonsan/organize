@@ -1,6 +1,3 @@
-use crate::{
-    lock_file::LockFile,
-};
 use std::{
     env,
     io::{
@@ -9,21 +6,32 @@ use std::{
     },
     process::Command,
 };
+use std::path::PathBuf;
+
 use sysinfo::{
+    Pid,
     ProcessExt,
     RefreshKind,
     Signal,
     System,
     SystemExt,
-    Pid
 };
 
-#[derive(Default, Clone, Debug)]
-pub struct Daemon;
+use crate::{
+    lock_file::LockFile,
+};
+use crate::cli::{Cli, config_path};
 
-impl Daemon {
-    pub fn new() -> Self {
-        Daemon
+#[derive(Clone, Debug)]
+pub struct Daemon<'a> {
+    cli: &'a Cli
+}
+
+impl<'a> Daemon<'a> {
+    pub fn new(cli: &'a Cli) -> Self {
+        Daemon {
+            cli
+        }
     }
 
     pub fn start(&self) -> Result<Pid, Error> {
@@ -40,7 +48,7 @@ impl Daemon {
     }
 
     pub fn kill(&self) -> Result<(), Error> {
-        let (_, pid) = self.is_running();
+        let (_, pid) = self.is_running(config_path(self.cli));
         if let Some(pid) = pid {
             let sys = System::new_with_specifics(RefreshKind::with_processes(RefreshKind::new()));
             sys.get_process(pid as i32).unwrap().kill(Signal::Kill);
@@ -63,15 +71,15 @@ impl Daemon {
         }
     }
 
-    pub fn is_running(&self) -> (bool, Option<Pid>) {
+    pub fn is_running(&self, config: PathBuf) -> (bool, Option<Pid>) {
         let sys = System::new_with_specifics(RefreshKind::with_processes(RefreshKind::new()));
-        let lock_file = LockFile::new();
-        let pid = lock_file.read_pid();
-        if pid.is_err() {
-            return (false, None);
+        let lock_file = LockFile::new(&config);
+        match lock_file.get_pid_and_config() {
+            Ok((pid, _)) => {
+                let process = sys.get_process(pid.clone());
+                (process.is_some(), Some(pid))
+            },
+            Err(_) => (false, None)
         }
-        let pid = pid.unwrap();
-        let process = sys.get_process(pid.clone());
-        (process.is_some(), Some(pid))
     }
 }

@@ -1,22 +1,12 @@
-pub mod daemon;
+use std::{io::{
+    Error,
+    ErrorKind,
+}, process, sync::mpsc::{
+    channel,
+    Receiver,
+}};
+use std::convert::TryInto;
 
-use crate::{
-    cli::Cli,
-    file::File,
-    commands::{
-        run::run,
-        watch::daemon::Daemon,
-    },
-    user_config::{
-        rules::{
-            folder::Options,
-            rule::Rule,
-        },
-        user_config::UserConfig,
-    },
-    utils::path2rules,
-    PROJECT_NAME,
-};
 use notify::{
     op,
     raw_watcher,
@@ -25,35 +15,47 @@ use notify::{
     RecursiveMode,
     Watcher as OtherWatcher,
 };
-use std::{io::{
-    Error,
-    ErrorKind,
-}, sync::mpsc::{
-    channel,
-    Receiver,
-}, process};
-use crate::lock_file::LockFile;
-use std::convert::TryInto;
 
-pub fn watch(cli: Cli, config: &UserConfig) -> Result<(), Error> {
-    let daemon = Daemon::new();
-    if cli.subcommand.1.is_present("replace") {
+use crate::{
+    cli::Cli,
+    commands::{
+        run::run,
+        watch::daemon::Daemon,
+    },
+    file::File,
+    PROJECT_NAME,
+    user_config::{
+        rules::{
+            folder::Options,
+        },
+        user_config::UserConfig,
+    },
+    utils::path2rules,
+};
+use crate::cli::config_path;
+use crate::lock_file::LockFile;
+
+pub mod daemon;
+
+pub fn watch(cli: Cli, config: UserConfig) -> Result<(), Error> {
+    let daemon = Daemon::new(&cli);
+    if cli.args.is_present("replace") {
         daemon.restart()?;
-    } else if !daemon.is_running().0 {
-        if cli.subcommand.1.is_present("daemon") {
+    } else if !daemon.is_running(config_path(&cli)).0 {
+        if cli.args.is_present("daemon") {
             daemon.start()?;
         } else {
             run(config.rules.to_owned(), false)?;
             let mut watcher = Watcher::new();
-            watcher.watch(&config.rules);
+            watcher.watch(cli, config);
         }
     } else {
         return Err(
-                Error::new(
-                    ErrorKind::Other,
-                    format!("a running instance already exists. Use `{} stop` to stop this instance or `{} watch --daemon --replace` to restart the daemon", PROJECT_NAME, PROJECT_NAME)
-                )
-            );
+            Error::new(
+                ErrorKind::Other,
+                format!("a running instance already exists. Use `{} stop` to stop this instance or `{} watch --daemon --replace` to restart the daemon", PROJECT_NAME, PROJECT_NAME),
+            )
+        );
     }
     Ok(())
 }
@@ -79,8 +81,8 @@ impl Watcher {
         }
     }
 
-    pub fn watch(&mut self, rules: &[Rule]) {
-        for rule in rules.iter() {
+    pub fn watch(&mut self, cli: Cli, config: UserConfig) {
+        for rule in config.rules.iter() {
             for folder in rule.folders.iter() {
                 let is_recursive = if folder.options.recursive {
                     RecursiveMode::Recursive
@@ -92,17 +94,18 @@ impl Watcher {
         }
         // REGISTER THE PID
         let pid = process::id();
-        let lock_file = LockFile::new();
-        lock_file.write_pid(pid.try_into().unwrap()).unwrap();
+        let config_path = config_path(&cli);
+        let lock_file = LockFile::new(&config_path);
+        lock_file.write(pid.try_into().unwrap()).unwrap();
 
         // PROCESS SIGNALS
-        let path2rules = path2rules(&rules);
+        let path2rules = path2rules(&config.rules);
         loop {
             if let Ok(RawEvent {
-                path: Some(abs_path),
-                op: Ok(op),
-                ..
-            }) = self.receiver.recv()
+                          path: Some(abs_path),
+                          op: Ok(op),
+                          ..
+                      }) = self.receiver.recv()
             {
                 if let op::CREATE = op {
                     let mut file = File::from(abs_path.as_path());
