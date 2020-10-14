@@ -1,15 +1,3 @@
-mod lib;
-
-use crate::{
-    file::get_stem_and_extension,
-    user_config::rules::{
-        actions::ConflictOption,
-        rule::Rule,
-    },
-    PROJECT_NAME,
-};
-use clap::load_yaml;
-use colored::Colorize;
 use std::{
     collections::HashMap,
     env,
@@ -25,8 +13,24 @@ use std::{
         PathBuf,
     },
 };
+
+use clap::load_yaml;
+use colored::Colorize;
 use yaml_rust::YamlEmitter;
-use crate::user_config::rules::actions::ConflictingFileOperation;
+
+use crate::{
+    file::get_stem_and_extension,
+    PROJECT_NAME,
+    user_config::rules::{
+        actions::{
+            ConflictingFileOperation,
+            ConflictOption,
+        },
+        rule::Rule,
+    },
+};
+
+mod lib;
 
 /// Helper function for the 'rename' and 'move' actions.
 /// It computes the appropriate new path for the file wanting to be renamed or moved.
@@ -39,16 +43,10 @@ use crate::user_config::rules::actions::ConflictingFileOperation;
 /// # Errors
 /// This function will return an error in the following case:
 /// * The target path exists and `conflict_option` is set to skip
-pub fn new_filepath(
-    from: &Path,
-    action: &ConflictingFileOperation,
-    watching: bool,
-) -> Result<PathBuf, Error> {
+pub fn new_filepath(from: &Path, action: &ConflictingFileOperation, watching: bool) -> Result<PathBuf, Error> {
     if action.to.exists() {
         return match action.if_exists {
-            ConflictOption::Skip => {
-                Ok(from.to_path_buf())
-            },
+            ConflictOption::Skip => Ok(from.to_path_buf()),
             ConflictOption::Rename => {
                 let mut new_path = action.to.to_path_buf();
                 let (stem, extension) = if action.to.is_dir() {

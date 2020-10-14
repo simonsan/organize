@@ -1,11 +1,3 @@
-use crate::{
-    file::File,
-    utils::new_filepath,
-};
-use serde::{
-    Deserialize,
-    Serialize,
-};
 use std::{
     fs,
     io::{
@@ -16,6 +8,16 @@ use std::{
         Path,
         PathBuf,
     },
+};
+
+use serde::{
+    Deserialize,
+    Serialize,
+};
+
+use crate::{
+    file::File,
+    utils::new_filepath,
 };
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -117,11 +119,7 @@ impl Actions {
             fs::create_dir_all(&r#move.to)?;
         }
 
-        let dst = new_filepath(
-            from,
-            &mut r#move,
-            watching,
-        )?;
+        let dst = new_filepath(from, &mut r#move, watching)?;
 
         std::fs::rename(from, dst.as_path()).expect("couldn't rename file");
         Ok(dst)

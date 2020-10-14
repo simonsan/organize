@@ -1,21 +1,17 @@
-use std::{
-    io::Error,
-};
+use std::io::Error;
 
 use clap::crate_name;
 
 use crate::cli::Cli;
 
 pub mod cli;
+pub mod commands;
 pub mod file;
 pub mod lock_file;
-pub mod commands;
 pub mod user_config;
 pub mod utils;
 
 static PROJECT_NAME: &str = crate_name!();
-
-
 
 fn main() -> Result<(), Error> {
     let cli = Cli::new();

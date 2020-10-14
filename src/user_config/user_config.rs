@@ -12,11 +12,14 @@ use serde::{
 };
 
 use crate::{
+    cli::{
+        Cli,
+        config_path,
+    },
     user_config::rules::rule::Rule,
     utils,
     utils::expand_env_vars,
 };
-use crate::cli::{Cli, config_path};
 
 /// Represents the user's configuration file
 /// ### Fields
