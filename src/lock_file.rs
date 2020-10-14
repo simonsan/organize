@@ -33,7 +33,7 @@ impl LockFile {
     }
 
     pub fn append(self, pid: Pid, config: &Path) -> Result<(), Error> {
-        let mut f = OpenOptions::new().append(true).open(config)?;
+        let mut f = OpenOptions::new().append(true).open(self.path)?;
         writeln!(f, "{}\n{}\n{}", pid, config.display(), self.sep)
     }
 

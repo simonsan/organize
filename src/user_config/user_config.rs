@@ -29,7 +29,7 @@ use std::path::PathBuf;
 /// * `rules`: a list of parsed rules defined by the user
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct UserConfig {
-    #[serde(default = "default_config")]
+    #[serde(skip)]
     pub path: PathBuf,
     pub rules: Vec<Rule>,
 }
@@ -52,7 +52,7 @@ impl UserConfig {
 
         let content = fs::read_to_string(&path)?;
         let mut config: Self = serde_yaml::from_str(&content).expect("could not parse config file");
-        // config.path = path;
+        config.path = path;
 
         for rule in config.rules.iter_mut() {
             for folder in rule.folders.iter_mut() {
