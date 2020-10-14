@@ -6,7 +6,7 @@ use std::{
     },
     process::Command,
 };
-use std::path::PathBuf;
+use std::path::Path;
 
 use sysinfo::{
     Pid,
@@ -18,23 +18,29 @@ use sysinfo::{
 };
 
 use crate::{
-    lock_file::LockFile,
+    cli::{
+        config_path,
+        Cli,
+    },
 };
-use crate::cli::{Cli, config_path};
 
 #[derive(Clone, Debug)]
 pub struct Daemon<'a> {
-    cli: &'a Cli
+    cli: &'a Cli,
+    pid: Pid,
+    config: &'a Path,
 }
 
 impl<'a> Daemon<'a> {
-    pub fn new(cli: &'a Cli) -> Self {
+    pub fn new(cli: &'a Cli, pid: Pid, config: &'a Path) -> Self {
         Daemon {
-            cli
+            cli,
+            pid,
+            config,
         }
     }
 
-    pub fn start(&self) -> Result<Pid, Error> {
+    pub fn start(&self) {
         let mut args = env::args();
         let command = args.next().unwrap(); // must've been started through a command
         let args: Vec<_> = args.filter(|arg| arg != "--daemon" && arg != "--replace").collect();
@@ -44,31 +50,16 @@ impl<'a> Daemon<'a> {
             .expect("couldn't start daemon")
             .id() as i32;
         println!("[1] {}", pid);
-        Ok(pid)
     }
 
-    pub fn kill(&self) -> Result<(), Error> {
-        let (_, pid) = self.is_running(config_path(self.cli));
-        if let Some(pid) = pid {
-            let sys = System::new_with_specifics(RefreshKind::with_processes(RefreshKind::new()));
-            sys.get_process(pid as i32).unwrap().kill(Signal::Kill);
-            Ok(())
-        } else {
-            Err(Error::new(ErrorKind::Other, "no running instance was found"))
-        }
+    pub fn kill(&self) {
+        let sys = System::new_with_specifics(RefreshKind::with_processes(RefreshKind::new()));
+        sys.get_process(pid as i32).unwrap().kill(Signal::Kill);
     }
 
-    pub fn restart(&self) -> Result<Pid, Error> {
-        match self.kill() {
-            Ok(_) => {
-                let pid = self.start()?;
-                Ok(pid)
-            }
-            Err(_) => Err(Error::new(
-                ErrorKind::Other,
-                "no running instance was found\nrun without --replace to start a new instance",
-            )),
-        }
+    pub fn restart(&self) {
+        self.kill();
+        self.start();
     }
 
     pub fn is_running(&self, config: PathBuf) -> (bool, Option<Pid>) {
