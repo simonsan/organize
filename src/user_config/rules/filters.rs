@@ -22,9 +22,16 @@ impl Default for Filters {
 }
 
 #[allow(dead_code)]
+#[derive(Deserialize, Serialize, Debug, Clone, Default)]
 struct Filename {
-    startswith: Option<String>,
-    endswith: Option<String>,
-    contains: Option<String>,
-    case_sensitive: Option<bool>,
+    #[serde(default)]
+    startswith: String,
+    #[serde(default)]
+    endswith: String,
+    #[serde(default)]
+    contains: String,
+    #[serde(default)]
+    case_sensitive: bool,
 }
+
+
