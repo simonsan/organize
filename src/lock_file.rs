@@ -37,25 +37,29 @@ impl LockFile {
         if !self.path.exists() {
             File::create(&self.path)?;
         }
-        let mut f = OpenOptions::new().append(true).open(self.path)?;
-        writeln!(f, "{}\n{}\n{}\n", pid, config.display(), self.sep)
+        let mut f = OpenOptions::new().append(true).open(&self.path)?;
+        writeln!(f, "{}", self.section(&pid, config))
     }
 
     pub fn get_running_watchers(&self) -> Vec<(Pid, PathBuf)> {
         let content = fs::read_to_string(&self.path);
         match content {
             Ok(content) => {
-                let content = content.split(&self.sep);
-                let mut sections = Vec::new();
-                for section in content.into_iter().filter(|x| !x.is_empty() && x != &"\n") {
-                    let section = section.lines().map(|x| x.to_string()).collect::<Vec<_>>();
-                    let pid = section.get(0).unwrap().parse().unwrap();
-                    let path = section.get(1).unwrap().parse().unwrap();
-                    sections.push((pid, path))
+                if !content.is_empty() {
+                    let content = content.trim().split(&self.sep);
+                    let mut sections = Vec::new();
+                    for section in content.into_iter().filter(|x| !x.is_empty() && x != &"\n") {
+                        let section = section.lines().map(|x| x.to_string()).filter(|x| !x.is_empty()).collect::<Vec<_>>();
+                        let pid = section.first().unwrap().parse().unwrap();
+                        let path = section.get(1).unwrap().parse().unwrap();
+                        sections.push((pid, path))
+                    }
+                    sections
+                } else {
+                    Vec::new()
                 }
-                sections
             }
-            Err(_) => Vec::new(),
+            Err(_) => Vec::new()
         }
     }
 
@@ -64,9 +68,11 @@ impl LockFile {
         for (pid, config) in self.get_running_watchers().iter() {
             let daemon = Daemon::new(cli, Some(*pid));
             if daemon.is_running() {
-                running_processes.push_str(&self.section(pid, config))
+                running_processes.push_str(&self.section(pid, config));
+                running_processes.push_str("\n");
             }
         }
+
         fs::write(&self.path, running_processes)?;
         Ok(())
     }
