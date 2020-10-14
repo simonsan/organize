@@ -76,16 +76,25 @@ pub fn watch(cli: Cli, config: UserConfig) -> Result<(), Error> {
     } else {
         let processes = lock_file.get_running_watchers();
         for (_, path) in processes.iter() {
-            if path == &config.path || (path != &config.path && !cli.args.is_present("allow_multiple_instances")) {
+            if path == &config.path {
                 return Err(
                     Error::new(
                         ErrorKind::Other,
                         format!("a running instance already exists with the desired configuration. \
-                        Use `{} stop --with-config {}` to stop this instance, '{} stop' to stop all instances\
+                        Use `{} stop --with-config {}` to stop this instance, '{} stop' to stop all instances \
                         or `{} watch --daemon --replace --with-config {}` to restart the daemon", PROJECT_NAME, &config.path.display(), PROJECT_NAME, PROJECT_NAME, &config.path.display()),
                     )
                 );
+            } else if path != &config.path && !cli.args.is_present("allow_multiple_instances") {
+                return Err(
+                    Error::new(
+                        ErrorKind::Other,
+                        format!("an instance is already running with config {} \n\
+                        make sure that new the configuration doesn't overlap with the existing one and then run again with --allow-multiple-instances", path.canonicalize()?.display()),
+                    )
+                );
             }
+        } {
         }
         if cli.args.is_present("daemon") {
             let daemon = Daemon::new(&cli, None);

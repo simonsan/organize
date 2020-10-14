@@ -45,7 +45,7 @@ pub fn default_config() -> PathBuf {
 
 pub fn config_path(cli: &Cli) -> PathBuf {
     match cli.args.value_of("with_config") {
-        Some(path) => PathBuf::from(path),
+        Some(path) => PathBuf::from(path).canonicalize().expect("invalid path"),
         None => default_config(),
     }
 }
@@ -116,6 +116,8 @@ impl Cli {
                 }
             }
             SubCommands::Run | SubCommands::Watch => {
+                let lock_file = LockFile::new();
+                lock_file.clear_dead_processes(&self)?;
                 let config = UserConfig::new(&self)?;
                 run(&config.rules, false)?;
                 if self.subcommand == SubCommands::Watch {
@@ -126,6 +128,7 @@ impl Cli {
             SubCommands::Logs => todo!(),
             SubCommands::Stop => {
                 let lock_file = LockFile::new();
+                lock_file.clear_dead_processes(&self)?;
                 let path = config_path(&self);
                 if self.args.is_present("with_config") {
                     match lock_file.find_process_by_path(&path) {
