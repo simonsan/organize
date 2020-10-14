@@ -38,7 +38,7 @@ impl LockFile {
             File::create(&self.path)?;
         }
         let mut f = OpenOptions::new().append(true).open(self.path)?;
-        writeln!(f, "{}\n{}\n{}", pid, config.display(), self.sep)
+        writeln!(f, "{}\n{}\n{}\n", pid, config.display(), self.sep)
     }
 
     pub fn get_running_watchers(&self) -> Vec<(Pid, PathBuf)> {
