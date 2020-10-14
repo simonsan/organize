@@ -11,8 +11,8 @@ mod new_filepath {
 
     use crate::{
         user_config::rules::actions::{
-            ConflictOption,
             ConflictingFileOperation,
+            ConflictOption,
         },
         utils::new_filepath,
     };
@@ -20,7 +20,9 @@ mod new_filepath {
     static WATCHING: bool = false;
 
     fn project_dir() -> PathBuf {
-        // cargo test must be run from the project directory, where Cargo.toml is
+        // 'cargo test' must be run from the project directory, where Cargo.toml is
+        // even if you run it from some other folder inside the project
+        // 'cargo test' will move to the project root
         env::current_dir().unwrap().to_path_buf()
     }
 
@@ -144,8 +146,9 @@ mod expand_env_var {
         },
     };
 
-    use crate::utils::expand_env_vars;
     use dirs::home_dir;
+
+    use crate::utils::expand_env_vars;
 
     #[test]
     fn home() -> Result<(), Error> {
