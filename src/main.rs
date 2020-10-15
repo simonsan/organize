@@ -1,13 +1,15 @@
-use std::io::Error;
-
-use clap::crate_name;
-
 use crate::cli::Cli;
+use clap::crate_name;
+use std::{
+    env,
+    io::Error,
+};
 
 pub mod cli;
 pub mod commands;
 pub mod file;
 pub mod lock_file;
+pub mod path;
 pub mod user_config;
 pub mod utils;
 

@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod new_path {
     use std::{
+        env,
         io::{
             Error,
             ErrorKind,
@@ -8,14 +9,25 @@ mod new_path {
         path::PathBuf,
     };
 
-    use crate::{
-        test_file_or_dir,
-        user_config::rules::actions::{
-            ConflictOption,
-            ConflictingFileOperation,
-        },
+    use crate::user_config::rules::actions::{
+        ConflictOption,
+        ConflictingFileOperation,
     };
 
+    fn project_dir() -> PathBuf {
+        // 'cargo test' must be run from the project directory, where Cargo.toml is
+        // even if you run it from some other folder inside the project
+        // 'cargo test' will move to the project root
+        env::current_dir().unwrap()
+    }
+
+    fn tests_directory() -> PathBuf {
+        project_dir().join("tests")
+    }
+
+    fn test_file_or_dir(filename: &str) -> PathBuf {
+        tests_directory().join("files").join(filename)
+    }
     static WATCHING: bool = false;
 
     #[test]

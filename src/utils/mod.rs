@@ -26,8 +26,6 @@ use crate::{
     PROJECT_NAME,
 };
 
-mod lib;
-
 pub fn resolve_name_conflict(filename: &str) -> Result<ConflictOption, Error> {
     print!(
         "A file named {} already exists in the destination.\n [(o)verwrite / (r)ename / (s)kip]: ",

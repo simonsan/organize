@@ -1,3 +1,5 @@
+mod lib;
+
 use std::{
     env,
     path::{
