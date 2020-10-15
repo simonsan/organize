@@ -176,21 +176,16 @@ pub(crate) fn prompt_editor_env_var() -> String {
 }
 
 pub fn expand_env_vars(path: &Path) -> PathBuf {
-    let components = path.components();
-    let mut new_path = PathBuf::new();
-
-    for component in components.into_iter() {
-        let component: &Path = component.as_ref();
-        if component.to_str().unwrap().starts_with('$') {
-            let env_var = env::var(component.to_str().unwrap().replace('$', ""));
-            if let Ok(env_var) = env_var {
-                new_path.push(env_var);
+    path.components()
+        .map(|comp| {
+            let path: &Path = comp.as_ref();
+            let path = path.to_str().unwrap();
+            if path.starts_with('$') {
+                env::var(path.replace('$', ""))
+                    .unwrap_or_else(|_| panic!("error: environment variable '{}' could not be found", path))
             } else {
-                panic!(format!("an environment variable ({}) was found in the configuration file but it couldn't be read. Are you sure it exists?", new_path.display()))
+                path.to_string()
             }
-        } else {
-            new_path.push(component);
-        }
-    }
-    new_path
+        })
+        .collect()
 }
