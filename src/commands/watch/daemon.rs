@@ -12,18 +12,15 @@ use sysinfo::{
     SystemExt,
 };
 
-use crate::cli::Cli;
 // TODO review fields are method args
 #[derive(Clone, Debug)]
-pub struct Daemon<'a> {
-    cli: &'a Cli,
+pub struct Daemon {
     pid: Option<Pid>,
 }
 
-impl<'a> Daemon<'a> {
-    pub fn new(cli: &'a Cli, pid: Option<Pid>) -> Self {
+impl Daemon {
+    pub fn new(pid: Option<Pid>) -> Self {
         Daemon {
-            cli,
             pid,
         }
     }

@@ -116,7 +116,7 @@ impl Cli {
             }
             SubCommands::Run | SubCommands::Watch => {
                 let lock_file = LockFile::new();
-                lock_file.clear_dead_processes(&self)?;
+                lock_file.clear_dead_processes()?;
                 let config = UserConfig::new(&self)?;
                 run(&config.rules, false)?;
                 if self.subcommand == SubCommands::Watch {
@@ -127,13 +127,14 @@ impl Cli {
             SubCommands::Logs => todo!(),
             SubCommands::Stop => {
                 let lock_file = LockFile::new();
-                lock_file.clear_dead_processes(&self)?;
                 let path = config_path(&self);
                 if self.args.is_present("with_config") {
                     match lock_file.find_process_by_path(&path) {
                         Some((pid, _)) => {
-                            let daemon = Daemon::new(&self, Some(pid));
-                            daemon.kill();
+                            let daemon = Daemon::new(Some(pid));
+                            if daemon.is_running() {
+                                daemon.kill();
+                            }
                         }
                         None => {
                             return Err(Error::new(
@@ -145,12 +146,13 @@ impl Cli {
                     }
                 } else {
                     for (pid, _) in lock_file.get_running_watchers() {
-                        let daemon = Daemon::new(&self, Some(pid));
+                        let daemon = Daemon::new(Some(pid));
                         if daemon.is_running() {
                             daemon.kill()
                         }
                     }
                 }
+                lock_file.clear_dead_processes()?;
             }
         };
         Ok(())

@@ -45,7 +45,7 @@ pub fn watch(cli: Cli, config: UserConfig) -> Result<(), Error> {
         let process = lock_file.find_process_by_path(&config.path);
         return match process {
             Some((pid, _)) => {
-                let daemon = Daemon::new(&cli, Some(pid));
+                let daemon = Daemon::new(Some(pid));
                 daemon.restart();
                 Ok(())
             }
@@ -100,7 +100,7 @@ pub fn watch(cli: Cli, config: UserConfig) -> Result<(), Error> {
         }
 
         if cli.args.is_present("daemon") {
-            let daemon = Daemon::new(&cli, None);
+            let daemon = Daemon::new(None);
             daemon.start();
         } else {
             let mut watcher = Watcher::new();
@@ -146,9 +146,7 @@ impl Watcher {
         // REGISTER PID
         let pid = process::id();
         let lock_file = LockFile::new();
-        lock_file.set_readonly(false)?;
         lock_file.append(pid.try_into().unwrap(), &config.path).unwrap();
-        lock_file.set_readonly(true)?;
 
         // PROCESS SIGNALS
         let path2rules = path2rules(&config.rules);

@@ -1,3 +1,5 @@
+mod lib;
+
 use std::{
     env::temp_dir,
     fs,
@@ -13,7 +15,6 @@ use std::{
 };
 
 use crate::{
-    cli::Cli,
     commands::watch::daemon::Daemon,
     PROJECT_NAME,
 };
@@ -43,7 +44,7 @@ impl LockFile {
         format!("{}\n{}\n{}", pid, config.display(), self.sep)
     }
 
-    pub fn set_readonly(&self, readonly: bool) -> Result<(), Error> {
+    fn set_readonly(&self, readonly: bool) -> Result<(), Error> {
         let f = File::open(&self.path)?;
         let mut perms = f.metadata()?.permissions();
         perms.set_readonly(readonly);
@@ -55,8 +56,11 @@ impl LockFile {
         if !self.path.exists() {
             File::create(&self.path)?;
         }
+        self.set_readonly(false)?;
         let mut f = OpenOptions::new().append(true).open(&self.path)?;
-        writeln!(f, "{}", self.section(&pid, config))
+        let result = writeln!(f, "{}", self.section(&pid, config));
+        self.set_readonly(true)?;
+        result
     }
 
     pub fn get_running_watchers(&self) -> Vec<(Pid, PathBuf)> {
@@ -85,17 +89,16 @@ impl LockFile {
         }
     }
 
-    pub fn clear_dead_processes(&self, cli: &Cli) -> Result<(), Error> {
+    pub fn clear_dead_processes(&self) -> Result<(), Error> {
         self.set_readonly(false)?;
         let mut running_processes = String::new();
         for (pid, config) in self.get_running_watchers().iter() {
-            let daemon = Daemon::new(cli, Some(*pid));
+            let daemon = Daemon::new(Some(*pid));
             if daemon.is_running() {
                 running_processes.push_str(&self.section(pid, config));
                 running_processes.push_str("\n");
             }
         }
-
         fs::write(&self.path, running_processes)?;
         self.set_readonly(true)?;
         Ok(())
