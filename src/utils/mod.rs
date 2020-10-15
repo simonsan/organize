@@ -147,12 +147,10 @@ pub fn create_config_file(path: &Path) -> Result<(), Error> {
             if !parent.exists() {
                 std::fs::create_dir_all(path.parent().unwrap())?;
             }
-            let default_config = load_yaml!("../../examples/example_config.yml");
+            let config = load_yaml!("../../examples/config.yml");
             let mut output = String::new();
             let mut emitter = YamlEmitter::new(&mut output);
-            emitter
-                .dump(default_config)
-                .expect("ERROR: could not create starter config");
+            emitter.dump(config).expect("ERROR: could not create starter config");
             std::fs::write(path, output)?;
         }
         None => panic!("home directory's parent folder should be defined"),
@@ -170,19 +168,4 @@ pub(crate) fn prompt_editor_env_var() -> String {
         "windows" => format!("{} could not find an EDITOR environment variable or it's not properly set", PROJECT_NAME),
         _ => format!("error: {} not supported", platform)
     }
-}
-
-pub fn expand_env_vars(path: &Path) -> PathBuf {
-    path.components()
-        .map(|comp| {
-            let path: &Path = comp.as_ref();
-            let path = path.to_str().unwrap();
-            if path.starts_with('$') {
-                env::var(path.replace('$', ""))
-                    .unwrap_or_else(|_| panic!("error: environment variable '{}' could not be found", path))
-            } else {
-                path.to_string()
-            }
-        })
-        .collect()
 }

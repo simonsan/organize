@@ -1,9 +1,6 @@
 use std::{
     fs,
-    io::{
-        Error,
-        ErrorKind,
-    },
+    io::Error,
     path::{
         Path,
         PathBuf,
@@ -18,10 +15,7 @@ use serde::{
 use super::deserialize::deserialize_path;
 use crate::{
     file::File,
-    
-    utils::{
-        new_filepath,
-    },
+    utils::new_filepath,
 };
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -70,26 +64,6 @@ impl Actions {
         Ok(())
     }
 
-    fn check_conflicting_actions(&self) -> Result<ConflictingActions, Error> {
-        let mut conflicting_options = Vec::new();
-        if self.r#move.is_some() {
-            conflicting_options.push(ConflictingActions::Move);
-        }
-        if self.rename.is_some() {
-            conflicting_options.push(ConflictingActions::Rename);
-        }
-        if self.delete.is_some() {
-            conflicting_options.push(ConflictingActions::Delete);
-        }
-        if conflicting_options.len() == 1 {
-            Ok(conflicting_options.get(0).unwrap().clone())
-        } else if conflicting_options.is_empty() {
-            Ok(ConflictingActions::None)
-        } else {
-            Err(Error::new(ErrorKind::InvalidInput, "too many conflicting actions"))
-        }
-    }
-
     fn copy(&self, from: &Path, watching: bool) -> Result<(), Error> {
         assert!(self.copy.is_some()); // should check that it's some before calling this method
         let copy = self.copy.as_ref().unwrap();
@@ -134,14 +108,6 @@ impl Actions {
     fn delete(&self, path: &Path) -> Result<(), Error> {
         std::fs::remove_file(path)
     }
-}
-
-#[derive(Clone)]
-pub enum ConflictingActions {
-    Move,
-    Rename,
-    Delete,
-    None,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

@@ -5,12 +5,8 @@ use crate::{
     },
     user_config::rules::rule::Rule,
     utils,
-    utils::expand_env_vars,
 };
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use serde::Deserialize;
 use std::{
     fs,
     io::Error,

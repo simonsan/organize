@@ -140,21 +140,18 @@ mod expand_env_var {
             Error,
             ErrorKind,
         },
-        path::{
-            Path,
-            PathBuf,
-        },
+        path::PathBuf,
     };
 
     use dirs::home_dir;
 
-    use crate::utils::expand_env_vars;
+    use crate::user_config::rules::deserialize::PathExpandable;
 
     #[test]
     fn home() -> Result<(), Error> {
-        let tested = PathBuf::from("$HOME/Documents");
+        let tested = PathBuf::from("$HOME/Documents").expand();
         let expected = home_dir().unwrap().join("Documents");
-        if expand_env_vars(Path::new(&tested)) == expected {
+        if tested == expected {
             Ok(())
         } else {
             Err(Error::new(

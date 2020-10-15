@@ -3,10 +3,7 @@ use crate::user_config::rules::{
     filters::Filters,
     folder::Folder,
 };
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use serde::Deserialize;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Rule {

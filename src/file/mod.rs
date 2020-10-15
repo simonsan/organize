@@ -1,10 +1,9 @@
 mod lib;
 
-use crate::{
-    user_config::rules::filters::Filters,
-    utils::expand_env_vars,
+use crate::user_config::rules::{
+    deserialize::PathExpandable,
+    filters::Filters,
 };
-use regex::Regex;
 use std::{
     io::Error,
     path::{
@@ -30,7 +29,7 @@ impl From<PathBuf> for File {
             filename,
             stem,
             extension,
-            path: expand_env_vars(&path),
+            path: path.expand(),
         }
     }
 }
@@ -44,14 +43,14 @@ impl From<&Path> for File {
             filename,
             stem,
             extension,
-            path: expand_env_vars(path),
+            path: path.to_path_buf().expand(),
         }
     }
 }
 
 impl From<&str> for File {
     fn from(path: &str) -> Self {
-        let path = expand_env_vars(Path::new(path));
+        let path = PathBuf::from(path);
         Self::from(path)
     }
 }
