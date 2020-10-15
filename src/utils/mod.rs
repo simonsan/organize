@@ -161,17 +161,14 @@ pub fn create_config_file(path: &Path) -> Result<(), Error> {
 }
 
 pub(crate) fn prompt_editor_env_var() -> String {
-    let platform = std::env::consts::OS;
-    if platform == "linux" || platform == "macos" {
-        format!("{} could not find an $EDITOR environment variable or it's not properly set.\nIn your .bashrc (or .zshrc), set 'export EDITOR=$(which <your-favorite-editor-name>) or \
+    let platform = env::consts::OS;
+    match platform {
+        "linux" | "macos" => {
+            format!("{} could not find an $EDITOR environment variable or it's not properly set.\nIn your .bashrc (or .zshrc), set 'export EDITOR=$(which <your-favorite-editor-name>) or \
             run {} as 'EDITOR=$(which <your-favorite-editor-name>) {} config'", PROJECT_NAME, PROJECT_NAME, PROJECT_NAME)
-    } else if platform == "windows" {
-        format!(
-            "{} could not find an EDITOR environment variable or it's not properly set",
-            PROJECT_NAME
-        )
-    } else {
-        format!("{} platform not supported", platform)
+        },
+        "windows" => format!("{} could not find an EDITOR environment variable or it's not properly set", PROJECT_NAME),
+        _ => format!("error: {} not supported", platform)
     }
 }
 
