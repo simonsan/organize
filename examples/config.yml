@@ -12,7 +12,7 @@
 #    move:
 #    # Field: `to`
 #    #  Use
-#    #   Represents the target directory when inside the 'move' action.
+#    #   Represents the target directory
 #    #  Special Notes
 #    #    - You can use environment variables
 #    #    - `move` conflicts with `rename`, so you cannot have both actions defined at the same time
