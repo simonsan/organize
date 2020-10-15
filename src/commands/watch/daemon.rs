@@ -15,11 +15,11 @@ use sysinfo::{
 // TODO review fields are method args
 #[derive(Clone, Debug)]
 pub struct Daemon {
-    pid: Option<Pid>,
+    pid: Pid,
 }
 
 impl Daemon {
-    pub fn new(pid: Option<Pid>) -> Self {
+    pub fn new(pid: Pid) -> Self {
         Daemon {
             pid,
         }
@@ -38,9 +38,8 @@ impl Daemon {
     }
 
     pub fn kill(&self) {
-        assert!(self.pid.is_some());
         let sys = System::new_with_specifics(RefreshKind::with_processes(RefreshKind::new()));
-        sys.get_process(self.pid.unwrap() as i32).unwrap().kill(Signal::Kill);
+        sys.get_process(self.pid as i32).unwrap().kill(Signal::Kill);
     }
 
     pub fn restart(&self) {
@@ -49,9 +48,8 @@ impl Daemon {
     }
 
     pub fn is_running(&self) -> bool {
-        assert!(self.pid.is_some());
         let sys = System::new_with_specifics(RefreshKind::with_processes(RefreshKind::new()));
-        let process = sys.get_process(self.pid.unwrap());
+        let process = sys.get_process(self.pid);
         process.is_some()
     }
 }

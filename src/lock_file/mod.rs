@@ -93,7 +93,7 @@ impl LockFile {
         self.set_readonly(false)?;
         let mut running_processes = String::new();
         for (pid, config) in self.get_running_watchers().iter() {
-            let daemon = Daemon::new(Some(*pid));
+            let daemon = Daemon::new(*pid);
             if daemon.is_running() {
                 running_processes.push_str(&self.section(pid, config));
                 running_processes.push_str("\n");

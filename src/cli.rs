@@ -131,7 +131,7 @@ impl Cli {
                 if self.args.is_present("with_config") {
                     match lock_file.find_process_by_path(&path) {
                         Some((pid, _)) => {
-                            let daemon = Daemon::new(Some(pid));
+                            let daemon = Daemon::new(pid);
                             if daemon.is_running() {
                                 daemon.kill();
                             }
@@ -146,7 +146,7 @@ impl Cli {
                     }
                 } else {
                     for (pid, _) in lock_file.get_running_watchers() {
-                        let daemon = Daemon::new(Some(pid));
+                        let daemon = Daemon::new(pid);
                         if daemon.is_running() {
                             daemon.kill()
                         }

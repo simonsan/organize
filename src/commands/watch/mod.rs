@@ -44,7 +44,7 @@ pub fn watch(cli: Cli, config: UserConfig) -> Result<(), Error> {
         let process = lock_file.find_process_by_path(&config.path);
         return match process {
             Some((pid, _)) => {
-                let daemon = Daemon::new(Some(pid));
+                let daemon = Daemon::new(pid);
                 daemon.restart();
                 Ok(())
             }
@@ -99,7 +99,7 @@ pub fn watch(cli: Cli, config: UserConfig) -> Result<(), Error> {
         }
 
         if cli.args.is_present("daemon") {
-            let daemon = Daemon::new(None);
+            let daemon = Daemon::new(process::id() as i32);
             daemon.start();
         } else {
             let mut watcher = Watcher::new();
