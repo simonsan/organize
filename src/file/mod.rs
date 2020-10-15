@@ -65,11 +65,8 @@ impl File {
         }
 
         let path = self.path.to_str().unwrap();
-        if !filters.regex.is_empty() {
-            let regex = Regex::new(&filters.regex).unwrap();
-            if regex.is_match(&path) {
-                return true;
-            }
+        if !filters.regex.to_string().is_empty() && filters.regex.is_match(&path) {
+            return true;
         }
         if !filters.filename.is_empty() && self.filename == filters.filename {
             return true;

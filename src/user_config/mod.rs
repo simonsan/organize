@@ -23,7 +23,7 @@ pub mod rules;
 /// ### Fields
 /// * `path`: the path the user's config, either the default one or some other passed with the --with-config argument
 /// * `rules`: a list of parsed rules defined by the user
-#[derive(Deserialize, Serialize, Clone, Debug)]
+#[derive(Deserialize, Clone, Debug)]
 pub struct UserConfig {
     #[serde(skip)]
     pub path: PathBuf,
@@ -49,12 +49,7 @@ impl UserConfig {
         let content = fs::read_to_string(&path)?;
         let mut config: Self = serde_yaml::from_str(&content).expect("could not parse config file");
         config.path = path;
-
-        for rule in config.rules.iter_mut() {
-            for folder in rule.folders.iter_mut() {
-                folder.path = expand_env_vars(&folder.path);
-            }
-        }
+        println!("{:?}", config);
 
         Ok(config)
     }

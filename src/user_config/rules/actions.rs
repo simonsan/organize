@@ -15,9 +15,13 @@ use serde::{
     Serialize,
 };
 
+use super::deserialize::deserialize_path;
 use crate::{
     file::File,
-    utils::new_filepath,
+    
+    utils::{
+        new_filepath,
+    },
 };
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -66,7 +70,7 @@ impl Actions {
         Ok(())
     }
 
-    pub fn check_conflicting_actions(&self) -> Result<ConflictingActions, Error> {
+    fn check_conflicting_actions(&self) -> Result<ConflictingActions, Error> {
         let mut conflicting_options = Vec::new();
         if self.r#move.is_some() {
             conflicting_options.push(ConflictingActions::Move);
@@ -142,6 +146,7 @@ pub enum ConflictingActions {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ConflictingFileOperation {
+    #[serde(deserialize_with = "deserialize_path")]
     pub to: PathBuf,
     #[serde(default)]
     pub if_exists: ConflictOption,

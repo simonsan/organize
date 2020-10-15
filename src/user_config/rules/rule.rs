@@ -8,7 +8,7 @@ use serde::{
     Serialize,
 };
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Rule {
     pub actions: Actions,
     pub filters: Filters,

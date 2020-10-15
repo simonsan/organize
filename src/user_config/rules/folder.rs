@@ -1,3 +1,4 @@
+use super::deserialize::deserialize_path;
 use serde::{
     Deserialize,
     Serialize,
@@ -6,6 +7,7 @@ use std::path::PathBuf;
 
 #[derive(Deserialize, Serialize, Debug, PartialEq, Eq, Clone)]
 pub struct Folder {
+    #[serde(deserialize_with = "deserialize_path")]
     pub path: PathBuf,
     #[serde(default)]
     pub options: Options,
