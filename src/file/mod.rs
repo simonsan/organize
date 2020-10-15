@@ -43,6 +43,11 @@ impl From<&str> for File {
 impl File {
     pub fn matches_filters(&self, filters: &Filters) -> bool {
         // TODO test this function
+        let temporary_file_extensions = ["crdownload", "part", "tmp", "download"];
+        if temporary_file_extensions.contains(&self.extension.as_str()) {
+            return false;
+        }
+
         let path = self.path.to_str().unwrap();
         if !filters.regex.is_empty() {
             let regex = Regex::new(&filters.regex).unwrap();
