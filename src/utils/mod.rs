@@ -19,12 +19,8 @@ use colored::Colorize;
 use yaml_rust::YamlEmitter;
 
 use crate::{
-    file::get_stem_and_extension,
     user_config::rules::{
-        actions::{
-            ConflictOption,
-            ConflictingFileOperation,
-        },
+        actions::ConflictOption,
         rule::Rule,
     },
     PROJECT_NAME,
@@ -32,71 +28,10 @@ use crate::{
 
 mod lib;
 
-/// Helper function for the 'rename' and 'move' actions.
-/// It computes the appropriate new path for the file wanting to be renamed or moved.
-/// In case of a name conflict, it will decide what new path to return based on a resolver parameter
-/// to avoid unwanted overwrites.
-/// # Args
-/// * `from`: path representing the original file's path
-/// * `to`: path representing the target path (must represent a file, which may or may not exist)
-/// * `conflict_option`: configuration option that helps adapt the new path
-/// # Errors
-/// This function will return an error in the following case:
-/// * The target path exists and `conflict_option` is set to skip
-pub fn new_filepath(from: &Path, action: &ConflictingFileOperation, watching: bool) -> Result<PathBuf, Error> {
-    if action.to.exists() {
-        return match action.if_exists {
-            ConflictOption::Skip => Ok(from.to_path_buf()),
-            ConflictOption::Rename => {
-                let mut new_path = expand_env_vars(&action.to);
-                let (stem, extension) = if action.to.is_dir() {
-                    new_path.push(from.file_name().unwrap());
-                    get_stem_and_extension(from)?
-                } else {
-                    get_stem_and_extension(&new_path)?
-                };
-                let new_dir = new_path.parent().unwrap().to_path_buf();
-
-                if new_path.exists() {
-                    let mut n = 1;
-                    while new_path.exists() {
-                        let new_filename = format!("{}{}({:?}).{}", stem, action.counter_separator, n, extension);
-                        new_path = new_dir.join(new_filename);
-                        n += 1;
-                    }
-                }
-                Ok(new_path)
-            }
-            ConflictOption::Overwrite => {
-                if action.to.is_file() {
-                    Ok(action.to.to_path_buf())
-                } else if action.to.is_dir() {
-                    Ok(action.to.join(from.file_name().unwrap()))
-                } else {
-                    panic!("file is neither a file nor a dir?")
-                }
-            }
-            ConflictOption::Ask => {
-                if watching {
-                    new_filepath(from, action, false)
-                } else {
-                    let action = ConflictingFileOperation {
-                        if_exists: resolve_name_conflict(&action.to)?,
-                        to: action.to.clone(),
-                        counter_separator: action.counter_separator.clone(),
-                    };
-                    new_filepath(from, &action, watching)
-                }
-            }
-        };
-    }
-    Ok(action.to.to_path_buf())
-}
-
-pub fn resolve_name_conflict(dst: &Path) -> Result<ConflictOption, Error> {
+pub fn resolve_name_conflict(filename: &str) -> Result<ConflictOption, Error> {
     print!(
         "A file named {} already exists in the destination.\n [(o)verwrite / (r)ename / (s)kip]: ",
-        dst.file_name().unwrap().to_str().unwrap().underline().bold()
+        filename.underline().bold()
     );
     io::stdout().flush().unwrap();
 
