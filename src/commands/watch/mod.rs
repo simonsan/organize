@@ -25,7 +25,10 @@ use crate::{
         default_config,
         Cli,
     },
-    commands::watch::daemon::Daemon,
+    commands::{
+        run::run,
+        watch::daemon::Daemon,
+    },
     file::File,
     lock_file::LockFile,
     user_config::{
@@ -35,6 +38,7 @@ use crate::{
     utils::path2rules,
     PROJECT_NAME,
 };
+
 pub mod daemon;
 
 pub fn watch(cli: Cli, config: UserConfig) -> Result<(), Error> {
@@ -102,6 +106,8 @@ pub fn watch(cli: Cli, config: UserConfig) -> Result<(), Error> {
             let daemon = Daemon::new(process::id() as i32);
             daemon.start();
         } else {
+            let config = UserConfig::new(&cli)?;
+            run(&config.rules, false)?;
             let mut watcher = Watcher::new();
             watcher.watch(&config)?;
         }
