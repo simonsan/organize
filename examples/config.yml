@@ -1,0 +1,79 @@
+# Configuration for Organize, the file management and automation tool
+
+# Every configuration file must have a 'rules' field
+# rules:
+#
+#   # Field: `actions`
+#   ## Use
+#       Every rule must contain a set of actions to apply on some files
+#  - actions:
+#    # Subfields:
+
+#    move:
+#    # Field: `to`
+#    #  Use
+#    #   Represents the target directory when inside the 'move' action.
+#    #  Special Notes
+#    #    You can use environment variables
+#     to: $HOME/Documents/
+#
+#     # Field: `if_exists`
+#     ## Use
+#         If the target path exists, these options will be used to decide
+#         how to resolve the problem
+#     ## Values:
+#         - rename (default)
+#         - overwrite
+#         - skip
+#         - ask
+#     ## Special Notes
+#         The `ask` option only works when `watch` is set to `false`
+#         or when the program has just been executed. If none of these
+#         conditions hold, it defaults back to `rename`.
+#     if_exists: rename
+#
+#     # Field: `counter_separator`
+#     ## Use
+#         String that goes between the file's stem and the extension in case of a
+#         naming conflict resolution
+#     ## Examples:
+#         - " " would produce `test (1).pdf` (default)
+#         - "-" would produce `test-(1).pdf`
+#     counter_separator: " "
+#
+#    # Field: `rename`
+#    ## Special Notes
+#        This action has the same three options as `move`. However, in this case
+#        the `to` field must represent a file, not a directory
+#    rename:
+#     to: $HOME/Documents/test.pdf
+#     if_exists: rename
+#     counter_separator: " "
+#
+#    # Field: `copy`
+#    ## Special Notes
+#        This action has the same three options as `move` and `rename`. However, in this case
+#        the `to` field must represent a directory, not a file like in `rename`
+#    copy:
+#     to: $HOME/Documents
+#     if_exists: rename
+#     counter_separator: " "
+#
+#    # Field: `delete`
+#    ## Values for `delete`:
+#        - true
+#        - false (default)
+#    delete: false
+#
+    filters:
+      extensions: 
+        - pdf
+        - docx
+        - odt
+        - djvu
+        - mobi
+        - epub
+    folders:
+      - path: $HOME/Downloads/
+      - path: $HOME
+      - path: $HOME/Desktop/

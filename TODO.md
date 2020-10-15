@@ -1,4 +1,5 @@
 ### Important:
+- Write configuration file with documentation and all possible values
 - Write documentation
 - Adopt TDD
 - Make tests
