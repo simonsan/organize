@@ -35,7 +35,6 @@ use crate::{
     utils::path2rules,
     PROJECT_NAME,
 };
-
 pub mod daemon;
 
 pub fn watch(cli: Cli, config: UserConfig) -> Result<(), Error> {

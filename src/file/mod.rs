@@ -1,15 +1,12 @@
 mod lib;
 
-use crate::user_config::rules::{
-    deserialize::PathExpandable,
-    filters::Filters,
+use crate::{
+    path::Expand,
+    user_config::rules::filters::Filters,
 };
-use std::{
-    io::Error,
-    path::{
-        Path,
-        PathBuf,
-    },
+use std::path::{
+    Path,
+    PathBuf,
 };
 
 pub struct File {
@@ -22,7 +19,7 @@ pub struct File {
 
 impl From<PathBuf> for File {
     fn from(path: PathBuf) -> Self {
-        let (stem, extension) = get_stem_and_extension(&path).unwrap();
+        let (stem, extension) = get_stem_and_extension(&path);
         let filename = String::from(path.file_name().unwrap().to_str().unwrap());
         File {
             is_hidden: filename.starts_with('.'),
@@ -36,7 +33,7 @@ impl From<PathBuf> for File {
 
 impl From<&Path> for File {
     fn from(path: &Path) -> Self {
-        let (stem, extension) = get_stem_and_extension(path).unwrap();
+        let (stem, extension) = get_stem_and_extension(path);
         let filename = String::from(path.file_name().unwrap().to_str().unwrap());
         File {
             is_hidden: filename.starts_with('.'),
@@ -85,9 +82,9 @@ impl File {
 /// * `path`: A reference to a std::path::PathBuf
 /// # Return
 /// Returns the stem and extension of `path` if they exist and can be parsed, otherwise returns an Error
-pub fn get_stem_and_extension(path: &Path) -> Result<(String, String), Error> {
+pub fn get_stem_and_extension(path: &Path) -> (String, String) {
     let stem = path.file_stem().unwrap().to_str().unwrap().to_owned();
     let extension = path.extension().unwrap_or_default().to_str().unwrap().to_owned();
 
-    Ok((stem, extension))
+    (stem, extension)
 }

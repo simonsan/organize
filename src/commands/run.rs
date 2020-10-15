@@ -9,13 +9,13 @@ use std::{
 };
 
 pub fn run(rules: &[Rule], watching: bool) -> Result<(), Error> {
-    let path2rules = path2rules(&rules);
-    for (path, rules) in path2rules.iter() {
+    let mut path2rules = path2rules(&rules);
+    for (path, rules) in path2rules.iter_mut() {
         let files = fs::read_dir(&path)?;
         'files: for file in files {
             let mut file = File::from(file.unwrap().path().as_path());
             if file.path.is_file() {
-                'rules: for (rule, index) in rules.iter() {
+                'rules: for (rule, index) in rules.iter_mut() {
                     let folder = rule.folders.get(*index).unwrap();
                     let options = &folder.options;
                     if file.is_hidden && !options.hidden_files {
