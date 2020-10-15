@@ -1,6 +1,9 @@
 mod lib;
 
-use crate::user_config::rules::filters::Filters;
+use crate::{
+    user_config::rules::filters::Filters,
+    utils::expand_env_vars,
+};
 use regex::Regex;
 use std::{
     io::Error,
@@ -10,13 +13,26 @@ use std::{
     },
 };
 
-#[allow(dead_code)]
 pub struct File {
     pub filename: String,
     pub stem: String,
     pub extension: String,
     pub path: PathBuf,
     pub is_hidden: bool,
+}
+
+impl From<PathBuf> for File {
+    fn from(path: PathBuf) -> Self {
+        let (stem, extension) = get_stem_and_extension(&path).unwrap();
+        let filename = String::from(path.file_name().unwrap().to_str().unwrap());
+        File {
+            is_hidden: filename.starts_with('.'),
+            filename,
+            stem,
+            extension,
+            path: expand_env_vars(&path),
+        }
+    }
 }
 
 impl From<&Path> for File {
@@ -28,14 +44,14 @@ impl From<&Path> for File {
             filename,
             stem,
             extension,
-            path: path.to_path_buf(),
+            path: expand_env_vars(path),
         }
     }
 }
 
 impl From<&str> for File {
     fn from(path: &str) -> Self {
-        let path = Path::new(path);
+        let path = expand_env_vars(Path::new(path));
         Self::from(path)
     }
 }

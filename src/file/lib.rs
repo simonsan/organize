@@ -10,6 +10,21 @@ mod tests {
     };
 
     #[test]
+    fn test_temporary_file() -> Result<(), Error> {
+        let crdownload = File::from("$HOME/Downloads/unsplash.jpg.crdownload");
+        let tmp = File::from("$HOME/Downloads/unsplash.jpg.tmp");
+        let part = File::from("$HOME/Downloads/unsplash.jpg.part");
+        let download = File::from("$HOME/Downloads/unsplash.jpg.crdownload");
+        let filters = Filters::default();
+        for file in [crdownload, tmp, part, download].iter() {
+            if file.matches_filters(&filters) {
+                return Err(Error::new(ErrorKind::Other, "temporary file matched filters"));
+            }
+        }
+        Ok(())
+    }
+
+    #[test]
     fn test_filters_extensions() -> Result<(), Error> {
         let file = File::from("/home/cabero/Documents/matricula.pdf");
         let mut filters = Filters::default();
