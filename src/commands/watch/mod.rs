@@ -98,13 +98,13 @@ pub fn watch(cli: Cli, config: UserConfig) -> Result<(), Error> {
                 );
             }
         }
-        {}
+
         if cli.args.is_present("daemon") {
             let daemon = Daemon::new(&cli, None);
             daemon.start();
         } else {
             let mut watcher = Watcher::new();
-            watcher.watch(&config);
+            watcher.watch(&config)?;
         }
     }
     Ok(())
@@ -131,7 +131,7 @@ impl Watcher {
         }
     }
 
-    pub fn watch(&mut self, config: &UserConfig) {
+    pub fn watch(&mut self, config: &UserConfig) -> Result<(), Error> {
         for rule in config.rules.iter() {
             for folder in rule.folders.iter() {
                 let is_recursive = if folder.options.recursive {
@@ -146,7 +146,9 @@ impl Watcher {
         // REGISTER PID
         let pid = process::id();
         let lock_file = LockFile::new();
+        lock_file.set_readonly(false)?;
         lock_file.append(pid.try_into().unwrap(), &config.path).unwrap();
+        lock_file.set_readonly(true)?;
 
         // PROCESS SIGNALS
         let path2rules = path2rules(&config.rules);

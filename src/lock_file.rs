@@ -43,7 +43,15 @@ impl LockFile {
         format!("{}\n{}\n{}", pid, config.display(), self.sep)
     }
 
-    pub fn append(self, pid: Pid, config: &Path) -> Result<(), Error> {
+    pub fn set_readonly(&self, readonly: bool) -> Result<(), Error> {
+        let f = File::open(&self.path)?;
+        let mut perms = f.metadata()?.permissions();
+        perms.set_readonly(readonly);
+        f.set_permissions(perms)?;
+        Ok(())
+    }
+
+    pub fn append(&self, pid: Pid, config: &Path) -> Result<(), Error> {
         if !self.path.exists() {
             File::create(&self.path)?;
         }
@@ -78,6 +86,7 @@ impl LockFile {
     }
 
     pub fn clear_dead_processes(&self, cli: &Cli) -> Result<(), Error> {
+        self.set_readonly(false)?;
         let mut running_processes = String::new();
         for (pid, config) in self.get_running_watchers().iter() {
             let daemon = Daemon::new(cli, Some(*pid));
@@ -88,6 +97,7 @@ impl LockFile {
         }
 
         fs::write(&self.path, running_processes)?;
+        self.set_readonly(true)?;
         Ok(())
     }
 
