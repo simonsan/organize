@@ -14,8 +14,9 @@
 #    #  Use
 #    #   Represents the target directory when inside the 'move' action.
 #    #  Special Notes
-#    #    You can use environment variables
-#     to: $HOME/Documents/
+#    #    - You can use environment variables
+#    #    - `move` conflicts with `rename`, so you cannot have both actions defined at the same time
+#    to: $HOME/Documents/
 #
 #     # Field: `if_exists`
 #     ## Use
@@ -40,11 +41,14 @@
 #         - " " would produce `test (1).pdf` (default)
 #         - "-" would produce `test-(1).pdf`
 #     counter_separator: " "
-#
+
+#    #####################
 #    # Field: `rename`
-#    ## Special Notes
-#        This action has the same three options as `move`. However, in this case
-#        the `to` field must represent a file, not a directory
+#    #####################
+#    # Special Notes
+#        - This action has the same three options as `move`. However, in this case
+#          the `to` field must represent a file, not a directory
+#    #   - `move` conflicts with `rename`, so you cannot have both actions defined at the same time
 #    rename:
 #     to: $HOME/Documents/test.pdf
 #     if_exists: rename
