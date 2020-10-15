@@ -8,7 +8,7 @@ use std::{
     io::Error,
 };
 
-pub fn run(rules: &Vec<Rule>, watching: bool) -> Result<(), Error> {
+pub fn run(rules: &[Rule], watching: bool) -> Result<(), Error> {
     let path2rules = path2rules(&rules);
     for (path, rules) in path2rules.iter() {
         let files = fs::read_dir(&path)?;

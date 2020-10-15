@@ -30,7 +30,7 @@ use crate::{
     lock_file::LockFile,
     user_config::{
         rules::folder::Options,
-        user_config::UserConfig,
+        UserConfig,
     },
     utils::path2rules,
     PROJECT_NAME,

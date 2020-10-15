@@ -2,7 +2,7 @@ use std::{
     env,
     io::{
         Error,
-        ErrorKind
+        ErrorKind,
     },
     path::PathBuf,
 };
@@ -28,7 +28,7 @@ use crate::{
     lock_file::LockFile,
     user_config::{
         rules::folder::Options,
-        user_config::UserConfig,
+        UserConfig,
     },
     PROJECT_NAME,
 };
@@ -88,7 +88,6 @@ impl Cli {
     }
 
     pub fn run(self) -> Result<(), Error> {
-
         match self.subcommand {
             SubCommands::Config => {
                 if self.args.is_present("show_path") {

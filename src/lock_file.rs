@@ -12,21 +12,31 @@ use std::{
     },
 };
 
-use crate::{cli::Cli, commands::watch::daemon::Daemon, PROJECT_NAME};
-use sysinfo::Pid;
+use crate::{
+    cli::Cli,
+    commands::watch::daemon::Daemon,
+    PROJECT_NAME,
+};
 use std::fs::File;
+use sysinfo::Pid;
 
 pub struct LockFile {
     path: PathBuf,
     sep: String,
 }
 
-impl LockFile {
-    pub fn new() -> Self {
+impl Default for LockFile {
+    fn default() -> Self {
         LockFile {
             path: temp_dir().join(format!("{}.lock", PROJECT_NAME)),
-            sep: "---".to_string(),
+            sep: " ".to_string(),
         }
+    }
+}
+
+impl LockFile {
+    pub fn new() -> Self {
+        Self::default()
     }
 
     fn section(&self, pid: &Pid, config: &Path) -> String {
@@ -48,8 +58,12 @@ impl LockFile {
                 if !content.is_empty() {
                     let content = content.trim().split(&self.sep);
                     let mut sections = Vec::new();
-                    for section in content.into_iter().filter(|x| !x.is_empty() && x != &"\n") {
-                        let section = section.lines().map(|x| x.to_string()).filter(|x| !x.is_empty()).collect::<Vec<_>>();
+                    for section in content.filter(|x| !x.is_empty() && x != &"\n") {
+                        let section = section
+                            .lines()
+                            .map(|x| x.to_string())
+                            .filter(|x| !x.is_empty())
+                            .collect::<Vec<_>>();
                         let pid = section.first().unwrap().parse().unwrap();
                         let path = section.get(1).unwrap().parse().unwrap();
                         sections.push((pid, path))
@@ -59,7 +73,7 @@ impl LockFile {
                     Vec::new()
                 }
             }
-            Err(_) => Vec::new()
+            Err(_) => Vec::new(),
         }
     }
 
@@ -80,9 +94,9 @@ impl LockFile {
     pub fn find_process_by_path(&self, path: &Path) -> Option<(Pid, PathBuf)> {
         self.get_running_watchers()
             .iter()
-            .filter(|(_, config)| config == &path)
+            .filter(|(_, config)| config == path)
             .collect::<Vec<_>>()
             .first()
-            .map(|(pid, config)| (pid.clone(), config.clone()))
+            .map(|(pid, config)| (*pid, config.clone()))
     }
 }

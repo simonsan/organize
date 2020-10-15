@@ -10,7 +10,7 @@ mod tests {
     };
 
     #[test]
-    fn test_temporary_file() -> Result<(), Error> {
+    fn test_temporary_files() -> Result<(), Error> {
         let crdownload = File::from("$HOME/Downloads/unsplash.jpg.crdownload");
         let tmp = File::from("$HOME/Downloads/unsplash.jpg.tmp");
         let part = File::from("$HOME/Downloads/unsplash.jpg.part");

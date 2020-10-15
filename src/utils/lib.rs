@@ -11,8 +11,8 @@ mod new_filepath {
 
     use crate::{
         user_config::rules::actions::{
-            ConflictingFileOperation,
             ConflictOption,
+            ConflictingFileOperation,
         },
         utils::new_filepath,
     };
@@ -23,7 +23,7 @@ mod new_filepath {
         // 'cargo test' must be run from the project directory, where Cargo.toml is
         // even if you run it from some other folder inside the project
         // 'cargo test' will move to the project root
-        env::current_dir().unwrap().to_path_buf()
+        env::current_dir().unwrap()
     }
 
     fn tests_directory() -> PathBuf {
@@ -31,14 +31,14 @@ mod new_filepath {
     }
 
     fn test_file_or_dir(filename: &str) -> PathBuf {
-       tests_directory().join("files").join(filename)
+        tests_directory().join("files").join(filename)
     }
 
     #[test]
     fn rename_with_rename_conflict() -> Result<(), Error> {
-        let mut action = ConflictingFileOperation::from(test_file_or_dir("test2.txt"));
+        let action = ConflictingFileOperation::from(test_file_or_dir("test2.txt"));
         let file = test_file_or_dir("test1.txt");
-        let new_path = new_filepath(&file, &mut action, WATCHING)?;
+        let new_path = new_filepath(&file, &action, WATCHING)?;
         let expected = PathBuf::from(format!(
             "{}/test2 (1).txt",
             action.to.parent().unwrap().to_str().unwrap()
@@ -55,7 +55,7 @@ mod new_filepath {
         let mut action = ConflictingFileOperation::from(test_file_or_dir("test2.txt"));
         action.counter_separator = "-".to_string();
         let file = test_file_or_dir("test1.txt");
-        let new_path = new_filepath(&file, &mut action, WATCHING)?;
+        let new_path = new_filepath(&file, &action, WATCHING)?;
         let expected = PathBuf::from(format!(
             "{}/test2-(1).txt",
             action.to.parent().unwrap().to_str().unwrap()
@@ -69,9 +69,9 @@ mod new_filepath {
 
     #[test]
     fn move_with_rename_conflict() -> Result<(), Error> {
-        let mut action = ConflictingFileOperation::from(test_file_or_dir("test_dir"));
+        let action = ConflictingFileOperation::from(test_file_or_dir("test_dir"));
         let file = test_file_or_dir("test1.txt");
-        let new_path = new_filepath(&file, &mut action, WATCHING)?;
+        let new_path = new_filepath(&file, &action, WATCHING)?;
         let expected = PathBuf::from(format!("{}/test1 (1).txt", action.to.to_str().unwrap()));
         if new_path == expected {
             Ok(())
@@ -85,7 +85,7 @@ mod new_filepath {
         let mut action = ConflictingFileOperation::from(test_file_or_dir("test2.txt"));
         action.if_exists = ConflictOption::Overwrite;
         let file = test_file_or_dir("test1.txt");
-        let new_path = new_filepath(&file, &mut action, WATCHING)?;
+        let new_path = new_filepath(&file, &action, WATCHING)?;
         if new_path == action.to {
             Ok(())
         } else {
@@ -97,7 +97,7 @@ mod new_filepath {
         let mut action = ConflictingFileOperation::from(test_file_or_dir("test_dir"));
         action.if_exists = ConflictOption::Overwrite;
         let file = test_file_or_dir("test1.txt");
-        let new_path = new_filepath(&file, &mut action, WATCHING)?;
+        let new_path = new_filepath(&file, &action, WATCHING)?;
         let expected = PathBuf::from(format!("{}/test1.txt", action.to.to_str().unwrap()));
         if new_path == expected {
             Ok(())
@@ -111,7 +111,7 @@ mod new_filepath {
         let mut action = ConflictingFileOperation::from(test_file_or_dir("test2.txt"));
         action.if_exists = ConflictOption::Skip;
         let original = test_file_or_dir("test1.txt");
-        let new = new_filepath(&original, &mut action, WATCHING)?;
+        let new = new_filepath(&original, &action, WATCHING)?;
         if original == new {
             Ok(())
         } else {
@@ -124,7 +124,7 @@ mod new_filepath {
         let mut action = ConflictingFileOperation::from(test_file_or_dir("test_dir"));
         action.if_exists = ConflictOption::Skip;
         let original = test_file_or_dir("test1.txt");
-        let new = new_filepath(&original, &mut action, WATCHING)?;
+        let new = new_filepath(&original, &action, WATCHING)?;
         if original == new {
             Ok(())
         } else {
@@ -153,7 +153,7 @@ mod expand_env_var {
     #[test]
     fn home() -> Result<(), Error> {
         let tested = PathBuf::from("$HOME/Documents");
-        let expected = PathBuf::from(home_dir().unwrap().join("Documents"));
+        let expected = home_dir().unwrap().join("Documents");
         if expand_env_vars(Path::new(&tested)) == expected {
             Ok(())
         } else {
