@@ -52,7 +52,9 @@ impl Actions {
         }
         // TODO the following three are conflicting operations - validate this
         if self.r#move.is_some() {
+            let old_path = file.path.clone();
             file.path = self.r#move(&file.path, watching)?;
+            println!("moved {} to {}", old_path.display(), file.path.display());
         }
 
         if self.rename.is_some() {
@@ -160,7 +162,6 @@ impl From<PathBuf> for ConflictingFileOperation {
         let mut op = ConflictingFileOperation::default();
         op.to = path;
         op
-
     }
 }
 

@@ -48,12 +48,12 @@ pub fn new_filepath(from: &Path, action: &ConflictingFileOperation, watching: bo
         return match action.if_exists {
             ConflictOption::Skip => Ok(from.to_path_buf()),
             ConflictOption::Rename => {
-                let mut new_path = action.to.to_path_buf();
+                let mut new_path = expand_env_vars(&action.to);
                 let (stem, extension) = if action.to.is_dir() {
                     new_path.push(from.file_name().unwrap());
                     get_stem_and_extension(from)?
                 } else {
-                    get_stem_and_extension(&action.to)?
+                    get_stem_and_extension(&new_path)?
                 };
                 let new_dir = new_path.parent().unwrap().to_path_buf();
 

@@ -25,9 +25,7 @@ use crate::{
         default_config,
         Cli,
     },
-    commands::{
-        watch::daemon::Daemon,
-    },
+    commands::watch::daemon::Daemon,
     file::File,
     lock_file::LockFile,
     user_config::{
@@ -77,14 +75,19 @@ pub fn watch(cli: Cli, config: UserConfig) -> Result<(), Error> {
         let processes = lock_file.get_running_watchers();
         for (_, path) in processes.iter() {
             if path == &config.path {
-                return Err(
-                    Error::new(
-                        ErrorKind::Other,
-                        format!("a running instance already exists with the desired configuration. \
+                return Err(Error::new(
+                    ErrorKind::Other,
+                    format!(
+                        "a running instance already exists with the desired configuration. \
                         Use `{} stop --with-config {}` to stop this instance, '{} stop' to stop all instances \
-                        or `{} watch --daemon --replace --with-config {}` to restart the daemon", PROJECT_NAME, &config.path.display(), PROJECT_NAME, PROJECT_NAME, &config.path.display()),
-                    )
-                );
+                        or `{} watch --daemon --replace --with-config {}` to restart the daemon",
+                        PROJECT_NAME,
+                        &config.path.display(),
+                        PROJECT_NAME,
+                        PROJECT_NAME,
+                        &config.path.display()
+                    ),
+                ));
             } else if path != &config.path && !cli.args.is_present("allow_multiple_instances") {
                 return Err(
                     Error::new(
@@ -94,8 +97,8 @@ pub fn watch(cli: Cli, config: UserConfig) -> Result<(), Error> {
                     )
                 );
             }
-        } {
         }
+        {}
         if cli.args.is_present("daemon") {
             let daemon = Daemon::new(&cli, None);
             daemon.start();
@@ -103,26 +106,6 @@ pub fn watch(cli: Cli, config: UserConfig) -> Result<(), Error> {
             let mut watcher = Watcher::new();
             watcher.watch(&config);
         }
-        // for (pid, path) in processes {
-        //     let daemon = Daemon::new(&cli, pid);
-        //     if path != config.path &&
-        //     {
-        //         if there is some other daemon running and it's allowed to watch with a different configuration
-        // if cli.args.is_present("daemon") {
-        //     daemon.start();
-        // } else {
-        //     run(config.rules.to_owned(), false)?;
-
-        // }
-        // } else {
-        //     return Err(
-        //         Error::new(
-        //             ErrorKind::Other,
-        //             format!("a running instance already exists. Use `{} stop` to stop this instance or `{} watch --daemon --replace` to restart the daemon", PROJECT_NAME, PROJECT_NAME),
-        //         )
-        //     );
-        // }
-        // }
     }
     Ok(())
 }
