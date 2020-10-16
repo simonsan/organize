@@ -29,18 +29,11 @@ use crate::{
     file::File,
     lock_file::LockFile,
     user_config::{
-        rules::{
-            folder::Options,
-            rule::Rule,
-        },
+        rules::folder::Options,
         UserConfig,
     },
     utils::path2rules,
     PROJECT_NAME,
-};
-use std::{
-    collections::HashMap,
-    path::PathBuf,
 };
 
 pub mod daemon;

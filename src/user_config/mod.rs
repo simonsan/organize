@@ -7,10 +7,6 @@ use clap::load_yaml;
 use dirs::home_dir;
 use serde::Deserialize;
 use std::{
-    collections::{
-        hash_map::RandomState,
-        HashMap,
-    },
     fs,
     io::{
         Error,
