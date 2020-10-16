@@ -1,5 +1,3 @@
-mod lib;
-
 use std::{
     fs,
     io::Error,
@@ -14,18 +12,22 @@ use serde::{
     Serialize,
 };
 
-use super::deserialize::deserialize_path;
 use crate::{
-    commands::run::resolve_conflict,
-    file::{
-        get_stem_and_extension,
-        File,
+    file::File,
+    path::{
+        Expandable,
+        Update,
     },
-    path::Expandable,
 };
-use std::io::ErrorKind;
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+use super::deserialize::{
+    default_sep,
+    deserialize_path,
+};
+
+mod lib;
+
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
 pub struct Actions {
     pub echo: Option<String>,
     pub shell: Option<String>,
@@ -36,53 +38,22 @@ pub struct Actions {
     pub rename: Option<ConflictingFileOperation>,
 }
 
-impl Default for Actions {
-    fn default() -> Self {
-        Self {
-            echo: None,
-            shell: None,
-            trash: None,
-            delete: None,
-            copy: None,
-            rename: None,
-            r#move: None,
-        }
-    }
-}
-
 impl Actions {
     pub fn run(&self, file: &mut File, watching: bool) -> Result<(), Error> {
+        assert!(self.r#move.is_some() ^ self.rename.is_some());
         if self.copy.is_some() {
-            if let Err(e) = self.copy(&file.path, watching) {
-                if e.kind() != ErrorKind::AlreadyExists {
-                    return Err(e);
-                }
-            }
+            self.copy(&file, watching)?;
         }
-        // TODO the following two are conflicting operations - validate this
-        if self.r#move.is_some() {
-            match self.r#move(&file.path, watching) {
-                Ok(path) => {
-                    file.path = path;
+        if self.r#move.is_some() ^ self.rename.is_some() {
+            let mut result = PathBuf::new();
+            if self.r#move.is_some() {
+                if let Some(path) = self.r#move(&file, watching)? {
+                    result = path;
                 }
-                Err(e) => {
-                    if e.kind() != ErrorKind::AlreadyExists {
-                        return Err(e);
-                    }
-                }
+            } else if let Some(path) = self.rename(&file, watching)? {
+                result = path;
             }
-        }
-        if self.rename.is_some() {
-            match self.rename(&file.path, watching) {
-                Ok(path) => {
-                    file.path = path;
-                }
-                Err(e) => {
-                    if e.kind() != ErrorKind::AlreadyExists {
-                        return Err(e);
-                    }
-                }
-            }
+            file.path = result;
         }
         if self.delete.is_some() {
             self.delete(&file.path)?;
@@ -90,79 +61,59 @@ impl Actions {
         Ok(())
     }
 
-    fn copy(&self, from: &Path, watching: bool) -> Result<PathBuf, Error> {
+    fn copy(&self, file: &File, is_watching: bool) -> Result<Option<PathBuf>, Error> {
         assert!(self.copy.is_some());
         let copy = self.copy.as_ref().unwrap();
         if !copy.to.exists() {
             fs::create_dir_all(&copy.to)?;
         }
-        let to = copy.to.join(from.file_name().unwrap());
+        let to = copy.to.join(&file.path.file_name().unwrap());
         if to.exists() {
-            match copy.get_new_path(from, watching) {
-                Ok(to) => {
-                    std::fs::copy(from, &to)?;
-                    Ok(to)
-                }
-                Err(e) => {
-                    // can only happen if `if_exists` is set to skip or
-                    // there is a problem when writing the file
-                    Err(e)
-                }
+            if let Some(path) = to.update(&copy.if_exists, &copy.sep, is_watching) {
+                std::fs::copy(&file.path, &path)?;
+                Ok(Some(path))
+            } else {
+                Ok(None)
             }
         } else {
-            let to = copy.to.join(to);
-            std::fs::copy(from, &to)?;
-            Ok(to)
+            std::fs::copy(&file.path, &to)?;
+            Ok(Some(to))
         }
     }
 
-    fn rename(&self, from: &Path, watching: bool) -> Result<PathBuf, Error> {
+    fn rename(&self, file: &File, is_watching: bool) -> Result<Option<PathBuf>, Error> {
         assert!(self.rename.is_some());
         let rename = self.rename.as_ref().unwrap();
-        let parent = rename.to.parent().unwrap();
-        if !parent.exists() {
-            fs::create_dir_all(parent)?;
-        }
         if rename.to.exists() {
-            match rename.get_new_path(from, watching) {
-                Ok(to) => {
-                    std::fs::rename(from, &to)?;
-                    Ok(to)
-                }
-                Err(e) => {
-                    // can only happen if `if_exists` is set to skip or overwrite, or
-                    // there is a problem when writing the file
-                    Err(e)
-                }
+            if let Some(path) = rename.to.update(&rename.if_exists, &rename.sep, is_watching) {
+                std::fs::rename(&file.path, &path)?;
+                Ok(Some(path))
+            } else {
+                Ok(None)
             }
         } else {
-            std::fs::rename(from, &rename.to)?;
-            Ok(rename.to.clone())
+            std::fs::rename(&file.path, &rename.to)?;
+            Ok(Some(rename.to.clone()))
         }
     }
 
-    fn r#move(&self, from: &Path, watching: bool) -> Result<PathBuf, Error> {
+    fn r#move(&self, file: &File, is_watching: bool) -> Result<Option<PathBuf>, Error> {
         assert!(self.r#move.is_some());
         let r#move = self.r#move.as_ref().unwrap();
         if !r#move.to.exists() {
             fs::create_dir_all(&r#move.to)?;
         }
-        let to = r#move.to.join(from.file_name().unwrap());
+        let to = r#move.to.join(&file.path.file_name().unwrap());
         if to.exists() {
-            match r#move.get_new_path(from, watching) {
-                Ok(to) => {
-                    std::fs::rename(from, &to)?;
-                    Ok(to)
-                }
-                Err(e) => {
-                    // can only happen if `if_exists` is set to skip or
-                    // there is a problem when writing the file
-                    Err(e)
-                }
+            if let Some(path) = to.update(&r#move.if_exists, &r#move.sep, is_watching) {
+                std::fs::rename(&file.path, &path)?;
+                Ok(Some(path))
+            } else {
+                Ok(None)
             }
         } else {
-            std::fs::rename(from, &to)?;
-            Ok(to)
+            std::fs::rename(&file.path, &to)?;
+            Ok(Some(to))
         }
     }
 
@@ -177,8 +128,8 @@ pub struct ConflictingFileOperation {
     pub(crate) to: PathBuf,
     #[serde(default)]
     pub if_exists: ConflictOption,
-    #[serde(default)]
-    pub counter_separator: String,
+    #[serde(default = "default_sep")]
+    pub sep: String,
 }
 
 impl From<&str> for ConflictingFileOperation {
@@ -192,7 +143,7 @@ impl From<&str> for ConflictingFileOperation {
 impl From<PathBuf> for ConflictingFileOperation {
     fn from(path: PathBuf) -> Self {
         let mut op = ConflictingFileOperation::default();
-        op.to = path.expand_vars();
+        op.to = path.fullpath();
         op
     }
 }
@@ -202,63 +153,7 @@ impl Default for ConflictingFileOperation {
         Self {
             to: PathBuf::new(), // shouldn't get to this if 'to' isn't specified
             if_exists: Default::default(),
-            counter_separator: " ".to_string(),
-        }
-    }
-}
-
-impl ConflictingFileOperation {
-    /// Computes the appropriate new path based on `self.if_exists`.
-    /// # Args
-    /// * `from`: path representing the original file's path
-    /// * `watching`: whether this function is being run from a watcher or not
-    /// # Errors
-    /// This method produces an error in the following cases:
-    /// * `self.if_exists` is set to skip
-    pub fn get_new_path(&self, from: &Path, watching: bool) -> Result<PathBuf, Error> {
-        assert!(from.exists());
-        assert!(self.to.exists());
-        match self.if_exists {
-            ConflictOption::Skip => Err(Error::new(
-                ErrorKind::AlreadyExists,
-                format!("error: {} already exists", self.to.display()),
-            )),
-            ConflictOption::Overwrite => {
-                if self.to.is_dir() {
-                    return Ok(self.to.join(from.file_name().unwrap()));
-                }
-                Ok(self.to.clone())
-            }
-            ConflictOption::Rename => {
-                let mut new_path = self.to.clone();
-                if new_path.is_dir() {
-                    new_path.push(from.file_name().unwrap())
-                }
-                let (stem, extension) = get_stem_and_extension(&new_path);
-                let new_dir = new_path.parent().unwrap().to_path_buf();
-                if new_path.exists() {
-                    let mut n = 1;
-                    while new_path.exists() {
-                        let new_filename = format!("{}{}({:?}).{}", stem, self.counter_separator, n, extension);
-                        new_path = new_dir.join(new_filename);
-                        n += 1;
-                    }
-                }
-                Ok(new_path)
-            }
-            ConflictOption::Ask => {
-                assert_ne!(ConflictOption::default(), ConflictOption::Ask);
-                let action = ConflictingFileOperation {
-                    if_exists: if watching {
-                        Default::default()
-                    } else {
-                        resolve_conflict(from, &self.to)
-                    },
-                    to: self.to.clone(),
-                    counter_separator: self.counter_separator.clone(),
-                };
-                action.get_new_path(from, watching)
-            }
+            sep: " ".to_string(),
         }
     }
 }

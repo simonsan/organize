@@ -1,25 +1,75 @@
-mod lib;
-
-use serde_yaml::to_string;
 use std::{
     env,
-    io::Error,
     path::{
         Path,
         PathBuf,
     },
 };
 
+use crate::{
+    commands::run::resolve_conflict,
+    file::get_stem_and_extension,
+    user_config::rules::actions::ConflictOption,
+};
+
+mod lib;
+
+pub trait Update {
+    fn update(&self, if_exists: &ConflictOption, sep: &str, watching: bool) -> Option<PathBuf>;
+}
+
+impl Update for PathBuf {
+    ///  Computes the appropriate new path based on `if_exists`.
+    ///  # Args
+    /// * `if_exists`: option to resolve the naming conflict
+    /// * `sep`: if `if_exists` is set to rename, `sep` will go between the filename and the added counter
+    /// * `is_watching`: whether this function is being run from a watcher or not
+    /// # Return
+    /// This function will return `Some(new_path)` if `if_exists` is not set to skip, otherwise it returns `None`
+    fn update(&self, if_exists: &ConflictOption, sep: &str, watching: bool) -> Option<Self> {
+        assert!(self.exists());
+        match if_exists {
+            ConflictOption::Skip => None,
+            ConflictOption::Overwrite => Some(self.clone()),
+            ConflictOption::Rename => {
+                let (stem, extension) = get_stem_and_extension(&self);
+                let mut new_path = self.clone();
+                let mut n = 1;
+                while new_path.exists() {
+                    let new_filename = format!("{}{}({:?}).{}", stem, sep, n, extension);
+                    new_path.set_file_name(new_filename);
+                    n += 1;
+                }
+                Some(new_path)
+            }
+            ConflictOption::Ask => {
+                assert_ne!(ConflictOption::default(), ConflictOption::Ask);
+                let if_exists = if watching {
+                    Default::default()
+                } else {
+                    resolve_conflict(&self)
+                };
+                self.update(&if_exists, sep, watching)
+            }
+        }
+    }
+}
+
 pub trait Expandable {
-    fn fullpath(&self) -> Result<Self, Error>;
-    fn expand_user(&self) -> Self;
-    fn expand_vars(&self) -> Self;
-    fn expand_placeholders(&self, path: &Path) -> Self;
+    fn fullpath(&self) -> PathBuf;
+    fn expand_user(&self) -> PathBuf;
+    fn expand_vars(&self) -> PathBuf;
+    // fn expand_placeholders(&self, path: &Path) -> PathBuf;
 }
 
 impl Expandable for PathBuf {
-    fn fullpath(&self) -> Result<Self, Error> {
-        Ok(self.expand_user().expand_vars().canonicalize()?)
+    fn fullpath(&self) -> Self {
+        // we're not making up the filepath, so running canonicalize should not fail
+        let mut path = self.expand_user().expand_vars();
+        if path.exists() {
+            path = path.canonicalize().unwrap();
+        }
+        path
     }
 
     fn expand_user(&self) -> Self {
@@ -42,7 +92,7 @@ impl Expandable for PathBuf {
             .collect()
     }
 
-    fn expand_placeholders(&self, path: &Path) -> Self {
-        let as_str = self.to_str().unwrap().to_string();
-    }
+    // fn expand_placeholders(&self, path: &Path) -> Self {
+    //     let as_str = self.to_str().unwrap().to_string();
+    // }
 }

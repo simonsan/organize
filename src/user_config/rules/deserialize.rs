@@ -1,25 +1,20 @@
-use crate::path::Expandable;
 use core::result::Result::Ok;
+use std::path::PathBuf;
+
 use regex::Regex;
 use serde::{
     Deserialize,
     Deserializer,
 };
-use std::{
-    fs,
-    path::PathBuf,
-};
+
+use crate::path::Expandable;
 
 pub(in crate::user_config) fn deserialize_path<'de, D>(deserializer: D) -> Result<PathBuf, D::Error>
 where
     D: Deserializer<'de>,
 {
     let buf = String::deserialize(deserializer)?;
-    let path = PathBuf::from(&buf).expand_vars();
-    if !path.exists() {
-        fs::create_dir_all(&path).expect("error: declared non-existing directory that could not be created");
-    }
-    Ok(path)
+    Ok(PathBuf::from(&buf).fullpath())
 }
 
 pub(in crate::user_config) fn deserialize_regex<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Regex, D::Error> {
@@ -31,4 +26,8 @@ pub(in crate::user_config) fn deserialize_regex<'de, D: Deserializer<'de>>(deser
 #[allow(clippy::trivial_regex)]
 pub(in crate::user_config) fn default_regex() -> Regex {
     Regex::new("").unwrap()
+}
+
+pub(in crate::user_config) fn default_sep() -> String {
+    " ".to_string()
 }
