@@ -32,7 +32,6 @@ use crate::{
         rules::folder::Options,
         UserConfig,
     },
-    utils::path2rules,
     PROJECT_NAME,
 };
 
@@ -109,8 +108,8 @@ pub fn watch(cli: Cli) -> Result<(), Error> {
         } else {
             let config = UserConfig::new(&cli)?;
             let mut watcher = Watcher::new();
-            run(&config.rules, false)?;
-            watcher.watch(cli, &config)?;
+            run(&config, false)?;
+            watcher.watch(cli, config)?;
         }
     }
     Ok(())
@@ -137,7 +136,7 @@ impl Watcher {
         }
     }
 
-    pub fn watch(&mut self, cli: Cli, config: &UserConfig) -> Result<(), Error> {
+    pub fn watch(&mut self, cli: Cli, config: UserConfig) -> Result<(), Error> {
         for rule in config.rules.iter() {
             for folder in rule.folders.iter() {
                 let is_recursive = if folder.options.recursive {
@@ -158,7 +157,7 @@ impl Watcher {
         std::mem::drop(cli);
 
         // PROCESS SIGNALS
-        let path2rules = path2rules(&config.rules);
+        let path2rules = config.to_map();
         loop {
             if let Ok(RawEvent {
                 path: Some(abs_path),

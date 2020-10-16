@@ -7,6 +7,7 @@ use clap::load_yaml;
 use dirs::home_dir;
 use serde::Deserialize;
 use std::{
+    collections::HashMap,
     fs,
     io::{
         Error,
@@ -95,5 +96,21 @@ impl UserConfig {
 
     pub fn default_path() -> PathBuf {
         Self::dir().join("config.yml")
+    }
+
+    /// returns a hashmap where the keys are paths and the values are tuples of rules
+    /// and indices, which indicate the index of the key's corresponding folder in the rule's folders' list
+    /// (i.e. the key is the ith folder in the corresponding rule)
+    pub fn to_map(&self) -> HashMap<&PathBuf, Vec<(&Rule, usize)>> {
+        let mut map = HashMap::new();
+        for rule in self.rules.iter() {
+            for (i, folder) in rule.folders.iter().enumerate() {
+                if !map.contains_key(&folder.path) {
+                    map.insert(&folder.path, Vec::new());
+                }
+                map.get_mut(&folder.path).unwrap().push((rule, i));
+            }
+        }
+        map
     }
 }

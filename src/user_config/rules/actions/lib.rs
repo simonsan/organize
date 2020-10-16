@@ -13,7 +13,7 @@ mod new_path {
             ConflictOption,
             ConflictingFileOperation,
         },
-        utils::test_file_or_dir,
+        utils::testing::test_file_or_dir,
     };
 
     static WATCHING: bool = false;

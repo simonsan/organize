@@ -61,16 +61,26 @@ impl Actions {
         }
         // TODO the following two are conflicting operations - validate this
         if self.r#move.is_some() {
-            if let Err(e) = self.r#move(&file.path, watching) {
-                if e.kind() != ErrorKind::AlreadyExists {
-                    return Err(e);
+            match self.r#move(&file.path, watching) {
+                Ok(path) => {
+                    file.path = path;
+                }
+                Err(e) => {
+                    if e.kind() != ErrorKind::AlreadyExists {
+                        return Err(e);
+                    }
                 }
             }
         }
         if self.rename.is_some() {
-            if let Err(e) = self.rename(&file.path, watching) {
-                if e.kind() != ErrorKind::AlreadyExists {
-                    return Err(e);
+            match self.rename(&file.path, watching) {
+                Ok(path) => {
+                    file.path = path;
+                }
+                Err(e) => {
+                    if e.kind() != ErrorKind::AlreadyExists {
+                        return Err(e);
+                    }
                 }
             }
         }

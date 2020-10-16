@@ -98,7 +98,7 @@ impl Cli {
                 let lock_file = LockFile::new();
                 lock_file.clear_dead_processes()?;
                 let config = UserConfig::new(&self)?;
-                run(&config.rules, false)?;
+                run(&config, false)?;
             }
             SubCommands::Watch => {
                 let lock_file = LockFile::new();

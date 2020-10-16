@@ -11,7 +11,7 @@ mod tests {
 
     use crate::{
         path::Expand,
-        utils::{
+        utils::testing::{
             project_dir,
             tests_dir,
         },

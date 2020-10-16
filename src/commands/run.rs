@@ -11,15 +11,14 @@ use dialoguer::{
 
 use crate::{
     file::File,
-    user_config::rules::{
-        actions::ConflictOption,
-        rule::Rule,
+    user_config::{
+        rules::actions::ConflictOption,
+        UserConfig,
     },
-    utils::path2rules,
 };
 
-pub fn run(rules: &[Rule], watching: bool) -> Result<(), Error> {
-    let mut path2rules = path2rules(&rules);
+pub fn run(config: &UserConfig, watching: bool) -> Result<(), Error> {
+    let mut path2rules = config.to_map();
     for (path, rules) in path2rules.iter_mut() {
         let files = fs::read_dir(&path)?;
         'files: for file in files {
