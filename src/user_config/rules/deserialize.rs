@@ -14,15 +14,9 @@ pub(in crate::user_config) fn deserialize_path<'de, D: Deserializer<'de>>(
     deserializer: D,
 ) -> Result<PathBuf, D::Error> {
     let buf = String::deserialize(deserializer)?;
-    if buf.is_empty() {
-        panic!("could not parse config file: field 'to' must represent a valid path")
-    }
     let path = PathBuf::from(&buf).expand();
-    if path.is_relative() {
-        panic!("could not parse config file: relative paths not allowed")
-    }
     if !path.exists() {
-        fs::create_dir_all(&path).expect("error: declared non-existent directory in config that could not be created");
+        fs::create_dir_all(&path).expect("error: declared non-existing directory that could not be created");
     }
     Ok(path)
 }
