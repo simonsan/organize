@@ -33,7 +33,6 @@ use crate::{
             folder::Options,
             rule::Rule,
         },
-        ToMap,
         UserConfig,
     },
     utils::path2rules,
