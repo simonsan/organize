@@ -10,7 +10,6 @@ use serde::Deserialize;
 use std::{
     fs,
     io::Error,
-    path::PathBuf,
 };
 
 pub mod rules;
@@ -21,8 +20,6 @@ pub mod rules;
 /// * `rules`: a list of parsed rules defined by the user
 #[derive(Deserialize, Clone, Debug)]
 pub struct UserConfig {
-    #[serde(skip)]
-    pub path: PathBuf,
     pub rules: Vec<Rule>,
 }
 
@@ -43,9 +40,7 @@ impl UserConfig {
         }
 
         let content = fs::read_to_string(&path)?;
-        let mut config: Self = serde_yaml::from_str(&content).expect("could not parse config file");
-        config.path = path;
-        println!("{:?}", config);
+        let config = serde_yaml::from_str(&content).expect("could not parse config file");
 
         Ok(config)
     }

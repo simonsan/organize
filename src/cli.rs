@@ -114,11 +114,17 @@ impl Cli {
                     edit(path)?;
                 }
             }
-            SubCommands::Run | SubCommands::Watch => {
+            SubCommands::Run => {
+                let lock_file = LockFile::new();
+                lock_file.clear_dead_processes()?;
+                let config = UserConfig::new(&self)?;
+                run(&config.rules, false)?;
+            }
+            SubCommands::Watch => {
                 let lock_file = LockFile::new();
                 lock_file.clear_dead_processes()?;
                 if self.subcommand == SubCommands::Watch {
-                    watch(self, config)?
+                    watch(self)?
                 }
             }
             SubCommands::Suggest => todo!(),

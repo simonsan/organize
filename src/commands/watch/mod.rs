@@ -22,6 +22,7 @@ use notify::{
 
 use crate::{
     cli::{
+        config_path,
         default_config,
         Cli,
     },
@@ -41,11 +42,11 @@ use crate::{
 
 pub mod daemon;
 
-pub fn watch(cli: Cli, config: UserConfig) -> Result<(), Error> {
+pub fn watch(cli: Cli) -> Result<(), Error> {
     let lock_file = LockFile::new();
-
+    let path = config_path(&cli);
     if cli.args.is_present("replace") {
-        let process = lock_file.find_process_by_path(&config.path);
+        let process = lock_file.find_process_by_path(&path);
         return match process {
             Some((pid, _)) => {
                 let daemon = Daemon::new(pid);
@@ -54,7 +55,7 @@ pub fn watch(cli: Cli, config: UserConfig) -> Result<(), Error> {
             }
             None => {
                 // there is no running process
-                if config.path == default_config() {
+                if path == default_config() {
                     Err(Error::new(
                         ErrorKind::Other,
                         format!(
@@ -69,15 +70,15 @@ pub fn watch(cli: Cli, config: UserConfig) -> Result<(), Error> {
                         ErrorKind::Other,
                         format!("no running instance was found for the desired configuration. \n\
                         Run `{} watch` or '{} watch --daemon --with-config {}' to start a new instance with this configuration",
-                                PROJECT_NAME, PROJECT_NAME, config.path.display()),
+                                PROJECT_NAME, PROJECT_NAME, path.display()),
                     ))
                 }
             }
         };
     } else {
         let processes = lock_file.get_running_watchers();
-        for (_, path) in processes.iter() {
-            if path == &config.path {
+        for (_, process_path) in processes {
+            if path == process_path {
                 return Err(Error::new(
                     ErrorKind::Other,
                     format!(
@@ -85,13 +86,13 @@ pub fn watch(cli: Cli, config: UserConfig) -> Result<(), Error> {
                         Use `{} stop --with-config {}` to stop this instance, '{} stop' to stop all instances \
                         or `{} watch --daemon --replace --with-config {}` to restart the daemon",
                         PROJECT_NAME,
-                        &config.path.display(),
+                        &path.display(),
                         PROJECT_NAME,
                         PROJECT_NAME,
-                        &config.path.display()
+                        &path.display()
                     ),
                 ));
-            } else if path != &config.path && !cli.args.is_present("allow_multiple_instances") {
+            } else if path != process_path && !cli.args.is_present("allow_multiple_instances") {
                 return Err(
                     Error::new(
                         ErrorKind::Other,
@@ -109,7 +110,7 @@ pub fn watch(cli: Cli, config: UserConfig) -> Result<(), Error> {
             let config = UserConfig::new(&cli)?;
             run(&config.rules, false)?;
             let mut watcher = Watcher::new();
-            watcher.watch(&config)?;
+            watcher.watch(&cli, &config)?;
         }
     }
     Ok(())
@@ -136,7 +137,7 @@ impl Watcher {
         }
     }
 
-    pub fn watch(&mut self, config: &UserConfig) -> Result<(), Error> {
+    pub fn watch(&mut self, cli: &Cli, config: &UserConfig) -> Result<(), Error> {
         for rule in config.rules.iter() {
             for folder in rule.folders.iter() {
                 let is_recursive = if folder.options.recursive {
@@ -151,7 +152,8 @@ impl Watcher {
         // REGISTER PID
         let pid = process::id();
         let lock_file = LockFile::new();
-        lock_file.append(pid.try_into().unwrap(), &config.path).unwrap();
+        let path = config_path(cli);
+        lock_file.append(pid.try_into().unwrap(), &path).unwrap();
 
         // PROCESS SIGNALS
         let path2rules = path2rules(&config.rules);
