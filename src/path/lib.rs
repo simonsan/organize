@@ -1,5 +1,5 @@
 #[cfg(test)]
-mod expand_env_var {
+mod tests {
     use std::{
         env,
         io::{
@@ -49,7 +49,10 @@ mod expand_env_var {
     #[test]
     #[should_panic]
     fn non_existing_var() {
-        assert!(env::var("PROJECT_DIR").is_err());
+        assert!(
+            env::var("PROJECT_DIR").is_err(),
+            "PROJECT_DIR should not be a valid environment variable for this test"
+        );
         let tested = PathBuf::from("$PROJECT_DIR/tests");
         tested.expand();
     }
