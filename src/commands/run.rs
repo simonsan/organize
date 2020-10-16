@@ -1,11 +1,19 @@
 use crate::{
     file::File,
-    user_config::rules::rule::Rule,
+    user_config::rules::{
+        actions::ConflictOption,
+        rule::Rule,
+    },
     utils::path2rules,
+};
+use dialoguer::{
+    theme::ColorfulTheme,
+    Select,
 };
 use std::{
     fs,
     io::Error,
+    path::Path,
 };
 
 pub fn run(rules: &[Rule], watching: bool) -> Result<(), Error> {
@@ -31,4 +39,29 @@ pub fn run(rules: &[Rule], watching: bool) -> Result<(), Error> {
         }
     }
     Ok(())
+}
+
+pub fn resolve_conflict(from: &Path, to: &Path) -> ConflictOption {
+    let selections = ["Overwrite", "Rename", "Skip"];
+    let selection = Select::with_theme(&ColorfulTheme::default())
+        .with_prompt(format!(
+            "A file named {} already exists in {}.\nSelect an option and press Enter to resolve this issue:",
+            from.file_name().unwrap().to_str().unwrap(),
+            if to.is_dir() {
+                to.display()
+            } else {
+                to.parent().unwrap().display()
+            }
+        ))
+        .default(0)
+        .items(&selections[..])
+        .interact()
+        .unwrap();
+
+    match selection {
+        0 => ConflictOption::Overwrite,
+        1 => ConflictOption::Rename,
+        2 => ConflictOption::Skip,
+        _ => panic!("no option selected"),
+    }
 }

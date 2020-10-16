@@ -4,7 +4,6 @@ use std::{
         Error,
         ErrorKind,
     },
-    path::PathBuf,
 };
 
 use clap::{
@@ -13,7 +12,6 @@ use clap::{
     ArgMatches,
 };
 use colored::Colorize;
-use dirs::home_dir;
 
 use crate::{
     commands::{
@@ -32,23 +30,6 @@ use crate::{
     },
     PROJECT_NAME,
 };
-
-pub fn config_directory() -> PathBuf {
-    home_dir()
-        .expect("ERROR: cannot determine home directory")
-        .join(format!(".{}", PROJECT_NAME))
-}
-
-pub fn default_config() -> PathBuf {
-    config_directory().join("config.yml")
-}
-
-pub fn config_path(cli: &Cli) -> PathBuf {
-    match cli.args.value_of("with_config") {
-        Some(path) => PathBuf::from(path).canonicalize().expect("invalid path"),
-        None => default_config(),
-    }
-}
 
 #[derive(Clone, Debug)]
 /// Struct that initializes the application and stores the main information about the subcommands and options introduced by the user
@@ -91,7 +72,7 @@ impl Cli {
         match self.subcommand {
             SubCommands::Config => {
                 if self.args.is_present("show_path") {
-                    println!("{}", config_path(&self).display());
+                    println!("{}", UserConfig::path(&self).display());
                 } else if self.args.is_present("show_defaults") {
                     let Options {
                         recursive,
@@ -107,11 +88,10 @@ impl Cli {
                     println!("ignored_directories: {:?}", ignore);
                 } else if self.args.is_present("new") {
                     let config_file = env::current_dir()?.join(format!("{}.yml", PROJECT_NAME));
-                    crate::utils::create_config_file(&config_file)?;
+                    UserConfig::create(&config_file)?;
                     println!("New config file created at {}", config_file.display());
                 } else {
-                    let path = config_path(&self);
-                    edit(path)?;
+                    edit(UserConfig::path(&self))?;
                 }
             }
             SubCommands::Run => {
@@ -131,7 +111,7 @@ impl Cli {
             SubCommands::Logs => todo!(),
             SubCommands::Stop => {
                 let lock_file = LockFile::new();
-                let path = config_path(&self);
+                let path = UserConfig::path(&self);
                 if self.args.is_present("with_config") {
                     match lock_file.find_process_by_path(&path) {
                         Some((pid, _)) => {

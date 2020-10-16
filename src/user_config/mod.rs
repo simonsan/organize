@@ -1,16 +1,23 @@
 use crate::{
-    cli::{
-        config_path,
-        Cli,
-    },
+    cli::Cli,
     user_config::rules::rule::Rule,
-    utils,
+    PROJECT_NAME,
 };
+use clap::load_yaml;
+use dirs::home_dir;
 use serde::Deserialize;
 use std::{
     fs,
-    io::Error,
+    io::{
+        Error,
+        ErrorKind,
+    },
+    path::{
+        Path,
+        PathBuf,
+    },
 };
+use yaml_rust::YamlEmitter;
 
 pub mod rules;
 
@@ -33,15 +40,60 @@ impl UserConfig {
     /// This constructor fails in the following cases:
     /// - The configuration file does not exist
     pub fn new(cli: &Cli) -> Result<Self, Error> {
-        let path = config_path(cli);
+        let path = UserConfig::path(cli);
 
         if !path.exists() {
-            utils::create_config_file(&path)?;
+            Self::create(&path)?;
         }
 
         let content = fs::read_to_string(&path)?;
         let config = serde_yaml::from_str(&content).expect("could not parse config file");
 
         Ok(config)
+    }
+
+    pub fn create(path: &Path) -> Result<(), Error> {
+        // safe unwrap, dir is created at $HOME or $UserProfile%,
+        // so it exists and the user must have permissions
+        if path.exists() {
+            return Err(Error::new(
+                ErrorKind::AlreadyExists,
+                format!(
+                    "{} already exists in this directory",
+                    path.file_name().unwrap().to_str().unwrap()
+                ),
+            ));
+        }
+        match path.parent() {
+            Some(parent) => {
+                if !parent.exists() {
+                    std::fs::create_dir_all(path.parent().unwrap())?;
+                }
+                let config = load_yaml!("../../examples/config.yml");
+                let mut output = String::new();
+                let mut emitter = YamlEmitter::new(&mut output);
+                emitter.dump(config).expect("ERROR: could not create starter config");
+                std::fs::write(path, output)?;
+            }
+            None => panic!("home directory's parent folder should be defined"),
+        }
+        Ok(())
+    }
+
+    pub fn path(cli: &Cli) -> PathBuf {
+        match cli.args.value_of("with_config") {
+            Some(path) => PathBuf::from(path).canonicalize().expect("invalid path"),
+            None => Self::default_path(),
+        }
+    }
+
+    pub fn dir() -> PathBuf {
+        home_dir()
+            .expect("ERROR: cannot determine home directory")
+            .join(format!(".{}", PROJECT_NAME))
+    }
+
+    pub fn default_path() -> PathBuf {
+        Self::dir().join("config.yml")
     }
 }

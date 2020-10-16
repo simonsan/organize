@@ -21,11 +21,7 @@ use notify::{
 };
 
 use crate::{
-    cli::{
-        config_path,
-        default_config,
-        Cli,
-    },
+    cli::Cli,
     commands::{
         run::run,
         watch::daemon::Daemon,
@@ -44,7 +40,7 @@ pub mod daemon;
 
 pub fn watch(cli: Cli) -> Result<(), Error> {
     let lock_file = LockFile::new();
-    let path = config_path(&cli);
+    let path = UserConfig::path(&cli);
 
     // REPLACE
     if cli.args.is_present("replace") {
@@ -57,7 +53,7 @@ pub fn watch(cli: Cli) -> Result<(), Error> {
             }
             None => {
                 // there is no running process
-                if path == default_config() {
+                if path == UserConfig::default_path() {
                     Err(Error::new(
                         ErrorKind::Other,
                         format!(
@@ -156,7 +152,7 @@ impl Watcher {
         // REGISTER PID
         let pid = process::id();
         let lock_file = LockFile::new();
-        let path = config_path(cli);
+        let path = UserConfig::path(cli);
         lock_file.append(pid.try_into().unwrap(), &path).unwrap();
 
         // PROCESS SIGNALS

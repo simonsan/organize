@@ -1,10 +1,9 @@
 use std::{
-    io::{
-        Error,
-        ErrorKind,
-    },
+    env,
+    ffi::OsString,
+    io::Error,
     path::PathBuf,
-    process::Command,
+    process,
 };
 
 /// Launches an editor to modify the default config.
@@ -16,17 +15,21 @@ use std::{
 /// This functions panics in the following cases:
 /// - The $EDITOR env. variable was found but its process could not be started.
 pub fn edit(path: PathBuf) -> Result<(), Error> {
-    match std::env::var("EDITOR") {
-        Ok(editor) => {
-            let mut editor = Command::new(editor);
-            editor
-                .arg(path.to_str().unwrap())
-                .spawn()
-                .expect("ERROR: failed to run editor")
-                .wait()
-                .expect("ERROR: command was not running");
-            Ok(())
-        }
-        Err(_) => Err(Error::new(ErrorKind::NotFound, crate::utils::prompt_editor_env_var())),
+    let editor = get_default_editor();
+    process::Command::new(&editor).arg(path).spawn()?.wait()?;
+    Ok(())
+}
+
+fn get_default_editor() -> OsString {
+    if let Some(prog) = env::var_os("VISUAL") {
+        return prog;
+    }
+    if let Some(prog) = env::var_os("EDITOR") {
+        return prog;
+    }
+    if cfg!(windows) {
+        "notepad.exe".into()
+    } else {
+        "vi".into()
     }
 }

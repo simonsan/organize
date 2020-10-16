@@ -16,12 +16,12 @@ use serde::{
 
 use super::deserialize::deserialize_path;
 use crate::{
+    commands::run::resolve_conflict,
     file::{
         get_stem_and_extension,
         File,
     },
     path::Expand,
-    utils::resolve_name_conflict,
 };
 use std::io::ErrorKind;
 
@@ -242,7 +242,7 @@ impl ConflictingFileOperation {
                     if_exists: if watching {
                         Default::default()
                     } else {
-                        resolve_name_conflict(from, &self.to)
+                        resolve_conflict(from, &self.to)
                     },
                     to: self.to.clone(),
                     counter_separator: self.counter_separator.clone(),
