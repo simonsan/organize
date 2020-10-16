@@ -1,7 +1,10 @@
 use crate::{
     file::File,
     user_config::rules::{
-        actions::ConflictOption,
+        actions::{
+            ConflictOption,
+            ConflictOption::Overwrite,
+        },
         rule::Rule,
     },
     utils::path2rules,
@@ -11,10 +14,13 @@ use dialoguer::{
     Select,
 };
 use std::{
+    collections::HashMap,
     fs,
     io::Error,
+    iter::FromIterator,
     path::Path,
 };
+use yaml_rust::yaml::Yaml::Hash;
 
 pub fn run(rules: &[Rule], watching: bool) -> Result<(), Error> {
     let mut path2rules = path2rules(&rules);

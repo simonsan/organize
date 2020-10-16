@@ -29,11 +29,19 @@ use crate::{
     file::File,
     lock_file::LockFile,
     user_config::{
-        rules::folder::Options,
+        rules::{
+            folder::Options,
+            rule::Rule,
+        },
+        ToMap,
         UserConfig,
     },
     utils::path2rules,
     PROJECT_NAME,
+};
+use std::{
+    collections::HashMap,
+    path::PathBuf,
 };
 
 pub mod daemon;
@@ -110,7 +118,7 @@ pub fn watch(cli: Cli) -> Result<(), Error> {
             let config = UserConfig::new(&cli)?;
             let mut watcher = Watcher::new();
             run(&config.rules, false)?;
-            watcher.watch(&cli, &config)?;
+            watcher.watch(cli, &config)?;
         }
     }
     Ok(())
@@ -137,7 +145,7 @@ impl Watcher {
         }
     }
 
-    pub fn watch(&mut self, cli: &Cli, config: &UserConfig) -> Result<(), Error> {
+    pub fn watch(&mut self, cli: Cli, config: &UserConfig) -> Result<(), Error> {
         for rule in config.rules.iter() {
             for folder in rule.folders.iter() {
                 let is_recursive = if folder.options.recursive {
@@ -152,8 +160,10 @@ impl Watcher {
         // REGISTER PID
         let pid = process::id();
         let lock_file = LockFile::new();
-        let path = UserConfig::path(cli);
+        let path = UserConfig::path(&cli);
         lock_file.append(pid.try_into().unwrap(), &path).unwrap();
+        std::mem::drop(lock_file);
+        std::mem::drop(cli);
 
         // PROCESS SIGNALS
         let path2rules = path2rules(&config.rules);

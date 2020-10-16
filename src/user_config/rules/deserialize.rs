@@ -10,9 +10,10 @@ use std::{
     path::PathBuf,
 };
 
-pub(in crate::user_config) fn deserialize_path<'de, D: Deserializer<'de>>(
-    deserializer: D,
-) -> Result<PathBuf, D::Error> {
+pub(in crate::user_config) fn deserialize_path<'de, D>(deserializer: D) -> Result<PathBuf, D::Error>
+where
+    D: Deserializer<'de>,
+{
     let buf = String::deserialize(deserializer)?;
     let path = PathBuf::from(&buf).expand();
     if !path.exists() {
