@@ -45,6 +45,8 @@ pub mod daemon;
 pub fn watch(cli: Cli) -> Result<(), Error> {
     let lock_file = LockFile::new();
     let path = config_path(&cli);
+
+    // REPLACE
     if cli.args.is_present("replace") {
         let process = lock_file.find_process_by_path(&path);
         return match process {
@@ -103,9 +105,11 @@ pub fn watch(cli: Cli) -> Result<(), Error> {
             }
         }
 
+        // DAEMON
         if cli.args.is_present("daemon") {
             let daemon = Daemon::new(process::id() as i32);
             daemon.start();
+        // NO ARGS
         } else {
             let config = UserConfig::new(&cli)?;
             run(&config.rules, false)?;
