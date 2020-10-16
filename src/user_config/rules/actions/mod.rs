@@ -21,7 +21,7 @@ use crate::{
         get_stem_and_extension,
         File,
     },
-    path::Expand,
+    path::Expandable,
 };
 use std::io::ErrorKind;
 
@@ -184,7 +184,7 @@ pub struct ConflictingFileOperation {
 impl From<&str> for ConflictingFileOperation {
     fn from(path: &str) -> Self {
         let mut op = ConflictingFileOperation::default();
-        op.to = PathBuf::from(path).expand();
+        op.to = PathBuf::from(path).expand_vars();
         op
     }
 }
@@ -192,7 +192,7 @@ impl From<&str> for ConflictingFileOperation {
 impl From<PathBuf> for ConflictingFileOperation {
     fn from(path: PathBuf) -> Self {
         let mut op = ConflictingFileOperation::default();
-        op.to = path.expand();
+        op.to = path.expand_vars();
         op
     }
 }

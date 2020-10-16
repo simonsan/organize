@@ -10,7 +10,7 @@ mod tests {
     };
 
     use crate::{
-        path::Expand,
+        path::Expandable,
         utils::testing::{
             project_dir,
             tests_dir,
@@ -22,7 +22,7 @@ mod tests {
     fn home() -> Result<(), Error> {
         let tested = PathBuf::from("$HOME/Documents");
         let expected = home_dir().unwrap().join("Documents");
-        if tested.expand() == expected {
+        if tested.expand_vars() == expected {
             Ok(())
         } else {
             Err(Error::new(
@@ -36,7 +36,7 @@ mod tests {
     fn new_var() -> Result<(), Error> {
         env::set_var("PROJECT_DIR", project_dir());
         let tested = PathBuf::from("$PROJECT_DIR/tests");
-        if tested.expand() == tests_dir() {
+        if tested.expand_vars() == tests_dir() {
             Ok(())
         } else {
             Err(Error::new(
@@ -54,6 +54,6 @@ mod tests {
             "PROJECT_DIR should not be a valid environment variable for this test"
         );
         let tested = PathBuf::from("$PROJECT_DIR/tests");
-        tested.expand();
+        tested.expand_vars();
     }
 }

@@ -16,6 +16,10 @@ pub mod utils;
 static PROJECT_NAME: &str = crate_name!();
 
 fn main() -> Result<(), Error> {
+    if env::consts::OS == "windows" {
+        eprintln!("Windows is not supported yet");
+        return Ok(());
+    }
     let cli = Cli::new();
     match cli.run() {
         Ok(_) => {}

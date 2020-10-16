@@ -1,7 +1,7 @@
 mod lib;
 
 use crate::{
-    path::Expand,
+    path::Expandable,
     user_config::rules::filters::Filters,
 };
 use std::path::{
@@ -26,7 +26,7 @@ impl From<PathBuf> for File {
             filename,
             stem,
             extension,
-            path: path.expand(),
+            path: path.expand_vars(),
         }
     }
 }
@@ -40,7 +40,7 @@ impl From<&Path> for File {
             filename,
             stem,
             extension,
-            path: path.to_path_buf().expand(),
+            path: path.to_path_buf().expand_vars(),
         }
     }
 }

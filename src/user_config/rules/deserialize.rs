@@ -1,4 +1,4 @@
-use crate::path::Expand;
+use crate::path::Expandable;
 use core::result::Result::Ok;
 use regex::Regex;
 use serde::{
@@ -15,7 +15,7 @@ where
     D: Deserializer<'de>,
 {
     let buf = String::deserialize(deserializer)?;
-    let path = PathBuf::from(&buf).expand();
+    let path = PathBuf::from(&buf).expand_vars();
     if !path.exists() {
         fs::create_dir_all(&path).expect("error: declared non-existing directory that could not be created");
     }
