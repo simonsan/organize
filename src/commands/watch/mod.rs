@@ -112,8 +112,8 @@ pub fn watch(cli: Cli) -> Result<(), Error> {
         // NO ARGS
         } else {
             let config = UserConfig::new(&cli)?;
-            run(&config.rules, false)?;
             let mut watcher = Watcher::new();
+            run(&config.rules, false)?;
             watcher.watch(&cli, &config)?;
         }
     }
