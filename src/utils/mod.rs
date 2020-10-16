@@ -102,3 +102,21 @@ pub(crate) fn prompt_editor_env_var() -> String {
         _ => format!("error: {} not supported", platform)
     }
 }
+
+#[cfg(test)]
+pub fn project_dir() -> PathBuf {
+    // 'cargo test' must be run from the project directory, where Cargo.toml is
+    // even if you run it from some other folder inside the project
+    // 'cargo test' will move to the project root
+    env::current_dir().unwrap()
+}
+
+#[cfg(test)]
+pub fn tests_dir() -> PathBuf {
+    project_dir().join("tests")
+}
+
+#[cfg(test)]
+pub fn test_file_or_dir(filename: &str) -> PathBuf {
+    tests_dir().join("files").join(filename)
+}
