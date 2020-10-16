@@ -1,12 +1,9 @@
 use std::{
     collections::HashMap,
     env,
-    io,
     io::{
         Error,
         ErrorKind,
-        Read,
-        Write,
     },
     path::{
         Path,
@@ -15,7 +12,6 @@ use std::{
 };
 
 use clap::load_yaml;
-use colored::Colorize;
 use yaml_rust::YamlEmitter;
 
 use crate::{
@@ -25,26 +21,33 @@ use crate::{
     },
     PROJECT_NAME,
 };
+use dialoguer::{
+    theme::ColorfulTheme,
+    Select,
+};
 
-pub fn resolve_name_conflict(filename: &str) -> Result<ConflictOption, Error> {
-    print!(
-        "A file named {} already exists in the destination.\n [(o)verwrite / (r)ename / (s)kip]: ",
-        filename.underline().bold()
-    );
-    io::stdout().flush().unwrap();
+pub fn resolve_name_conflict(from: &Path, to: &Path) -> ConflictOption {
+    let selections = ["Overwrite", "Rename", "Skip"];
+    let selection = Select::with_theme(&ColorfulTheme::default())
+        .with_prompt(format!(
+            "A file named {} already exists in {}.\nSelect an option and press Enter to resolve this issue:",
+            from.file_name().unwrap().to_str().unwrap(),
+            if to.is_dir() {
+                to.display()
+            } else {
+                to.parent().unwrap().display()
+            }
+        ))
+        .default(0)
+        .items(&selections[..])
+        .interact()
+        .unwrap();
 
-    let mut buf = [0; 1];
-    io::stdin().read_exact(&mut buf).unwrap();
-    let buf = buf[0];
-
-    if buf == 111 {
-        Ok(ConflictOption::Overwrite)
-    } else if buf == 114 {
-        Ok(ConflictOption::Rename)
-    } else if buf == 115 {
-        Ok(ConflictOption::Skip)
-    } else {
-        Err(Error::new(ErrorKind::InvalidInput, "ERROR: invalid option"))
+    match selection {
+        0 => ConflictOption::Overwrite,
+        1 => ConflictOption::Rename,
+        2 => ConflictOption::Skip,
+        _ => panic!("no option selected"),
     }
 }
 

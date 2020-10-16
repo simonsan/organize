@@ -109,6 +109,10 @@ impl Actions {
     fn rename(&self, from: &Path, watching: bool) -> Result<PathBuf, Error> {
         assert!(self.rename.is_some());
         let rename = self.rename.as_ref().unwrap();
+        let parent = rename.to.parent().unwrap();
+        if !parent.exists() {
+            fs::create_dir_all(parent)?;
+        }
         if rename.to.exists() {
             match rename.get_new_path(from, watching) {
                 Ok(to) => {
@@ -238,8 +242,7 @@ impl ConflictingFileOperation {
                     if_exists: if watching {
                         Default::default()
                     } else {
-                        let filename = from.file_name().unwrap().to_str().unwrap();
-                        resolve_name_conflict(filename)?
+                        resolve_name_conflict(from, &self.to)
                     },
                     to: self.to.clone(),
                     counter_separator: self.counter_separator.clone(),
