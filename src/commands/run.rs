@@ -42,16 +42,16 @@ pub fn run(config: &UserConfig, watching: bool) -> Result<(), Error> {
     Ok(())
 }
 
-pub fn resolve_conflict(from: &Path, to: &Path) -> ConflictOption {
+pub fn resolve_conflict(path: &Path) -> ConflictOption {
     let selections = ["Overwrite", "Rename", "Skip"];
     let selection = Select::with_theme(&ColorfulTheme::default())
         .with_prompt(format!(
             "A file named {} already exists in {}.\nSelect an option and press Enter to resolve this issue:",
-            from.file_name().unwrap().to_str().unwrap(),
-            if to.is_dir() {
-                to.display()
+            path.file_name().unwrap().to_str().unwrap(),
+            if path.is_dir() {
+                path.display()
             } else {
-                to.parent().unwrap().display()
+                path.parent().unwrap().display()
             }
         ))
         .default(0)
