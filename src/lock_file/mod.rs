@@ -28,8 +28,12 @@ pub struct LockFile {
 
 impl Default for LockFile {
     fn default() -> Self {
+        let path = temp_dir().join(format!("{}.lock", PROJECT_NAME));
+        if !path.exists() {
+            File::create(&path).expect("could not create lock file");
+        }
         LockFile {
-            path: temp_dir().join(format!("{}.lock", PROJECT_NAME)),
+            path,
             sep: " ".to_string(),
         }
     }
