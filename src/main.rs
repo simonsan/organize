@@ -1,3 +1,4 @@
+extern crate winapi;
 use crate::subcommands::{
     config::config,
     run::run,

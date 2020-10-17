@@ -17,6 +17,11 @@ use crate::{
     },
 };
 
+use winapi::um::fileapi::{
+    GetFileAttributesExA,
+    SetFileAttributesA,
+};
+
 pub mod lib;
 
 pub trait MatchesFilters {
