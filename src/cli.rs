@@ -17,7 +17,10 @@ use dialoguer::{
 
 use crate::{
     commands::{
-        config::edit,
+        config::{
+            config,
+            edit,
+        },
         run::run,
         stop::stop,
         watch::{
@@ -75,28 +78,7 @@ impl Cli {
     pub fn run(self) -> Result<(), Error> {
         match self.subcommand {
             SubCommands::Config => {
-                if self.args.is_present("show_path") {
-                    println!("{}", UserConfig::path(&self).display());
-                } else if self.args.is_present("show_defaults") {
-                    let Options {
-                        recursive,
-                        watch,
-                        ignore,
-                        suggestions,
-                        hidden_files,
-                    } = Options::default();
-                    println!("recursive: {}", recursive.to_string().purple());
-                    println!("watch: {}", watch.to_string().purple());
-                    println!("suggestions: {}", suggestions.to_string().purple());
-                    println!("hidden_files: {}", hidden_files.to_string().purple());
-                    println!("ignored_directories: {:?}", ignore);
-                } else if self.args.is_present("new") {
-                    let config_file = env::current_dir()?.join(format!("{}.yml", PROJECT_NAME));
-                    UserConfig::create(&config_file)?;
-                    println!("New config file created at {}", config_file.display());
-                } else {
-                    edit(UserConfig::path(&self))?;
-                }
+                config(self)?;
             }
             SubCommands::Run => {
                 let lock_file = LockFile::new();

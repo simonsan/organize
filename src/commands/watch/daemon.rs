@@ -33,7 +33,7 @@ impl Daemon {
             .collect();
         if args.is_empty() {
             // allows to start daemon from the stop command
-            args.push("watch".to_string());
+            args.push("watch".into());
         }
         let pid = Command::new(command)
             .args(&args)
