@@ -61,10 +61,13 @@ impl Actions {
     fn copy(&self, path: &Path, is_watching: bool) -> Result<Option<PathBuf>, Error> {
         assert!(self.copy.is_some());
         let copy = self.copy.as_ref().unwrap();
-        if !copy.to.exists() {
-            fs::create_dir_all(&copy.to)?;
+
+        let mut to = copy.to.expand_placeholders(path);
+        if !to.exists() {
+            fs::create_dir_all(&to)?;
         }
-        let to = copy.to.join(&path.file_name().unwrap());
+        to = to.join(&path.file_name().unwrap());
+
         if to.exists() {
             if let Some(to) = to.update(&copy.if_exists, &copy.sep, is_watching) {
                 std::fs::copy(&path, &to)?;
@@ -81,8 +84,9 @@ impl Actions {
     fn rename(&self, path: &Path, is_watching: bool) -> Result<Option<PathBuf>, Error> {
         assert!(self.rename.is_some());
         let rename = self.rename.as_ref().unwrap();
-        if rename.to.exists() {
-            if let Some(to) = rename.to.update(&rename.if_exists, &rename.sep, is_watching) {
+        let to = rename.to.expand_placeholders(path);
+        if to.exists() {
+            if let Some(to) = to.update(&rename.if_exists, &rename.sep, is_watching) {
                 std::fs::rename(&path, &to)?;
                 Ok(Some(to))
             } else {
@@ -97,10 +101,11 @@ impl Actions {
     fn r#move(&self, path: &Path, is_watching: bool) -> Result<Option<PathBuf>, Error> {
         assert!(self.r#move.is_some());
         let r#move = self.r#move.as_ref().unwrap();
-        if !r#move.to.exists() {
-            fs::create_dir_all(&r#move.to)?;
+        let mut to = r#move.to.expand_placeholders(path);
+        if !to.exists() {
+            fs::create_dir_all(&to)?;
         }
-        let to = r#move.to.join(&path.file_name().unwrap());
+        to = to.join(&path.file_name().unwrap());
         if to.exists() {
             if let Some(to) = to.update(&r#move.if_exists, &r#move.sep, is_watching) {
                 std::fs::rename(&path, &to)?;
