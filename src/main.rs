@@ -19,7 +19,6 @@ use std::{
 };
 
 pub mod commands;
-pub mod file;
 pub mod lock_file;
 pub mod path;
 pub mod user_config;

@@ -8,11 +8,62 @@ use std::{
 
 use crate::{
     commands::run::resolve_conflict,
-    file::get_stem_and_extension,
-    user_config::rules::actions::ConflictOption,
+    user_config::rules::{
+        actions::ConflictOption,
+        filters::{
+            Filename,
+            Filters,
+        },
+    },
 };
 
 pub mod lib;
+
+pub trait MatchesFilters {
+    fn matches_filters(&self, filters: &Filters) -> bool;
+    fn is_hidden(&self) -> bool;
+}
+
+impl MatchesFilters for PathBuf {
+    fn matches_filters(&self, filters: &Filters) -> bool {
+        let extension = self.extension().unwrap_or_default().to_str().unwrap_or_default();
+        let temporary_file_extensions = ["crdownload", "part", "tmp", "download"];
+        if !extension.is_empty() && temporary_file_extensions.contains(&extension) {
+            return false;
+        }
+
+        let as_str = self.to_str().unwrap();
+        if !filters.regex.to_string().is_empty() && filters.regex.is_match(&as_str) {
+            return true;
+        }
+
+        let Filename {
+            startswith,
+            endswith,
+            contains,
+            ..
+        } = &filters.filename;
+
+        let filename = self.file_name().unwrap().to_str().unwrap();
+        if !startswith.is_empty() && filename.starts_with(startswith) {
+            return true;
+        }
+        if !endswith.is_empty() && filename.ends_with(endswith) {
+            return true;
+        }
+        if !contains.is_empty() && filename.contains(contains) {
+            return true;
+        }
+        if !filters.extensions.is_empty() && filters.extensions.contains(&extension.to_string()) {
+            return true;
+        }
+        false
+    }
+
+    fn is_hidden(&self) -> bool {
+        self.file_name().unwrap().to_str().unwrap().starts_with('.')
+    }
+}
 
 pub trait Update {
     fn update(&self, if_exists: &ConflictOption, sep: &str, watching: bool) -> Option<PathBuf>;
@@ -96,4 +147,15 @@ impl Expandable for PathBuf {
     // fn expand_placeholders(&self, path: &Path) -> Self {
     //     let as_str = self.to_str().unwrap().to_string();
     // }
+}
+
+/// # Arguments
+/// * `path`: A reference to a std::path::PathBuf
+/// # Return
+/// Returns the stem and extension of `path` if they exist and can be parsed, otherwise returns an Error
+fn get_stem_and_extension(path: &Path) -> (&str, &str) {
+    let stem = path.file_stem().unwrap().to_str().unwrap();
+    let extension = path.extension().unwrap_or_default().to_str().unwrap();
+
+    (stem, extension)
 }

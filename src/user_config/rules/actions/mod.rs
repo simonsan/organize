@@ -13,7 +13,6 @@ use serde::{
 };
 
 use crate::{
-    file::File,
     path::{
         Expandable,
         Update,
@@ -39,80 +38,80 @@ pub struct Actions {
 }
 
 impl Actions {
-    pub fn run(&self, file: &mut File, watching: bool) -> Result<(), Error> {
+    pub fn run(&self, mut path: PathBuf, watching: bool) -> Result<(), Error> {
         assert!(self.r#move.is_some() ^ self.rename.is_some());
         if self.copy.is_some() {
-            self.copy(&file, watching)?;
+            self.copy(&path, watching)?;
         }
         if self.r#move.is_some() ^ self.rename.is_some() {
             let mut result = PathBuf::new();
             if self.r#move.is_some() {
-                if let Some(path) = self.r#move(&file, watching)? {
+                if let Some(path) = self.r#move(&path, watching)? {
                     result = path;
                 }
-            } else if let Some(path) = self.rename(&file, watching)? {
+            } else if let Some(path) = self.rename(&path, watching)? {
                 result = path;
             }
-            file.path = result;
+            path = result;
         }
         if self.delete.is_some() {
-            self.delete(&file.path)?;
+            self.delete(&path)?;
         }
         Ok(())
     }
 
-    fn copy(&self, file: &File, is_watching: bool) -> Result<Option<PathBuf>, Error> {
+    fn copy(&self, path: &Path, is_watching: bool) -> Result<Option<PathBuf>, Error> {
         assert!(self.copy.is_some());
         let copy = self.copy.as_ref().unwrap();
         if !copy.to.exists() {
             fs::create_dir_all(&copy.to)?;
         }
-        let to = copy.to.join(&file.path.file_name().unwrap());
+        let to = copy.to.join(&path.file_name().unwrap());
         if to.exists() {
-            if let Some(path) = to.update(&copy.if_exists, &copy.sep, is_watching) {
-                std::fs::copy(&file.path, &path)?;
-                Ok(Some(path))
+            if let Some(to) = to.update(&copy.if_exists, &copy.sep, is_watching) {
+                std::fs::copy(&path, &to)?;
+                Ok(Some(to))
             } else {
                 Ok(None)
             }
         } else {
-            std::fs::copy(&file.path, &to)?;
+            std::fs::copy(&path, &to)?;
             Ok(Some(to))
         }
     }
 
-    fn rename(&self, file: &File, is_watching: bool) -> Result<Option<PathBuf>, Error> {
+    fn rename(&self, path: &Path, is_watching: bool) -> Result<Option<PathBuf>, Error> {
         assert!(self.rename.is_some());
         let rename = self.rename.as_ref().unwrap();
         if rename.to.exists() {
-            if let Some(path) = rename.to.update(&rename.if_exists, &rename.sep, is_watching) {
-                std::fs::rename(&file.path, &path)?;
-                Ok(Some(path))
+            if let Some(to) = rename.to.update(&rename.if_exists, &rename.sep, is_watching) {
+                std::fs::rename(&path, &to)?;
+                Ok(Some(to))
             } else {
                 Ok(None)
             }
         } else {
-            std::fs::rename(&file.path, &rename.to)?;
+            std::fs::rename(&path, &rename.to)?;
             Ok(Some(rename.to.clone()))
         }
     }
 
-    fn r#move(&self, file: &File, is_watching: bool) -> Result<Option<PathBuf>, Error> {
+    fn r#move(&self, path: &Path, is_watching: bool) -> Result<Option<PathBuf>, Error> {
         assert!(self.r#move.is_some());
         let r#move = self.r#move.as_ref().unwrap();
         if !r#move.to.exists() {
             fs::create_dir_all(&r#move.to)?;
         }
-        let to = r#move.to.join(&file.path.file_name().unwrap());
+        let to = r#move.to.join(&path.file_name().unwrap());
         if to.exists() {
-            if let Some(path) = to.update(&r#move.if_exists, &r#move.sep, is_watching) {
-                std::fs::rename(&file.path, &path)?;
-                Ok(Some(path))
+            if let Some(to) = to.update(&r#move.if_exists, &r#move.sep, is_watching) {
+                std::fs::rename(&path, &to)?;
+                Ok(Some(to))
             } else {
                 Ok(None)
             }
         } else {
-            std::fs::rename(&file.path, &to)?;
+            std::fs::rename(&path, &to)?;
             Ok(Some(to))
         }
     }
@@ -174,12 +173,6 @@ pub enum ConflictOption {
 impl Default for ConflictOption {
     fn default() -> Self {
         ConflictOption::Rename
-    }
-}
-
-impl Default for &ConflictOption {
-    fn default() -> Self {
-        &ConflictOption::Rename
     }
 }
 

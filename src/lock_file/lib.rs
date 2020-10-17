@@ -34,6 +34,7 @@ mod tests {
             .unwrap_or_else(|_| panic!("could not run {} stop", crate_name!()))
             .wait()
             .expect("command wasn't running");
+
         let lock_file = LockFile::new()?;
         let content = fs::read_to_string(&lock_file.path).expect("couldnt read lockfile");
         if content.is_empty() {

@@ -11,7 +11,7 @@ use dialoguer::{
 
 use crate::{
     commands::SubCommands,
-    file::File,
+    path::MatchesFilters,
     user_config::{
         rules::actions::ConflictOption,
         UserConfig,
@@ -27,17 +27,17 @@ pub fn run(args: &ArgMatches) -> Result<(), Error> {
     for (path, rules) in path2rules.iter() {
         let files = fs::read_dir(&path)?;
         'files: for file in files {
-            let mut file = File::from(file.unwrap().path().as_path());
-            if file.path.is_file() {
+            let path = file.unwrap().path();
+            if path.is_file() {
                 'rules: for (rule, index) in rules.iter() {
                     let folder = rule.folders.get(*index).unwrap();
                     let options = &folder.options;
-                    if file.is_hidden && !options.hidden_files {
+                    if path.is_hidden() && !options.hidden_files {
                         continue 'rules;
                     }
                     let filters = &rule.filters;
-                    if file.matches_filters(filters) {
-                        rule.actions.run(&mut file, subcommand == SubCommands::Watch)?;
+                    if path.matches_filters(filters) {
+                        rule.actions.run(path, subcommand == SubCommands::Watch)?;
                         continue 'files;
                     }
                 }

@@ -23,8 +23,8 @@ use crate::{
         stop::stop,
         watch::daemon::Daemon,
     },
-    file::File,
     lock_file::LockFile,
+    path::MatchesFilters,
     user_config::{
         rules::folder::Options,
         UserConfig,
@@ -154,16 +154,15 @@ impl Watcher {
         let path2rules = config.to_map();
         loop {
             if let Ok(RawEvent {
-                path: Some(abs_path),
+                path: Some(path),
                 op: Ok(op),
                 ..
             }) = self.receiver.recv()
             {
                 if let op::CREATE = op {
-                    let mut file = File::from(abs_path.as_path());
-                    if file.path.is_file() {
-                        let parent_dir = file.path.parent().unwrap().to_path_buf();
-                        let values = path2rules.get(&parent_dir).unwrap().to_owned();
+                    if path.is_file() {
+                        let parent = path.parent().unwrap().to_path_buf();
+                        let values = path2rules.get(&parent).unwrap().to_owned();
                         'rules: for (rule, i) in values {
                             let folder = rule.folders.get(i).unwrap();
                             let Options {
@@ -171,11 +170,11 @@ impl Watcher {
                                 ignore,
                                 ..
                             } = &folder.options;
-                            if ignore.contains(&parent_dir) {
+                            if ignore.contains(&parent) {
                                 continue;
                             }
-                            if *watch && file.matches_filters(&rule.filters) {
-                                rule.actions.run(&mut file, true).unwrap();
+                            if *watch && path.matches_filters(&rule.filters) {
+                                rule.actions.run(path, true).unwrap();
                                 break 'rules;
                             }
                         }
