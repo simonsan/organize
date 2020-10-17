@@ -30,8 +30,7 @@ impl ToString for SubCommands {
 
 impl From<&ArgMatches> for SubCommands {
     fn from(args: &ArgMatches) -> Self {
-        let str = args.subcommand_name().unwrap();
-        Self::from(str)
+        Self::from(args.subcommand_name().unwrap())
     }
 }
 impl From<&str> for SubCommands {
