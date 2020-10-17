@@ -17,6 +17,10 @@ use crate::{
     },
 };
 use regex::Regex;
+use std::io::{
+    Error,
+    ErrorKind,
+};
 
 pub mod lib;
 
@@ -113,7 +117,7 @@ impl Update for PathBuf {
 pub trait Expandable {
     fn expand_user(&self) -> PathBuf;
     fn expand_vars(&self) -> PathBuf;
-    fn expand_placeholders(&self, path: &Path) -> PathBuf;
+    fn expand_placeholders(&self, path: &Path) -> Result<PathBuf, Error>;
 }
 
 impl Expandable for PathBuf {
@@ -137,7 +141,7 @@ impl Expandable for PathBuf {
             .collect()
     }
 
-    fn expand_placeholders(&self, path: &Path) -> Self {
+    fn expand_placeholders(&self, path: &Path) -> Result<Self, Error> {
         let mut as_str = self.to_str().unwrap().to_string();
         let regex = Regex::new("\\{\\w+(?:\\.\\w+)*}").unwrap();
         while let Some(span) = regex.find(&as_str) {
@@ -150,43 +154,55 @@ impl Expandable for PathBuf {
                     "path" => current_value,
                     "parent" => current_value
                         .parent()
-                        .unwrap_or_else(|| {
-                            panic!(format!(
-                                "modified path ({} | original path: {}) has no parent",
-                                current_value.display(),
-                                path.display()
-                            ))
-                        })
+                        .ok_or_else(|| {
+                            Error::new(
+                                ErrorKind::Other,
+                                format!(
+                                    "modified path has no {} (original filepath: {})",
+                                    placeholder,
+                                    path.display()
+                                ),
+                            )
+                        })?
                         .into(),
                     "name" => current_value
                         .file_name()
-                        .unwrap_or_else(|| {
-                            panic!(format!(
-                                "modified path ({} | original path: {}) has no filename",
-                                current_value.display(),
-                                path.display()
-                            ))
-                        })
+                        .ok_or_else(|| {
+                            Error::new(
+                                ErrorKind::Other,
+                                format!(
+                                    "modified path has no {} (original filepath: {})",
+                                    placeholder,
+                                    path.display()
+                                ),
+                            )
+                        })?
                         .into(),
                     "stem" => current_value
                         .file_stem()
-                        .unwrap_or_else(|| {
-                            panic!(format!(
-                                "modified path ({} | original path: {}) has no stem",
-                                current_value.display(),
-                                path.display()
-                            ))
-                        })
+                        .ok_or_else(|| {
+                            Error::new(
+                                ErrorKind::Other,
+                                format!(
+                                    "modified path has no {} (original filepath: {})",
+                                    placeholder,
+                                    path.display()
+                                ),
+                            )
+                        })?
                         .into(),
                     "extension" => current_value
                         .extension()
-                        .unwrap_or_else(|| {
-                            panic!(format!(
-                                "modified path ({} | original path: {}) has no extension",
-                                current_value.display(),
-                                path.display()
-                            ))
-                        })
+                        .ok_or_else(|| {
+                            Error::new(
+                                ErrorKind::Other,
+                                format!(
+                                    "modified path has no {} (original filepath: {})",
+                                    placeholder,
+                                    path.display()
+                                ),
+                            )
+                        })?
                         .into(),
                     _ => panic!("unknown placeholder"),
                 }
@@ -195,7 +211,7 @@ impl Expandable for PathBuf {
                 .replace(&r#match, current_value.to_str().unwrap())
                 .replace("//", "/");
         }
-        as_str.into()
+        Ok(as_str.into())
     }
 }
 
