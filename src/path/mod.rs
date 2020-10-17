@@ -79,7 +79,9 @@ impl Update for PathBuf {
     /// # Return
     /// This function will return `Some(new_path)` if `if_exists` is not set to skip, otherwise it returns `None`
     fn update(&self, if_exists: &ConflictOption, sep: &str, watching: bool) -> Option<Self> {
+        #[cfg(debug_assertions)]
         assert!(self.exists());
+
         match if_exists {
             ConflictOption::Skip => None,
             ConflictOption::Overwrite => Some(self.clone()),
