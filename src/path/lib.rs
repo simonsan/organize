@@ -35,6 +35,7 @@ mod tests {
     #[test]
     fn new_var() -> Result<(), Error> {
         env::set_var("PROJECT_DIR", project_dir());
+        // TODO: remove var when finished
         let tested = PathBuf::from("$PROJECT_DIR/tests");
         if tested.expand_vars() == tests_dir() {
             Ok(())
@@ -50,7 +51,7 @@ mod tests {
     #[should_panic]
     fn non_existing_var() {
         assert!(
-            env::var("PROJECT_DIR").is_err(),
+            env::var("PROJECT_DIR2").is_err(),
             "PROJECT_DIR should not be a valid environment variable for this test"
         );
         let tested = PathBuf::from("$PROJECT_DIR/tests");

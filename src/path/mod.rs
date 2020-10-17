@@ -19,7 +19,8 @@ pub trait Update {
 }
 
 impl Update for PathBuf {
-    ///  Computes the appropriate new path based on `if_exists`.
+    ///  When trying to rename a file to a path that already exists, calling update() on the
+    ///  target path will return a new valid path.
     ///  # Args
     /// * `if_exists`: option to resolve the naming conflict
     /// * `sep`: if `if_exists` is set to rename, `sep` will go between the filename and the added counter
