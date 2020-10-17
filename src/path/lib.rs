@@ -80,7 +80,7 @@ pub mod vars {
     #[test]
     fn placeholder() -> Result<(), Error> {
         let tested = PathBuf::from("/home/cabero/Downloads/{parent.name}");
-        let new_path = tested.expand_placeholders(&Path::new("/home/cabero/Documents/test.pdf"));
+        let new_path = tested.expand_placeholders(&Path::new("/home/cabero/Documents/test.pdf"))?;
         let expected = PathBuf::from("/home/cabero/Downloads/Documents");
         if new_path == expected {
             Ok(())
