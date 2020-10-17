@@ -14,7 +14,7 @@ where
     D: Deserializer<'de>,
 {
     let buf = String::deserialize(deserializer)?;
-    Ok(PathBuf::from(&buf).fullpath())
+    Ok(PathBuf::from(&buf).expand_vars().expand_user())
 }
 
 pub(in crate::user_config) fn deserialize_regex<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Regex, D::Error> {

@@ -111,21 +111,12 @@ impl Update for PathBuf {
 }
 
 pub trait Expandable {
-    fn fullpath(&self) -> PathBuf;
     fn expand_user(&self) -> PathBuf;
     fn expand_vars(&self) -> PathBuf;
     fn expand_placeholders(&self, path: &Path) -> PathBuf;
 }
 
 impl Expandable for PathBuf {
-    fn fullpath(&self) -> Self {
-        let mut path = self.expand_user().expand_vars();
-        if path.exists() {
-            path = path.canonicalize().unwrap();
-        }
-        path
-    }
-
     fn expand_user(&self) -> Self {
         let str = self.to_str().unwrap().to_string();
         Self::from(str.replace("~", "$HOME"))
@@ -156,10 +147,10 @@ impl Expandable for PathBuf {
             let mut current_value = path.to_path_buf();
             for placeholder in placeholders {
                 current_value = match placeholder {
-                    "stem" => current_value.file_stem().unwrap().into(),
                     "parent" => current_value.parent().unwrap().into(),
-                    "extension" => current_value.extension().unwrap().into(),
                     "name" => current_value.file_name().unwrap().into(),
+                    "stem" => current_value.file_stem().unwrap().into(),
+                    "extension" => current_value.extension().unwrap().into(),
                     _ => panic!("unknown placeholder"),
                 }
             }
@@ -167,7 +158,6 @@ impl Expandable for PathBuf {
                 .replace(&r#match, current_value.to_str().unwrap())
                 .replace("//", "/");
         }
-        println!("{}", as_str);
         as_str.into()
     }
 }
