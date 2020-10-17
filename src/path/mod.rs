@@ -147,10 +147,23 @@ impl Expandable for PathBuf {
             let mut current_value = path.to_path_buf();
             for placeholder in placeholders {
                 current_value = match placeholder {
-                    "parent" => current_value.parent().unwrap().into(),
-                    "name" => current_value.file_name().unwrap().into(),
-                    "stem" => current_value.file_stem().unwrap().into(),
-                    "extension" => current_value.extension().unwrap().into(),
+                    "path" => current_value,
+                    "parent" => current_value
+                        .parent()
+                        .unwrap_or_else(|| panic!(format!("{} has no parent", current_value.display())))
+                        .into(),
+                    "name" => current_value
+                        .file_name()
+                        .unwrap_or_else(|| panic!(format!("{} has no filename", current_value.display())))
+                        .into(),
+                    "stem" => current_value
+                        .file_stem()
+                        .unwrap_or_else(|| panic!(format!("{} has no stem", current_value.display())))
+                        .into(),
+                    "extension" => current_value
+                        .extension()
+                        .unwrap_or_else(|| panic!(format!("{} has no extension", current_value.display())))
+                        .into(),
                     _ => panic!("unknown placeholder"),
                 }
             }
