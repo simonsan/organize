@@ -7,14 +7,10 @@ use dialoguer::{
     Confirm,
     MultiSelect,
 };
-use std::{
-    io::Error,
-    process,
-};
+use std::io::Error;
 
 pub fn stop() -> Result<(), Error> {
-    let lock_file = LockFile::new();
-    lock_file.clear_dead_processes()?;
+    let lock_file = LockFile::new()?;
     let watchers = lock_file.get_running_watchers();
     let pids = watchers.iter().map(|(pid, _)| pid).collect::<Vec<_>>();
     let paths = watchers.iter().map(|(_, path)| path.display()).collect::<Vec<_>>();
@@ -24,21 +20,21 @@ pub fn stop() -> Result<(), Error> {
         let prompt = "Would you like to start a new daemon with the default configuration?";
         let confirm = Confirm::new().with_prompt(prompt).interact();
         if confirm.is_ok() && confirm.unwrap() {
-            let daemon = Daemon::new(process::id() as i32);
+            let mut daemon = Daemon::new(None);
             daemon.start();
         }
     } else if watchers.len() == 1 {
-        let daemon = Daemon::new(**pids.first().unwrap());
+        let mut daemon = Daemon::new(Some(**pids.first().unwrap()));
         daemon.kill();
     } else {
-        let prompt = "Press Spacebar to select one or more options and press Enter to stop them:";
+        let prompt = "Press SpaceBar to select one or more options and press Enter to stop them:";
         let selections = MultiSelect::with_theme(&ColorfulTheme::default())
             .with_prompt(prompt)
             .items(&paths[..])
             .interact()
             .unwrap();
         for selection in selections {
-            let daemon = Daemon::new(**pids.get(selection).unwrap());
+            let mut daemon = Daemon::new(Some(**pids.get(selection).unwrap()));
             daemon.kill();
         }
     }

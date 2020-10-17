@@ -10,21 +10,26 @@ use dialoguer::{
 };
 
 use crate::{
+    commands::SubCommands,
     file::File,
     user_config::{
         rules::actions::ConflictOption,
         UserConfig,
     },
 };
+use clap::ArgMatches;
 
-pub fn run(config: &UserConfig, watching: bool) -> Result<(), Error> {
-    let mut path2rules = config.to_map();
-    for (path, rules) in path2rules.iter_mut() {
+pub fn run(args: &ArgMatches) -> Result<(), Error> {
+    let config = UserConfig::new(args)?;
+    let path2rules = config.to_map();
+    let subcommand = SubCommands::from(args);
+
+    for (path, rules) in path2rules.iter() {
         let files = fs::read_dir(&path)?;
         'files: for file in files {
             let mut file = File::from(file.unwrap().path().as_path());
             if file.path.is_file() {
-                'rules: for (rule, index) in rules.iter_mut() {
+                'rules: for (rule, index) in rules.iter() {
                     let folder = rule.folders.get(*index).unwrap();
                     let options = &folder.options;
                     if file.is_hidden && !options.hidden_files {
@@ -32,13 +37,14 @@ pub fn run(config: &UserConfig, watching: bool) -> Result<(), Error> {
                     }
                     let filters = &rule.filters;
                     if file.matches_filters(filters) {
-                        rule.actions.run(&mut file, watching)?;
+                        rule.actions.run(&mut file, subcommand == SubCommands::Watch)?;
                         continue 'files;
                     }
                 }
             }
         }
     }
+
     Ok(())
 }
 

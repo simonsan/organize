@@ -1,11 +1,11 @@
 use crate::{
-    cli::Cli,
     user_config::{
         rules::folder::Options,
         UserConfig,
     },
     PROJECT_NAME,
 };
+use clap::ArgMatches;
 use colored::Colorize;
 use std::{
     env,
@@ -15,10 +15,10 @@ use std::{
     process,
 };
 
-pub fn config(cli: Cli) -> Result<(), Error> {
-    if cli.args.is_present("show_path") {
-        println!("{}", UserConfig::path(&cli).display());
-    } else if cli.args.is_present("show_defaults") {
+pub fn config(args: &ArgMatches) -> Result<(), Error> {
+    if args.is_present("show_path") {
+        println!("{}", UserConfig::path(args).display());
+    } else if args.is_present("show_defaults") {
         let Options {
             recursive,
             watch,
@@ -31,12 +31,12 @@ pub fn config(cli: Cli) -> Result<(), Error> {
         println!("suggestions: {}", suggestions.to_string().purple());
         println!("hidden_files: {}", hidden_files.to_string().purple());
         println!("ignored_directories: {:?}", ignore);
-    } else if cli.args.is_present("new") {
+    } else if args.is_present("new") {
         let config_file = env::current_dir()?.join(format!("{}.yml", PROJECT_NAME));
         UserConfig::create(&config_file)?;
         println!("New config file created at {}", config_file.display());
     } else {
-        edit(UserConfig::path(&cli))?;
+        edit(UserConfig::path(args))?;
     }
     Ok(())
 }

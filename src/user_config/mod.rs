@@ -1,9 +1,12 @@
 use crate::{
-    cli::Cli,
+    path::Expandable,
     user_config::rules::rule::Rule,
     PROJECT_NAME,
 };
-use clap::load_yaml;
+use clap::{
+    load_yaml,
+    ArgMatches,
+};
 use dirs::home_dir;
 use serde::Deserialize;
 use std::{
@@ -29,6 +32,8 @@ pub mod rules;
 #[derive(Deserialize, Clone, Debug)]
 pub struct UserConfig {
     pub rules: Vec<Rule>,
+    #[serde(skip)]
+    pub path: PathBuf,
 }
 
 impl UserConfig {
@@ -40,15 +45,16 @@ impl UserConfig {
     /// ### Errors
     /// This constructor fails in the following cases:
     /// - The configuration file does not exist
-    pub fn new(cli: &Cli) -> Result<Self, Error> {
-        let path = UserConfig::path(cli);
+    pub fn new(args: &ArgMatches) -> Result<Self, Error> {
+        let path = UserConfig::path(args);
 
         if !path.exists() {
             Self::create(&path)?;
         }
 
         let content = fs::read_to_string(&path)?;
-        let config = serde_yaml::from_str(&content).expect("could not parse config file");
+        let mut config: UserConfig = serde_yaml::from_str(&content).expect("could not parse config file");
+        config.path = path;
 
         Ok(config)
     }
@@ -81,11 +87,13 @@ impl UserConfig {
         Ok(())
     }
 
-    pub fn path(cli: &Cli) -> PathBuf {
-        match cli.args.value_of("with_config") {
-            Some(path) => PathBuf::from(path).canonicalize().expect("invalid path"),
+    pub fn path(args: &ArgMatches) -> PathBuf {
+        let path = match args.value_of("config") {
+            Some(path) => PathBuf::from(path).fullpath(),
             None => Self::default_path(),
-        }
+        };
+        assert!(path.exists());
+        path
     }
 
     pub fn dir() -> PathBuf {

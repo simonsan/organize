@@ -1,3 +1,5 @@
+use clap::ArgMatches;
+
 pub mod config;
 pub mod run;
 pub mod stop;
@@ -11,4 +13,37 @@ pub enum SubCommands {
     Watch,
     Logs,
     Stop,
+}
+
+impl ToString for SubCommands {
+    fn to_string(&self) -> String {
+        match self {
+            SubCommands::Config => "config".into(),
+            SubCommands::Run => "run".into(),
+            SubCommands::Suggest => "suggest".into(),
+            SubCommands::Watch => "watch".into(),
+            SubCommands::Logs => "logs".into(),
+            SubCommands::Stop => "stop".into(),
+        }
+    }
+}
+
+impl From<&ArgMatches> for SubCommands {
+    fn from(args: &ArgMatches) -> Self {
+        let str = args.subcommand_name().unwrap();
+        Self::from(str)
+    }
+}
+impl From<&str> for SubCommands {
+    fn from(name: &str) -> Self {
+        match name {
+            "config" => SubCommands::Config,
+            "run" => SubCommands::Run,
+            "suggest" => SubCommands::Suggest,
+            "watch" => SubCommands::Watch,
+            "logs" => SubCommands::Logs,
+            "stop" => SubCommands::Stop,
+            _ => panic!("unknown subcommand"),
+        }
+    }
 }

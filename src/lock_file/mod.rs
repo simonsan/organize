@@ -26,22 +26,17 @@ pub struct LockFile {
     sep: String,
 }
 
-impl Default for LockFile {
-    fn default() -> Self {
+impl LockFile {
+    pub fn new() -> Result<Self, Error> {
         let path = temp_dir().join(format!("{}.lock", PROJECT_NAME));
         if !path.exists() {
             File::create(&path).expect("could not create lock file");
         }
-        LockFile {
+        let f = LockFile {
             path,
-            sep: " ".to_string(),
-        }
-    }
-}
-
-impl LockFile {
-    pub fn new() -> Self {
-        Self::default()
+            sep: "---".into(),
+        };
+        f.clear_dead_processes()
     }
 
     fn section(&self, pid: &Pid, config: &Path) -> String {
@@ -94,11 +89,11 @@ impl LockFile {
         }
     }
 
-    pub fn clear_dead_processes(&self) -> Result<(), Error> {
+    fn clear_dead_processes(self) -> Result<Self, Error> {
         self.set_readonly(false)?;
         let mut running_processes = String::new();
         for (pid, config) in self.get_running_watchers().iter() {
-            let daemon = Daemon::new(*pid);
+            let daemon = Daemon::new(Some(*pid));
             if daemon.is_running() {
                 running_processes.push_str(&self.section(pid, config));
                 running_processes.push_str("\n");
@@ -106,7 +101,7 @@ impl LockFile {
         }
         fs::write(&self.path, running_processes)?;
         self.set_readonly(true)?;
-        Ok(())
+        Ok(self)
     }
 
     pub fn find_process_by_path(&self, path: &Path) -> Option<(Pid, PathBuf)> {

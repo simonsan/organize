@@ -6,12 +6,14 @@ mod new_path {
     };
 
     use crate::{
-        path::Update,
-        user_config::rules::actions::ConflictOption,
-        utils::testing::{
-            expected_path,
-            test_file_or_dir,
+        path::{
+            lib::tests::{
+                expected_path,
+                test_file_or_dir,
+            },
+            Update,
         },
+        user_config::rules::actions::ConflictOption,
     };
 
     static WATCHING: bool = false;

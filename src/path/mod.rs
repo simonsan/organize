@@ -12,7 +12,7 @@ use crate::{
     user_config::rules::actions::ConflictOption,
 };
 
-mod lib;
+pub mod lib;
 
 pub trait Update {
     fn update(&self, if_exists: &ConflictOption, sep: &str, watching: bool) -> Option<PathBuf>;
