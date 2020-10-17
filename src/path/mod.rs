@@ -118,7 +118,6 @@ pub trait Expandable {
 
 impl Expandable for PathBuf {
     fn fullpath(&self) -> Self {
-        // we're not making up the filepath, so running canonicalize should not fail
         let mut path = self.expand_user().expand_vars();
         if path.exists() {
             path = path.canonicalize().unwrap();
