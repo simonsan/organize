@@ -1,5 +1,6 @@
 use std::{
     convert::TryInto,
+    env,
     io::Error,
     process,
     sync::mpsc::{
@@ -42,7 +43,6 @@ pub mod daemon;
 pub fn watch(args: &ArgMatches) -> Result<(), Error> {
     let lock_file = LockFile::new()?;
     let path = UserConfig::path(args);
-
     // REPLACE
     if args.is_present("replace") {
         let process = lock_file.find_process_by_path(&path);
@@ -84,9 +84,7 @@ pub fn watch(args: &ArgMatches) -> Result<(), Error> {
                     .unwrap();
 
                 match selection {
-                    0 => {
-                        stop()?;
-                    }
+                    0 => stop()?,
                     1 => {
                         let mut daemon = Daemon::new(None);
                         daemon.start();
@@ -97,14 +95,16 @@ pub fn watch(args: &ArgMatches) -> Result<(), Error> {
         }
 
         // DAEMON
+        println!("{:?}", args.value_of("daemon"));
         if args.is_present("daemon") {
+            println!("{:?}", env::args());
             let mut daemon = Daemon::new(None);
             daemon.start();
         // NO ARGS
         } else {
             run(args)?;
             let mut watcher = Watcher::new();
-            watcher.run(args, lock_file)?;
+            watcher.run(args, &lock_file)?;
         }
     }
     Ok(())
@@ -131,7 +131,7 @@ impl Watcher {
         }
     }
 
-    pub fn run(&mut self, args: &ArgMatches, lock_file: LockFile) -> Result<(), Error> {
+    pub fn run(&mut self, args: &ArgMatches, lock_file: &LockFile) -> Result<(), Error> {
         let config = UserConfig::new(args)?;
         for rule in config.rules.iter() {
             for folder in rule.folders.iter() {
@@ -148,7 +148,6 @@ impl Watcher {
         let pid = process::id();
         let path = UserConfig::path(args);
         lock_file.append(pid.try_into().unwrap(), &path).unwrap();
-        std::mem::drop(lock_file);
 
         // PROCESS SIGNALS
         let path2rules = config.to_map();

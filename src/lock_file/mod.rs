@@ -1,7 +1,6 @@
 mod lib;
 
 use std::{
-    env::temp_dir,
     fs,
     fs::OpenOptions,
     io::{

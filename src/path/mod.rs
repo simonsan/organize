@@ -16,6 +16,7 @@ use crate::{
         },
     },
 };
+use regex::Regex;
 
 pub mod lib;
 
@@ -113,7 +114,7 @@ pub trait Expandable {
     fn fullpath(&self) -> PathBuf;
     fn expand_user(&self) -> PathBuf;
     fn expand_vars(&self) -> PathBuf;
-    // fn expand_placeholders(&self, path: &Path) -> PathBuf;
+    fn expand_placeholders(&self, path: &Path) -> PathBuf;
 }
 
 impl Expandable for PathBuf {
@@ -145,9 +146,30 @@ impl Expandable for PathBuf {
             .collect()
     }
 
-    // fn expand_placeholders(&self, path: &Path) -> Self {
-    //     let as_str = self.to_str().unwrap().to_string();
-    // }
+    fn expand_placeholders(&self, path: &Path) -> Self {
+        let mut as_str = self.to_str().unwrap().to_string();
+        let regex = Regex::new("\\{\\w+(?:\\.\\w+)*}").unwrap();
+        while let Some(span) = regex.find(&as_str) {
+            let r#match = as_str[span.start()..span.end()].to_string();
+            let placeholders = r#match.replace("{", "").replace("}", "");
+            let placeholders = placeholders.split('.').collect::<Vec<_>>();
+            let mut current_value = path.to_path_buf();
+            for placeholder in placeholders {
+                current_value = match placeholder {
+                    "stem" => current_value.file_stem().unwrap().into(),
+                    "parent" => current_value.parent().unwrap().into(),
+                    "extension" => current_value.extension().unwrap().into(),
+                    "name" => current_value.file_name().unwrap().into(),
+                    _ => panic!("unknown placeholder"),
+                }
+            }
+            as_str = as_str
+                .replace(&r#match, current_value.to_str().unwrap())
+                .replace("//", "/");
+        }
+        println!("{}", as_str);
+        as_str.into()
+    }
 }
 
 /// # Arguments
