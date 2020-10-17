@@ -28,15 +28,19 @@ impl Daemon {
     pub fn start(&mut self) {
         let mut args = env::args();
         let command = args.next().unwrap(); // must've been started through a command
-        let args: Vec<_> = args
+        let mut args: Vec<_> = args
             .filter(|arg| arg != "--daemon" && arg != "--replace" && arg != "stop")
             .collect();
+        if args.is_empty() {
+            // if called from the stop command, `args` will be empty
+            // so we must push `watch` to be able to run the daemon
+            args.push("watch".into());
+        }
         let pid = Command::new(command)
             .args(&args)
             .spawn()
             .expect("couldn't start daemon")
             .id() as i32;
-        println!("[1] {}", pid);
         self.pid = Some(pid);
     }
 

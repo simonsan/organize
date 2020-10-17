@@ -36,6 +36,7 @@ use dialoguer::{
     Confirm,
     Select,
 };
+use std::io::Write;
 
 pub mod daemon;
 
@@ -72,11 +73,20 @@ pub fn watch(args: &ArgMatches) -> Result<(), Error> {
             }
         };
     } else {
+        // DAEMON
         let processes = lock_file.get_running_watchers();
-        for (_, process_path) in processes {
-            if path == process_path {
+        if args.subcommand().unwrap().1.is_present("daemon") {
+            let mut exited = false;
+            for (_, process_path) in &processes {
+                if path == *process_path {
+                    exited = true;
+                    break;
+                }
+            }
+            if exited {
                 let options = ["Stop instance", "Run anyway", "Do nothing"];
                 let selection = Select::with_theme(&ColorfulTheme::default())
+                    .clear(true)
                     .with_prompt("An existing instance was found:")
                     .items(&options)
                     .default(0)
@@ -84,20 +94,19 @@ pub fn watch(args: &ArgMatches) -> Result<(), Error> {
                     .unwrap();
 
                 match selection {
-                    0 => stop()?,
+                    0 => {
+                        stop()?;
+                    }
                     1 => {
                         let mut daemon = Daemon::new(None);
                         daemon.start();
                     }
-                    _ => {}
+                    _ => return Ok(()),
                 }
+            } else {
+                let mut daemon = Daemon::new(None);
+                daemon.start();
             }
-        }
-
-        // DAEMON
-        if args.subcommand().unwrap().1.is_present("daemon") {
-            let mut daemon = Daemon::new(None);
-            daemon.start();
         // NO ARGS
         } else {
             run(args)?;
@@ -171,7 +180,7 @@ impl Watcher {
                                 continue;
                             }
                             if *watch && path.matches_filters(&rule.filters) {
-                                rule.actions.run(path, true).unwrap();
+                                rule.actions.run(path, true)?;
                                 break 'rules;
                             }
                         }
