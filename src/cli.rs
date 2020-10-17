@@ -1,6 +1,10 @@
 use std::io::Error;
 
 use clap::{
+    crate_authors,
+    crate_description,
+    crate_name,
+    crate_version,
     load_yaml,
     App,
     ArgMatches,
@@ -35,7 +39,12 @@ impl Cli {
     /// Creates a new CLI instance that initializes the app
     pub fn new() -> Self {
         let yaml = load_yaml!("../cli.yml");
-        let app = App::from(yaml);
+        let app = App::from(yaml)
+            .author(crate_authors!())
+            .about(crate_description!())
+            .version(crate_version!())
+            .name(crate_name!());
+
         let matches = app.get_matches();
         let (subcommand, args) = matches.subcommand().unwrap();
         let args = args.clone();

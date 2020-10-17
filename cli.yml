@@ -1,7 +1,4 @@
-name: d-organizer
-author: Andres Cabero <cabero96@protonmail.com>
-version: "2.0"
-about: a productivity tool for tidiness lovers
+name: organize # at least one the info fields is required to be able to override it the Cargo.toml values
 settings:
   - SubcommandRequiredElseHelp
   - StrictUtf8
@@ -9,13 +6,13 @@ subcommands:
   - run:
       about: Run with the default configuration
       args:
-        - with_config: &with-config
-            long: with-config
+        - config: &config # as an arg
+            long: config
             help: Provide a different configuration file
             takes_value: true
             value_name: file
 
-  - config:
+  - config: # as a subcommand
       about: Edit configuration
       args:
         # all three of these sub-arguments conflict with each other
@@ -35,7 +32,7 @@ subcommands:
   - watch:
       about: Watch for changes and apply rules
       args:
-        - with_config: *with-config
+        - config: *config
         - daemon:
             long: daemon
             display_order: 1
@@ -54,5 +51,3 @@ subcommands:
       about: Show logs
   - stop:
       about: Stop watching
-      args:
-        - with_config: *with-config
