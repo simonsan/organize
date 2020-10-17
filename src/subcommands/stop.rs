@@ -1,6 +1,6 @@
 use crate::{
-    commands::watch::daemon::Daemon,
     lock_file::LockFile,
+    subcommands::watch::daemon::Daemon,
 };
 use dialoguer::{
     theme::ColorfulTheme,

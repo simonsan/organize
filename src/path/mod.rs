@@ -7,7 +7,7 @@ use std::{
 };
 
 use crate::{
-    commands::run::resolve_conflict,
+    subcommands::run::resolve_conflict,
     user_config::rules::{
         actions::ConflictOption,
         filters::{

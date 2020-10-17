@@ -1,4 +1,4 @@
-use crate::commands::{
+use crate::subcommands::{
     config::config,
     run::run,
     stop::stop,
@@ -18,9 +18,9 @@ use std::{
     io::Error,
 };
 
-pub mod commands;
 pub mod lock_file;
 pub mod path;
+pub mod subcommands;
 pub mod user_config;
 
 static PROJECT_NAME: &str = crate_name!();
@@ -31,7 +31,7 @@ fn main() -> Result<(), Error> {
         return Ok(());
     }
 
-    let args = App::from(load_yaml!("../cli.yml"))
+    let args = App::from(load_yaml!("cli.yml"))
         .author(crate_authors!())
         .about(crate_description!())
         .version(crate_version!())

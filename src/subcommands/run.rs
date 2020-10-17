@@ -10,8 +10,8 @@ use dialoguer::{
 };
 
 use crate::{
-    commands::SubCommands,
     path::MatchesFilters,
+    subcommands::SubCommands,
     user_config::{
         rules::actions::ConflictOption,
         UserConfig,

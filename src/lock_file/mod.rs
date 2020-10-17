@@ -15,7 +15,7 @@ use std::{
 };
 
 use crate::{
-    commands::watch::daemon::Daemon,
+    subcommands::watch::daemon::Daemon,
     PROJECT_NAME,
 };
 use std::fs::File;

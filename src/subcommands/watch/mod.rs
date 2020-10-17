@@ -18,13 +18,13 @@ use notify::{
 };
 
 use crate::{
-    commands::{
+    lock_file::LockFile,
+    path::MatchesFilters,
+    subcommands::{
         run::run,
         stop::stop,
         watch::daemon::Daemon,
     },
-    lock_file::LockFile,
-    path::MatchesFilters,
     user_config::{
         rules::folder::Options,
         UserConfig,
