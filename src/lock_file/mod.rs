@@ -73,18 +73,19 @@ impl LockFile {
             Ok(content) => {
                 if !content.is_empty() {
                     let content = content.trim().split(&self.sep);
-                    let mut sections = Vec::new();
-                    for section in content.filter(|x| !x.is_empty() && x != &"\n") {
-                        let section = section
-                            .lines()
-                            .map(|x| x.to_string())
-                            .filter(|x| !x.is_empty())
-                            .collect::<Vec<_>>();
-                        let pid = section.first().unwrap().parse().unwrap();
-                        let path = section.get(1).unwrap().parse().unwrap();
-                        sections.push((pid, path))
-                    }
-                    sections
+                    content
+                        .filter(|section| !section.is_empty() && *section != "\n")
+                        .map(|section| {
+                            let section = section
+                                .lines()
+                                .map(|line| line.to_string())
+                                .filter(|line| !line.is_empty())
+                                .collect::<Vec<_>>();
+                            let pid = section.first().unwrap().parse().unwrap();
+                            let path = section.get(1).unwrap().parse().unwrap();
+                            (pid, path)
+                        })
+                        .collect()
                 } else {
                     Vec::new()
                 }

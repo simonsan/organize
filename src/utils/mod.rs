@@ -1,7 +1,10 @@
 #[cfg(test)]
 pub mod testing {
-    use std::path::{PathBuf, Path};
     use crate::file::get_stem_and_extension;
+    use std::path::{
+        Path,
+        PathBuf,
+    };
 
     pub fn project_dir() -> PathBuf {
         use std::env;
@@ -18,7 +21,7 @@ pub mod testing {
     pub fn test_file_or_dir(filename: &str) -> PathBuf {
         tests_dir().join("files").join(filename)
     }
-    
+
     pub fn expected_path(file: &Path, sep: &str) -> PathBuf {
         let (stem, extension) = get_stem_and_extension(file);
         let parent = file.parent().unwrap();

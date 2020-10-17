@@ -1,9 +1,7 @@
 use std::{
     env,
-    io::{
-        Error,
-        ErrorKind,
-    },
+    io::Error,
+    process,
 };
 
 use clap::{
@@ -12,6 +10,10 @@ use clap::{
     ArgMatches,
 };
 use colored::Colorize;
+use dialoguer::{
+    Confirm,
+    MultiSelect,
+};
 
 use crate::{
     commands::{
@@ -30,6 +32,7 @@ use crate::{
     },
     PROJECT_NAME,
 };
+use dialoguer::theme::ColorfulTheme;
 
 #[derive(Clone, Debug)]
 /// Struct that initializes the application and stores the main information about the subcommands and options introduced by the user
@@ -111,34 +114,37 @@ impl Cli {
             SubCommands::Logs => todo!(),
             SubCommands::Stop => {
                 let lock_file = LockFile::new();
-                let path = UserConfig::path(&self);
-                if self.args.is_present("with_config") {
-                    match lock_file.find_process_by_path(&path) {
-                        Some((pid, _)) => {
-                            let daemon = Daemon::new(pid);
-                            if daemon.is_running() {
-                                daemon.kill();
-                            }
-                        }
-                        None => {
-                            return Err(Error::new(
-                                ErrorKind::Other,
-                                "no instance was found with the desired configuration\n\
-                            Run '{} stop' to stop all instances or rerun the last command with a different path",
-                            ))
-                        }
+                lock_file.clear_dead_processes()?;
+                let _config = UserConfig::path(&self);
+                let watchers = lock_file.get_running_watchers();
+                let pids = watchers.iter().map(|(pid, _)| pid).collect::<Vec<_>>();
+                let paths = watchers.iter().map(|(_, path)| path.display()).collect::<Vec<_>>();
+
+                if watchers.is_empty() {
+                    println!("No instance was found running.");
+                    let prompt = "Would you like to start a new daemon with the default configuration?";
+                    let confirm = Confirm::new().with_prompt(prompt).interact();
+                    if confirm.is_ok() && confirm.unwrap() {
+                        let daemon = Daemon::new(process::id() as i32);
+                        daemon.start();
                     }
+                } else if watchers.len() == 1 {
+                    let daemon = Daemon::new(**pids.first().unwrap());
+                    daemon.kill();
                 } else {
-                    for (pid, _) in lock_file.get_running_watchers() {
-                        let daemon = Daemon::new(pid);
-                        if daemon.is_running() {
-                            daemon.kill()
-                        }
+                    let prompt = "Press Spacebar to select one or more options and press Enter to stop them:";
+                    let selections = MultiSelect::with_theme(&ColorfulTheme::default())
+                        .with_prompt(prompt)
+                        .items(&paths[..])
+                        .interact()
+                        .unwrap();
+                    for selection in selections {
+                        let daemon = Daemon::new(**pids.get(selection).unwrap());
+                        daemon.kill();
                     }
                 }
-                lock_file.clear_dead_processes()?;
             }
-        };
+        }
         Ok(())
     }
 }
