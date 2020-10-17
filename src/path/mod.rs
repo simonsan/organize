@@ -150,19 +150,43 @@ impl Expandable for PathBuf {
                     "path" => current_value,
                     "parent" => current_value
                         .parent()
-                        .unwrap_or_else(|| panic!(format!("{} has no parent", current_value.display())))
+                        .unwrap_or_else(|| {
+                            panic!(format!(
+                                "modified path ({} | original path: {}) has no parent",
+                                current_value.display(),
+                                path.display()
+                            ))
+                        })
                         .into(),
                     "name" => current_value
                         .file_name()
-                        .unwrap_or_else(|| panic!(format!("{} has no filename", current_value.display())))
+                        .unwrap_or_else(|| {
+                            panic!(format!(
+                                "modified path ({} | original path: {}) has no filename",
+                                current_value.display(),
+                                path.display()
+                            ))
+                        })
                         .into(),
                     "stem" => current_value
                         .file_stem()
-                        .unwrap_or_else(|| panic!(format!("{} has no stem", current_value.display())))
+                        .unwrap_or_else(|| {
+                            panic!(format!(
+                                "modified path ({} | original path: {}) has no stem",
+                                current_value.display(),
+                                path.display()
+                            ))
+                        })
                         .into(),
                     "extension" => current_value
                         .extension()
-                        .unwrap_or_else(|| panic!(format!("{} has no extension", current_value.display())))
+                        .unwrap_or_else(|| {
+                            panic!(format!(
+                                "modified path ({} | original path: {}) has no extension",
+                                current_value.display(),
+                                path.display()
+                            ))
+                        })
                         .into(),
                     _ => panic!("unknown placeholder"),
                 }
