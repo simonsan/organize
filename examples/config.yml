@@ -33,14 +33,15 @@
 #         conditions hold, it defaults back to `rename`.
 #     if_exists: rename
 #
-#     # Field: `counter_separator`
+#     # Field: `sep`
 #     ## Use
 #         String that goes between the file's stem and the extension in case of a
 #         naming conflict resolution
 #     ## Examples:
+#         - "" would produce `test(1).pdf`
 #         - " " would produce `test (1).pdf` (default)
 #         - "-" would produce `test-(1).pdf`
-#     counter_separator: " "
+#     sep: " "
 
 #    #####################
 #    # Field: `rename`
@@ -52,7 +53,7 @@
 #    rename:
 #     to: $HOME/Documents/test.pdf
 #     if_exists: rename
-#     counter_separator: " "
+#     sep: " "
 #
 #    # Field: `copy`
 #    ## Special Notes
@@ -61,7 +62,7 @@
 #    copy:
 #     to: $HOME/Documents
 #     if_exists: rename
-#     counter_separator: " "
+#     sep: " "
 #
 #    # Field: `delete`
 #    ## Values for `delete`:
