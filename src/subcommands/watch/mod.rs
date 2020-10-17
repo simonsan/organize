@@ -1,6 +1,5 @@
 use std::{
     convert::TryInto,
-    env,
     io::Error,
     process,
     sync::mpsc::{
@@ -43,8 +42,9 @@ pub mod daemon;
 pub fn watch(args: &ArgMatches) -> Result<(), Error> {
     let lock_file = LockFile::new()?;
     let path = UserConfig::path(args);
+
     // REPLACE
-    if args.is_present("replace") {
+    if args.subcommand().unwrap().1.is_present("replace") {
         let process = lock_file.find_process_by_path(&path);
         return match process {
             Some((pid, _)) => {
@@ -95,9 +95,7 @@ pub fn watch(args: &ArgMatches) -> Result<(), Error> {
         }
 
         // DAEMON
-        println!("{:?}", args.value_of("daemon"));
-        if args.is_present("daemon") {
-            println!("{:?}", env::args());
+        if args.subcommand().unwrap().1.is_present("daemon") {
             let mut daemon = Daemon::new(None);
             daemon.start();
         // NO ARGS

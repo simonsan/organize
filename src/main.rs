@@ -38,6 +38,8 @@ fn main() -> Result<(), Error> {
         .name(crate_name!())
         .get_matches();
 
+    println!("{:?}", args);
+
     match SubCommands::from(&args) {
         SubCommands::Config => config(&args),
         SubCommands::Run => run(&args),

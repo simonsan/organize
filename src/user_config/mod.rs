@@ -88,12 +88,10 @@ impl UserConfig {
     }
 
     pub fn path(args: &ArgMatches) -> PathBuf {
-        let path = match args.value_of("config") {
+        match args.value_of("config") {
             Some(path) => PathBuf::from(path).fullpath(),
             None => Self::default_path(),
-        };
-        assert!(path.exists());
-        path
+        }
     }
 
     pub fn dir() -> PathBuf {
