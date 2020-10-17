@@ -13,7 +13,7 @@ pub struct Filters {
     #[serde(deserialize_with = "deserialize_regex", default = "default_regex")]
     pub regex: Regex,
     #[serde(default)]
-    pub filename: String,
+    pub filename: Filename,
     #[serde(default)]
     pub extensions: Vec<String>,
 }
@@ -22,8 +22,8 @@ pub struct Filters {
 impl Default for Filters {
     fn default() -> Self {
         Filters {
-            regex: Regex::new("").unwrap(),
-            filename: String::new(),
+            regex: default_regex(),
+            filename: Default::default(),
             extensions: Vec::new(),
         }
     }
@@ -31,13 +31,13 @@ impl Default for Filters {
 
 #[allow(dead_code)]
 #[derive(Deserialize, Serialize, Debug, Clone, Default)]
-struct Filename {
+pub struct Filename {
     #[serde(default)]
-    startswith: String,
+    pub startswith: String,
     #[serde(default)]
-    endswith: String,
+    pub endswith: String,
     #[serde(default)]
-    contains: String,
+    pub contains: String,
     #[serde(default)]
-    case_sensitive: bool,
+    pub case_sensitive: bool,
 }

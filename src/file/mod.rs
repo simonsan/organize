@@ -2,12 +2,17 @@ mod lib;
 
 use crate::{
     path::Expandable,
-    user_config::rules::filters::Filters,
+    user_config::rules::filters::{
+        Filename,
+        Filters,
+    },
 };
 use std::path::{
     Path,
     PathBuf,
 };
+
+// TODO: Integrate the File functionality into PathBuf
 
 pub struct File {
     pub filename: String,
@@ -64,15 +69,23 @@ impl File {
         if !filters.regex.to_string().is_empty() && filters.regex.is_match(&path) {
             return true;
         }
-        if !filters.filename.is_empty() && self.filename == filters.filename {
+        let Filename {
+            startswith,
+            endswith,
+            contains,
+            ..
+        } = &filters.filename;
+        if !startswith.is_empty() && self.filename.starts_with(startswith) {
             return true;
         }
-        if !filters.extensions.is_empty() {
-            for extension in filters.extensions.iter() {
-                if self.extension.eq(extension) {
-                    return true;
-                }
-            }
+        if !endswith.is_empty() && self.filename.ends_with(endswith) {
+            return true;
+        }
+        if !contains.is_empty() && self.filename.contains(contains) {
+            return true;
+        }
+        if !filters.extensions.is_empty() && filters.extensions.contains(&self.extension) {
+            return true;
         }
         false
     }
