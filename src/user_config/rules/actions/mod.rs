@@ -12,11 +12,9 @@ use serde::{
     Serialize,
 };
 
-use crate::{
-    path::{
-        Expandable,
-        Update,
-    },
+use crate::path::{
+    Expandable,
+    Update,
 };
 
 use super::deserialize::{

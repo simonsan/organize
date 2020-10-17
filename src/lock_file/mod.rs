@@ -16,6 +16,7 @@ use std::{
 
 use crate::{
     subcommands::watch::daemon::Daemon,
+    user_config::UserConfig,
     PROJECT_NAME,
 };
 use std::fs::File;
@@ -28,7 +29,7 @@ pub struct LockFile {
 
 impl LockFile {
     pub fn new() -> Result<Self, Error> {
-        let path = temp_dir().join(format!("{}.lock", PROJECT_NAME));
+        let path = UserConfig::dir().join(format!("{}.lock", PROJECT_NAME));
         if !path.exists() {
             File::create(&path).expect("could not create lock file");
         }

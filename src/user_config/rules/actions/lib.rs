@@ -7,11 +7,14 @@ mod new_path {
 
     use crate::{
         path::{
+            lib::vars::{
+                expected_path,
+                test_file_or_dir,
+            },
             Update,
         },
         user_config::rules::actions::ConflictOption,
     };
-    use crate::path::lib::vars::{test_file_or_dir, expected_path};
 
     static WATCHING: bool = false;
     static SEP: &str = " ";
