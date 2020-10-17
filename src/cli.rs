@@ -1,42 +1,22 @@
-use std::{
-    env,
-    io::Error,
-    process,
-};
+use std::io::Error;
 
 use clap::{
     load_yaml,
     App,
     ArgMatches,
 };
-use colored::Colorize;
-use dialoguer::{
-    Confirm,
-    MultiSelect,
-};
 
 use crate::{
     commands::{
-        config::{
-            config,
-            edit,
-        },
+        config::config,
         run::run,
         stop::stop,
-        watch::{
-            daemon::Daemon,
-            watch,
-        },
+        watch::watch,
         SubCommands,
     },
     lock_file::LockFile,
-    user_config::{
-        rules::folder::Options,
-        UserConfig,
-    },
-    PROJECT_NAME,
+    user_config::UserConfig,
 };
-use dialoguer::theme::ColorfulTheme;
 
 #[derive(Clone, Debug)]
 /// Struct that initializes the application and stores the main information about the subcommands and options introduced by the user
