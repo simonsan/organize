@@ -204,6 +204,18 @@ impl Expandable for PathBuf {
                             )
                         })?
                         .into(),
+                    "to_uppercase" => current_value.to_str().unwrap().to_uppercase().into(),
+                    "to_lowercase" => current_value.to_str().unwrap().to_lowercase().into(),
+                    "capitalize" => {
+                        let mut c = current_value.to_str().unwrap().chars();
+                        (c.next()
+                            .ok_or_else(|| Error::from(ErrorKind::Other))?
+                            .to_uppercase()
+                            .collect::<String>()
+                            + c.as_str())
+                        .into()
+                    }
+
                     _ => panic!("unknown placeholder"),
                 }
             }

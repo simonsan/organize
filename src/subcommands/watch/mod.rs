@@ -1,5 +1,4 @@
 use std::{
-    convert::TryInto,
     io::Error,
     process,
     sync::mpsc::{
@@ -8,6 +7,7 @@ use std::{
     },
 };
 
+use colored::Colorize;
 use notify::{
     op,
     raw_watcher,
@@ -36,7 +36,6 @@ use dialoguer::{
     Confirm,
     Select,
 };
-use std::io::Write;
 
 pub mod daemon;
 
@@ -78,14 +77,15 @@ pub fn watch(args: &ArgMatches) -> Result<(), Error> {
         if args.subcommand().unwrap().1.is_present("daemon") {
             let processes = lock_file.get_running_watchers();
             if !processes.is_empty() {
-                println!("The following configurations were found running:");
+                println!("{}", "The following configurations were found running:".bold());
                 for (_, path) in processes {
-                    println!(" - {}", path.display())
+                    println!(" - {}", path.display().to_string().as_str().underline())
                 }
+                println!();
                 let options = ["Stop instance", "Run anyway", "Do nothing"];
                 let selection = Select::with_theme(&ColorfulTheme::default())
                     // .clear(true)
-                    .with_prompt("Select an option")
+                    .with_prompt("Select an option:")
                     .items(&options)
                     .default(0)
                     .interact()

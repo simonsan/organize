@@ -3,11 +3,7 @@ use std::{
     process::Command,
 };
 
-use crate::{
-    lock_file::LockFile,
-    user_config::UserConfig,
-};
-use clap::ArgMatches;
+use crate::lock_file::LockFile;
 use std::{
     convert::TryInto,
     path::Path,
