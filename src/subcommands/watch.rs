@@ -73,7 +73,7 @@ pub fn watch(args: &ArgMatches) -> Result<(), Error> {
                     )
                 }
                 println!();
-                let options = ["Stop instance", "Run anyway", "Do nothing"];
+                let options = ["Stop instance and run", "Run anyway", "Do nothing"];
                 let selection = Select::with_theme(&ColorfulTheme::default())
                     .with_prompt("Select an option:")
                     .items(&options)
@@ -82,7 +82,10 @@ pub fn watch(args: &ArgMatches) -> Result<(), Error> {
                     .unwrap();
 
                 match selection {
-                    0 => stop()?,
+                    0 => {
+                        stop()?;
+                        Daemon::start(&path);
+                    }
                     1 => Daemon::start(&path),
                     _ => {}
                 }
@@ -91,35 +94,36 @@ pub fn watch(args: &ArgMatches) -> Result<(), Error> {
         } else if lock_file.get_running_watchers().is_empty() {
             run(args)?;
             lock_file.append(process::id() as i32, &path)?;
+            std::mem::drop(path);
+            std::mem::drop(lock_file);
+            let mut watcher = Watcher::new();
+            watcher.run(args)?;
+        } else if lock_file.find_process_by_pid(process::id() as i32).is_some() {
+            // if the pid has already been registered, that means that `organize` was run with the --daemon option
+            // and we don't need to prompt the user
+            run(args)?;
             let mut watcher = Watcher::new();
             watcher.run(args)?;
         } else {
-            let process = lock_file.find_process_by_pid(process::id() as i32);
-            if process.is_some() {
-                // if the pid has already been registered, that means that `organize` was run with the --daemon option
-                // and we don't need to prompt the user
-                run(args)?;
-                let mut watcher = Watcher::new();
-                watcher.run(args)?;
-            } else {
-                let options = ["Stop instance", "Run anyway", "Do nothing"];
-                let selection = Select::with_theme(&ColorfulTheme::default())
-                    .with_prompt("An existing instance was found:")
-                    .items(&options)
-                    .default(0)
-                    .interact()
-                    .unwrap();
+            let options = ["Stop instance", "Run anyway", "Do nothing"];
+            let selection = Select::with_theme(&ColorfulTheme::default())
+                .with_prompt("An existing instance was found:")
+                .items(&options)
+                .default(0)
+                .interact()
+                .unwrap();
 
-                match selection {
-                    0 => stop()?,
-                    1 => {
-                        run(args)?;
-                        lock_file.append(process::id() as i32, &path)?;
-                        let mut watcher = Watcher::new();
-                        watcher.run(args)?;
-                    }
-                    _ => {}
+            match selection {
+                0 => stop()?,
+                1 => {
+                    run(args)?;
+                    lock_file.append(process::id() as i32, &path)?;
+                    std::mem::drop(lock_file);
+                    std::mem::drop(path);
+                    let mut watcher = Watcher::new();
+                    watcher.run(args)?;
                 }
+                _ => {}
             }
         }
     }
@@ -148,7 +152,7 @@ impl Watcher {
     }
 
     pub fn run(&mut self, args: &ArgMatches) -> Result<(), Error> {
-        let config = UserConfig::new(args)?;
+        let config = UserConfig::new(&args)?;
         for rule in config.rules.iter() {
             for folder in rule.folders.iter() {
                 let is_recursive = if folder.options.recursive {
