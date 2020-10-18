@@ -46,7 +46,6 @@ pub enum Level {
 impl From<&str> for Level {
     fn from(level: &str) -> Self {
         let level = level.to_lowercase();
-        println!("{}", level);
         match level.as_str() {
             "debug" => Self::Debug,
             "error" => Self::Error,
