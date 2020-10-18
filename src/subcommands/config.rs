@@ -1,19 +1,10 @@
 use crate::{
-    user_config::{
-        rules::folder::Options,
-        UserConfig,
-    },
+    user_config::{rules::folder::Options, UserConfig},
     PROJECT_NAME,
 };
 use clap::ArgMatches;
 use colored::Colorize;
-use std::{
-    env,
-    ffi::OsString,
-    io::Error,
-    path::PathBuf,
-    process,
-};
+use std::{env, ffi::OsString, io::Error, path::PathBuf, process};
 
 pub fn config(args: &ArgMatches) -> Result<(), Error> {
     if args.is_present("show_path") {

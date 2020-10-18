@@ -1,12 +1,6 @@
-use super::deserialize::{
-    default_regex,
-    deserialize_regex,
-};
+use super::deserialize::{default_regex, deserialize_regex};
 use regex::Regex;
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Filters {

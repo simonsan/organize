@@ -1,6 +1,7 @@
 use clap::ArgMatches;
 
 pub mod config;
+pub mod logs;
 pub mod run;
 pub mod stop;
 pub mod watch;
@@ -33,15 +34,23 @@ impl From<&ArgMatches> for SubCommands {
         Self::from(args.subcommand_name().unwrap())
     }
 }
+
+impl From<String> for SubCommands {
+    fn from(name: String) -> Self {
+        let name = name.as_str();
+        Self::from(name)
+    }
+}
+
 impl From<&str> for SubCommands {
     fn from(name: &str) -> Self {
         match name {
-            "config" => SubCommands::Config,
-            "run" => SubCommands::Run,
-            "suggest" => SubCommands::Suggest,
-            "watch" => SubCommands::Watch,
-            "logs" => SubCommands::Logs,
-            "stop" => SubCommands::Stop,
+            "config" => Self::Config,
+            "run" => Self::Run,
+            "suggest" => Self::Suggest,
+            "watch" => Self::Watch,
+            "logs" => Self::Logs,
+            "stop" => Self::Stop,
             _ => panic!("unknown subcommand"),
         }
     }

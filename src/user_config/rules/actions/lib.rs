@@ -1,16 +1,10 @@
 #[cfg(test)]
 mod new_path {
-    use std::io::{
-        Error,
-        ErrorKind,
-    };
+    use std::io::{Error, ErrorKind};
 
     use crate::{
         path::{
-            lib::vars::{
-                expected_path,
-                test_file_or_dir,
-            },
+            lib::vars::{expected_path, test_file_or_dir},
             Update,
         },
         user_config::rules::actions::ConflictOption,

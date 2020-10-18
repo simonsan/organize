@@ -1,10 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::string::Capitalize;
-    use std::io::{
-        Error,
-        ErrorKind,
-    };
+    use std::io::{Error, ErrorKind};
 
     #[test]
     fn capitalize() -> Result<(), Error> {

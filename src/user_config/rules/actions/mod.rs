@@ -1,26 +1,15 @@
 use std::{
     fs,
     io::Error,
-    path::{
-        Path,
-        PathBuf,
-    },
+    path::{Path, PathBuf},
 };
 
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use serde::{Deserialize, Serialize};
 
-use crate::path::{
-    Expandable,
-    Update,
-};
+use crate::path::{Expandable, Update};
 
-use super::deserialize::{
-    default_sep,
-    deserialize_path,
-};
+use super::deserialize::{default_sep, deserialize_path};
+use crate::subcommands::logs::{Level, Logger};
 
 mod lib;
 
@@ -100,6 +89,7 @@ impl Actions {
 
     fn r#move(&self, path: &Path, is_watching: bool) -> Result<Option<PathBuf>, Error> {
         assert!(self.r#move.is_some());
+        let mut logger = Logger::default();
         let r#move = self.r#move.as_ref().unwrap();
         let mut to = r#move.to.expand_placeholders(path)?;
         if !to.exists() {
@@ -115,6 +105,7 @@ impl Actions {
             }
         } else {
             std::fs::rename(&path, &to)?;
+            logger.write(Level::Info, &format!("(move) {} -> {}", &path.display(), &to.display()))?;
             Ok(Some(to))
         }
     }

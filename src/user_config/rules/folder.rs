@@ -1,8 +1,5 @@
 use super::deserialize::deserialize_path;
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
 #[derive(Deserialize, Serialize, Debug, PartialEq, Eq, Clone)]

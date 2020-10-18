@@ -44,5 +44,10 @@ subcommands:
             help: Restarts the running daemon
   - logs:
       about: Show logs
+      args:
+        - clear:
+            long: clear
+            help: Clear log file
+            takes_value: false
   - stop:
       about: Stop watching

@@ -1,25 +1,12 @@
-use crate::{
-    path::Expandable,
-    user_config::rules::rule::Rule,
-    PROJECT_NAME,
-};
-use clap::{
-    load_yaml,
-    ArgMatches,
-};
+use crate::{path::Expandable, user_config::rules::rule::Rule, PROJECT_NAME};
+use clap::{load_yaml, ArgMatches};
 use dirs::home_dir;
 use serde::Deserialize;
 use std::{
     collections::HashMap,
     fs,
-    io::{
-        Error,
-        ErrorKind,
-    },
-    path::{
-        Path,
-        PathBuf,
-    },
+    io::{Error, ErrorKind},
+    path::{Path, PathBuf},
 };
 use yaml_rust::YamlEmitter;
 

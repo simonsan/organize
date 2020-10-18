@@ -1,22 +1,13 @@
 use crate::subcommands::{
     config::config,
+    logs::{show_logs, Logger},
     run::run,
     stop::stop,
     watch::watch,
     SubCommands,
 };
-use clap::{
-    crate_authors,
-    crate_description,
-    crate_name,
-    crate_version,
-    load_yaml,
-    App,
-};
-use std::{
-    env,
-    io::Error,
-};
+use clap::{crate_authors, crate_description, crate_name, crate_version, load_yaml, App};
+use std::{env, fs, io::Error};
 
 pub mod lock_file;
 pub mod path;
@@ -44,7 +35,13 @@ fn main() -> Result<(), Error> {
         SubCommands::Run => run(&args),
         SubCommands::Watch => watch(&args),
         SubCommands::Stop => stop(),
+        SubCommands::Logs => {
+            if args.subcommand().unwrap().1.is_present("clear") {
+                Ok(fs::remove_file(Logger::default_path())?)
+            } else {
+                show_logs()
+            }
+        }
         SubCommands::Suggest => unimplemented!(),
-        SubCommands::Logs => unimplemented!(),
     }
 }

@@ -1,24 +1,12 @@
 #[cfg(test)]
 mod tests {
-    use crate::{
-        lock_file::LockFile,
-        user_config::UserConfig,
-    };
+    use crate::{lock_file::LockFile, user_config::UserConfig};
     use std::{
         convert::TryInto,
         fs,
-        io::{
-            Error,
-            ErrorKind,
-        },
+        io::{Error, ErrorKind},
     };
-    use sysinfo::{
-        ProcessExt,
-        RefreshKind,
-        Signal,
-        System,
-        SystemExt,
-    };
+    use sysinfo::{ProcessExt, RefreshKind, Signal, System, SystemExt};
 
     fn stop() {
         let sys = System::new_with_specifics(RefreshKind::with_processes(RefreshKind::new()));

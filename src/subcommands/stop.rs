@@ -1,21 +1,7 @@
-use crate::{
-    lock_file::LockFile,
-    subcommands::watch::Daemon,
-    user_config::UserConfig,
-};
-use dialoguer::{
-    theme::ColorfulTheme,
-    Confirm,
-    MultiSelect,
-};
+use crate::{lock_file::LockFile, subcommands::watch::Daemon, user_config::UserConfig};
+use dialoguer::{theme::ColorfulTheme, Confirm, MultiSelect};
 use std::io::Error;
-use sysinfo::{
-    ProcessExt,
-    RefreshKind,
-    Signal,
-    System,
-    SystemExt,
-};
+use sysinfo::{ProcessExt, RefreshKind, Signal, System, SystemExt};
 
 pub fn stop() -> Result<(), Error> {
     let lock_file = LockFile::new()?;

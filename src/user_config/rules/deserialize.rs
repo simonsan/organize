@@ -2,10 +2,7 @@ use core::result::Result::Ok;
 use std::path::PathBuf;
 
 use regex::Regex;
-use serde::{
-    Deserialize,
-    Deserializer,
-};
+use serde::{Deserialize, Deserializer};
 
 use crate::path::Expandable;
 

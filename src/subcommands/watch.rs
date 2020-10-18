@@ -2,52 +2,22 @@ use std::{
     env,
     io::Error,
     process,
-    sync::mpsc::{
-        channel,
-        Receiver,
-    },
+    sync::mpsc::{channel, Receiver},
 };
 
 use colored::Colorize;
-use notify::{
-    op,
-    raw_watcher,
-    RawEvent,
-    RecommendedWatcher,
-    RecursiveMode,
-    Watcher as OtherWatcher,
-};
+use notify::{op, raw_watcher, RawEvent, RecommendedWatcher, RecursiveMode, Watcher as OtherWatcher};
 
 use crate::{
     lock_file::LockFile,
     path::MatchesFilters,
-    subcommands::{
-        run::run,
-        stop::stop,
-    },
-    user_config::{
-        rules::folder::Options,
-        UserConfig,
-    },
+    subcommands::{run::run, stop::stop},
+    user_config::{rules::folder::Options, UserConfig},
 };
 use clap::ArgMatches;
-use dialoguer::{
-    theme::ColorfulTheme,
-    Confirm,
-    Select,
-};
-use std::{
-    convert::TryInto,
-    path::Path,
-    process::Command,
-};
-use sysinfo::{
-    ProcessExt,
-    RefreshKind,
-    Signal,
-    System,
-    SystemExt,
-};
+use dialoguer::{theme::ColorfulTheme, Confirm, Select};
+use std::{convert::TryInto, path::Path, process::Command};
+use sysinfo::{ProcessExt, RefreshKind, Signal, System, SystemExt};
 
 pub fn watch(args: &ArgMatches) -> Result<(), Error> {
     let lock_file = LockFile::new()?;

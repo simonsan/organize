@@ -2,17 +2,11 @@
 pub mod vars {
     use std::{
         env,
-        io::{
-            Error,
-            ErrorKind,
-        },
+        io::{Error, ErrorKind},
         path::PathBuf,
     };
 
-    use crate::path::{
-        get_stem_and_extension,
-        Expandable,
-    };
+    use crate::path::{get_stem_and_extension, Expandable};
     use dirs::home_dir;
     use std::path::Path;
 
@@ -92,15 +86,9 @@ pub mod vars {
 
 #[cfg(test)]
 mod filters {
-    use crate::{
-        path::MatchesFilters,
-        user_config::rules::filters::Filters,
-    };
+    use crate::{path::MatchesFilters, user_config::rules::filters::Filters};
     use std::{
-        io::{
-            Error,
-            ErrorKind,
-        },
+        io::{Error, ErrorKind},
         path::PathBuf,
     };
 

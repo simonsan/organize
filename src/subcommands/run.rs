@@ -1,21 +1,11 @@
-use std::{
-    fs,
-    io::Error,
-    path::Path,
-};
+use std::{fs, io::Error, path::Path};
 
-use dialoguer::{
-    theme::ColorfulTheme,
-    Select,
-};
+use dialoguer::{theme::ColorfulTheme, Select};
 
 use crate::{
     path::MatchesFilters,
     subcommands::SubCommands,
-    user_config::{
-        rules::actions::ConflictOption,
-        UserConfig,
-    },
+    user_config::{rules::actions::ConflictOption, UserConfig},
 };
 use clap::ArgMatches;
 

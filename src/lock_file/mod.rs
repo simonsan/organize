@@ -3,27 +3,13 @@ mod lib;
 use std::{
     fs,
     fs::OpenOptions,
-    io::{
-        prelude::*,
-        Error,
-    },
-    path::{
-        Path,
-        PathBuf,
-    },
+    io::{prelude::*, Error},
+    path::{Path, PathBuf},
 };
 
-use crate::{
-    user_config::UserConfig,
-    PROJECT_NAME,
-};
+use crate::{user_config::UserConfig, PROJECT_NAME};
 use std::fs::File;
-use sysinfo::{
-    Pid,
-    RefreshKind,
-    System,
-    SystemExt,
-};
+use sysinfo::{Pid, RefreshKind, System, SystemExt};
 
 pub struct LockFile {
     path: PathBuf,

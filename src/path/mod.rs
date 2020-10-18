@@ -1,9 +1,6 @@
 use std::{
     env,
-    path::{
-        Path,
-        PathBuf,
-    },
+    path::{Path, PathBuf},
 };
 
 use crate::{
@@ -11,17 +8,11 @@ use crate::{
     subcommands::run::resolve_conflict,
     user_config::rules::{
         actions::ConflictOption,
-        filters::{
-            Filename,
-            Filters,
-        },
+        filters::{Filename, Filters},
     },
 };
 use regex::Regex;
-use std::io::{
-    Error,
-    ErrorKind,
-};
+use std::io::{Error, ErrorKind};
 
 pub mod lib;
 
