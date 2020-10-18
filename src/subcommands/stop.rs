@@ -1,6 +1,7 @@
 use crate::{
     lock_file::LockFile,
     subcommands::watch::daemon::Daemon,
+    user_config::UserConfig,
 };
 use dialoguer::{
     theme::ColorfulTheme,
@@ -21,7 +22,7 @@ pub fn stop() -> Result<(), Error> {
         let confirm = Confirm::new().with_prompt(prompt).interact();
         if confirm.is_ok() && confirm.unwrap() {
             let mut daemon = Daemon::new(None);
-            daemon.start();
+            daemon.start(&UserConfig::default_path());
         }
     } else if watchers.len() == 1 {
         let mut daemon = Daemon::new(Some(**pids.first().unwrap()));

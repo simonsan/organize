@@ -112,4 +112,13 @@ impl LockFile {
             .first()
             .map(|(pid, config)| (*pid, config.clone()))
     }
+
+    pub fn find_process_by_pid(&self, pid: Pid) -> Option<(Pid, PathBuf)> {
+        self.get_running_watchers()
+            .iter()
+            .filter(|(running_pid, _)| pid == *running_pid)
+            .collect::<Vec<_>>()
+            .first()
+            .map(|(pid, config)| (*pid, config.clone()))
+    }
 }

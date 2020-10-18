@@ -3,6 +3,15 @@ use std::{
     process::Command,
 };
 
+use crate::{
+    lock_file::LockFile,
+    user_config::UserConfig,
+};
+use clap::ArgMatches;
+use std::{
+    convert::TryInto,
+    path::Path,
+};
 use sysinfo::{
     Pid,
     ProcessExt,
@@ -25,7 +34,7 @@ impl Daemon {
         }
     }
 
-    pub fn start(&mut self) {
+    pub fn start(&mut self, path: &Path) {
         let mut args = env::args();
         let command = args.next().unwrap(); // must've been started through a command
         let mut args: Vec<_> = args
@@ -36,12 +45,14 @@ impl Daemon {
             // so we must push `watch` to be able to run the daemon
             args.push("watch".into());
         }
+        let lock_file = LockFile::new().unwrap();
         let pid = Command::new(command)
             .args(&args)
             .spawn()
             .expect("couldn't start daemon")
             .id() as i32;
-        self.pid = Some(pid);
+        // self.pid = Some(pid);
+        lock_file.append(pid.try_into().unwrap(), path).unwrap();
     }
 
     pub fn kill(&mut self) {
@@ -53,9 +64,9 @@ impl Daemon {
         self.pid = None;
     }
 
-    pub fn restart(&mut self) {
+    pub fn restart(&mut self, path: &Path) {
         self.kill();
-        self.start();
+        self.start(path);
     }
 
     pub fn is_running(&self) -> bool {

@@ -50,7 +50,7 @@ pub fn watch(args: &ArgMatches) -> Result<(), Error> {
         return match process {
             Some((pid, _)) => {
                 let mut daemon = Daemon::new(Some(pid));
-                daemon.restart();
+                daemon.restart(&path);
                 Ok(())
             }
             None => {
@@ -67,23 +67,54 @@ pub fn watch(args: &ArgMatches) -> Result<(), Error> {
                 let confirm = Confirm::new().with_prompt(prompt).interact().unwrap();
                 if confirm {
                     let mut daemon = Daemon::new(None);
-                    daemon.start();
+                    daemon.start(&path);
                 }
                 Ok(())
             }
         };
     } else {
         // DAEMON
-        let processes = lock_file.get_running_watchers();
+
         if args.subcommand().unwrap().1.is_present("daemon") {
-            let mut exited = false;
-            for (_, process_path) in &processes {
-                if path == *process_path {
-                    exited = true;
-                    break;
+            let processes = lock_file.get_running_watchers();
+            if !processes.is_empty() {
+                println!("The following configurations were found running:");
+                for (_, path) in processes {
+                    println!(" - {}", path.display())
                 }
+                let options = ["Stop instance", "Run anyway", "Do nothing"];
+                let selection = Select::with_theme(&ColorfulTheme::default())
+                    // .clear(true)
+                    .with_prompt("Select an option")
+                    .items(&options)
+                    .default(0)
+                    .interact()
+                    .unwrap();
+
+                match selection {
+                    0 => {
+                        stop()?;
+                    }
+                    1 => {
+                        let mut daemon = Daemon::new(None);
+                        daemon.start(&path);
+                    }
+                    _ => {}
+                }
+            } else {
+                let mut daemon = Daemon::new(None);
+                daemon.start(&path);
             }
-            if exited {
+        // NO ARGS
+        } else {
+            let process = lock_file.find_process_by_pid(process::id() as i32);
+            if process.is_some() {
+                // if the pid has already been registered, that means that `organize` was run with the --daemon option
+                // and the pid has already been registered
+                run(args)?;
+                let mut watcher = Watcher::new();
+                watcher.run(args, &lock_file)?;
+            } else {
                 let options = ["Stop instance", "Run anyway", "Do nothing"];
                 let selection = Select::with_theme(&ColorfulTheme::default())
                     .clear(true)
@@ -98,20 +129,14 @@ pub fn watch(args: &ArgMatches) -> Result<(), Error> {
                         stop()?;
                     }
                     1 => {
-                        let mut daemon = Daemon::new(None);
-                        daemon.start();
+                        run(args)?;
+                        lock_file.append(process::id() as i32, &path)?;
+                        let mut watcher = Watcher::new();
+                        watcher.run(args, &lock_file)?;
                     }
                     _ => return Ok(()),
                 }
-            } else {
-                let mut daemon = Daemon::new(None);
-                daemon.start();
             }
-        // NO ARGS
-        } else {
-            run(args)?;
-            let mut watcher = Watcher::new();
-            watcher.run(args, &lock_file)?;
         }
     }
     Ok(())
@@ -152,9 +177,9 @@ impl Watcher {
         }
 
         // REGISTER PID
-        let pid = process::id();
-        let path = UserConfig::path(args);
-        lock_file.append(pid.try_into().unwrap(), &path).unwrap();
+        // let pid = process::id();
+        // let path = UserConfig::path(args);
+        // lock_file.append(pid.try_into().unwrap(), &path).unwrap();
 
         // PROCESS SIGNALS
         let path2rules = config.to_map();

@@ -88,8 +88,8 @@ impl UserConfig {
     }
 
     pub fn path(args: &ArgMatches) -> PathBuf {
-        match args.value_of("config") {
-            Some(path) => PathBuf::from(path).expand_user().expand_vars(),
+        match args.subcommand().unwrap().1.value_of("config") {
+            Some(path) => PathBuf::from(path).expand_user().expand_vars().canonicalize().unwrap(),
             None => Self::default_path(),
         }
     }
