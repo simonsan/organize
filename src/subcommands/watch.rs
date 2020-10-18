@@ -66,11 +66,7 @@ pub fn watch(args: &ArgMatches) -> Result<(), Error> {
             } else {
                 println!("{}", "The following configurations were found running:".bold());
                 for (_, path) in processes {
-                    println!(
-                        " {} {}",
-                        "·".bright_black(),
-                        path.display().to_string().as_str().underline()
-                    )
+                    println!(" {} {}", "·".bright_black(), path.display().to_string().underline())
                 }
                 println!();
                 let options = ["Stop instance and run", "Run anyway", "Do nothing"];
@@ -209,7 +205,7 @@ impl Daemon {
             .filter(|arg| arg != "--daemon" && arg != "--replace" && arg != "stop")
             .collect();
         if args.is_empty() {
-            // if called from the stop command, `args` will be empty
+            // if called from the stop command, `args` will be empty (stop doesn't have sub-arguments)
             // so we must push `watch` to be able to run the daemon
             args.push("watch".into());
         }
@@ -236,16 +232,19 @@ impl Daemon {
             None => {
                 // there is no running process
                 if path == UserConfig::default_path() {
-                    println!("No instance was found running with the default configuration.");
+                    println!(
+                        "{}",
+                        "No instance was found running with the default configuration.".bold()
+                    );
                 } else {
                     println!(
-                        "No instance was found running with the configuration {}",
-                        path.display()
+                        "{} ({})",
+                        "No instance was found running with the desired configuration".bold(),
+                        path.display().to_string().underline()
                     );
-                }
-                let prompt = "Would you like to start a new instance?";
+                };
                 let confirm = Confirm::with_theme(&ColorfulTheme::default())
-                    .with_prompt(prompt)
+                    .with_prompt("Would you like to start a new instance?")
                     .interact()
                     .unwrap();
                 if confirm {
