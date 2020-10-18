@@ -1,7 +1,6 @@
 use crate::user_config::UserConfig;
 use chrono::prelude::Local;
 use colored::{ColoredString, Colorize};
-use regex::Regex;
 use std::{
     fs,
     fs::OpenOptions,
