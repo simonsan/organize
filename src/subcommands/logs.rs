@@ -1,5 +1,7 @@
 use crate::user_config::UserConfig;
 use chrono::prelude::Local;
+use colored::{ColoredString, Colorize};
+use regex::Regex;
 use std::{
     fs,
     fs::OpenOptions,
@@ -10,8 +12,26 @@ use std::{
 pub fn show_logs() -> Result<(), Error> {
     let logger = Logger::default();
     for line in logger.read_lines()? {
-        // TODO: colorize line parts
-        println!("{}", line)
+        // let time = Regex::new("\\[.+]").unwrap().find(&line).unwrap().as_str().to_string();
+        let mut components = line.split(" ");
+        let time = components.next().unwrap().to_string();
+        let level = components.next().unwrap().to_string().replace(":", "");
+        let level = Level::from(level.as_str()).colored();
+        let mut action = components.next().unwrap().to_string();
+        action = action.trim_start_matches('(').trim_end_matches(')').to_string();
+        let as_str = components.collect::<String>();
+        components = as_str.split("->");
+        let first_path = components.next().unwrap().to_string();
+        let last_path = components.next().unwrap().to_string();
+
+        println!(
+            "{} {}: ({}) {} -> {}",
+            time.dimmed(),
+            level,
+            action.bold(),
+            first_path.underline(),
+            last_path.underline()
+        )
     }
     Ok(())
 }
@@ -25,7 +45,9 @@ pub enum Level {
 
 impl From<&str> for Level {
     fn from(level: &str) -> Self {
-        match level {
+        let level = level.to_lowercase();
+        println!("{}", level);
+        match level.as_str() {
             "debug" => Self::Debug,
             "error" => Self::Error,
             "warn" => Self::Warn,
@@ -38,12 +60,23 @@ impl From<&str> for Level {
 impl ToString for Level {
     fn to_string(&self) -> String {
         match self {
-            Self::Debug => "debug",
-            Self::Error => "error",
-            Self::Warn => "warn",
-            Self::Info => "info",
+            Self::Debug => "DEBUG",
+            Self::Error => "ERROR",
+            Self::Warn => "WARN",
+            Self::Info => "INFO",
         }
         .to_string()
+    }
+}
+
+impl Level {
+    pub fn colored(&self) -> ColoredString {
+        match self {
+            Level::Info => self.to_string().green(),
+            Level::Error => self.to_string().red(),
+            Level::Warn => self.to_string().yellow(),
+            Level::Debug => self.to_string().cyan(),
+        }
     }
 }
 
