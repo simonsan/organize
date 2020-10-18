@@ -113,7 +113,7 @@ pub fn watch(args: &ArgMatches) -> Result<(), Error> {
                 // and the pid has already been registered
                 run(args)?;
                 let mut watcher = Watcher::new();
-                watcher.run(args, &lock_file)?;
+                watcher.run(args)?;
             } else {
                 let options = ["Stop instance", "Run anyway", "Do nothing"];
                 let selection = Select::with_theme(&ColorfulTheme::default())
@@ -132,7 +132,7 @@ pub fn watch(args: &ArgMatches) -> Result<(), Error> {
                         run(args)?;
                         lock_file.append(process::id() as i32, &path)?;
                         let mut watcher = Watcher::new();
-                        watcher.run(args, &lock_file)?;
+                        watcher.run(args)?;
                     }
                     _ => return Ok(()),
                 }
@@ -163,7 +163,7 @@ impl Watcher {
         }
     }
 
-    pub fn run(&mut self, args: &ArgMatches, lock_file: &LockFile) -> Result<(), Error> {
+    pub fn run(&mut self, args: &ArgMatches) -> Result<(), Error> {
         let config = UserConfig::new(args)?;
         for rule in config.rules.iter() {
             for folder in rule.folders.iter() {
@@ -175,11 +175,6 @@ impl Watcher {
                 self.watcher.watch(&folder.path, is_recursive).unwrap();
             }
         }
-
-        // REGISTER PID
-        // let pid = process::id();
-        // let path = UserConfig::path(args);
-        // lock_file.append(pid.try_into().unwrap(), &path).unwrap();
 
         // PROCESS SIGNALS
         let path2rules = config.to_map();
