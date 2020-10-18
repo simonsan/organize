@@ -72,7 +72,6 @@ impl Logger {
             Ok(file) => Self {
                 file,
                 path,
-                history_size,
             },
             Err(_) => {
                 let file = OpenOptions::new()
@@ -83,7 +82,6 @@ impl Logger {
                 Self {
                     file,
                     path,
-                    history_size,
                 }
             }
         }
