@@ -20,6 +20,7 @@ use std::{
 
 pub mod lock_file;
 pub mod path;
+pub mod string;
 pub mod subcommands;
 pub mod user_config;
 

@@ -14,12 +14,16 @@ use std::{
 };
 
 use crate::{
-    subcommands::watch::daemon::Daemon,
     user_config::UserConfig,
     PROJECT_NAME,
 };
 use std::fs::File;
-use sysinfo::Pid;
+use sysinfo::{
+    Pid,
+    RefreshKind,
+    System,
+    SystemExt,
+};
 
 pub struct LockFile {
     path: PathBuf,
@@ -92,9 +96,11 @@ impl LockFile {
     fn clear_dead_processes(self) -> Result<Self, Error> {
         self.set_readonly(false)?;
         let mut running_processes = String::new();
+        let sys = System::new_with_specifics(RefreshKind::with_processes(RefreshKind::new()));
+
         for (pid, config) in self.get_running_watchers().iter() {
-            let daemon = Daemon::new(Some(*pid));
-            if daemon.is_running() {
+            let process = sys.get_process(*pid);
+            if process.is_some() {
                 running_processes.push_str(&self.section(pid, config));
                 running_processes.push_str("\n");
             }

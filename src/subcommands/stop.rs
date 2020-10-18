@@ -1,6 +1,6 @@
 use crate::{
     lock_file::LockFile,
-    subcommands::watch::daemon::Daemon,
+    subcommands::watch::Daemon,
     user_config::UserConfig,
 };
 use dialoguer::{
@@ -9,6 +9,13 @@ use dialoguer::{
     MultiSelect,
 };
 use std::io::Error;
+use sysinfo::{
+    ProcessExt,
+    RefreshKind,
+    Signal,
+    System,
+    SystemExt,
+};
 
 pub fn stop() -> Result<(), Error> {
     let lock_file = LockFile::new()?;
@@ -19,24 +26,29 @@ pub fn stop() -> Result<(), Error> {
     if watchers.is_empty() {
         println!("No instance was found running.");
         let prompt = "Would you like to start a new daemon with the default configuration?";
-        let confirm = Confirm::new().with_prompt(prompt).interact();
-        if confirm.is_ok() && confirm.unwrap() {
-            let mut daemon = Daemon::new(None);
-            daemon.start(&UserConfig::default_path());
-        }
-    } else if watchers.len() == 1 {
-        let mut daemon = Daemon::new(Some(**pids.first().unwrap()));
-        daemon.kill();
-    } else {
-        let prompt = "Press SpaceBar to select one or more options and press Enter to stop them:";
-        let selections = MultiSelect::with_theme(&ColorfulTheme::default())
+        let confirm = Confirm::with_theme(&ColorfulTheme::default())
             .with_prompt(prompt)
-            .items(&paths[..])
             .interact()
             .unwrap();
-        for selection in selections {
-            let mut daemon = Daemon::new(Some(**pids.get(selection).unwrap()));
-            daemon.kill();
+        if confirm {
+            Daemon::start(&UserConfig::default_path());
+        }
+    } else {
+        let sys = System::new_with_specifics(RefreshKind::with_processes(RefreshKind::new()));
+        if watchers.len() == 1 {
+            sys.get_process(**pids.first().unwrap()).unwrap().kill(Signal::Kill);
+        } else {
+            let prompt = "Press SpaceBar to select one or more options and press Enter to stop them:";
+            let selections = MultiSelect::with_theme(&ColorfulTheme::default())
+                .with_prompt(prompt)
+                .items(&paths[..])
+                .interact()
+                .unwrap();
+            for selection in selections {
+                sys.get_process(**pids.get(selection).unwrap())
+                    .unwrap()
+                    .kill(Signal::Kill);
+            }
         }
     }
     Ok(())

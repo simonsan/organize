@@ -2,7 +2,6 @@
 mod tests {
     use crate::{
         lock_file::LockFile,
-        subcommands::watch::daemon::Daemon,
         user_config::UserConfig,
     };
     use std::{
@@ -14,17 +13,19 @@ mod tests {
         },
     };
     use sysinfo::{
+        ProcessExt,
         RefreshKind,
+        Signal,
         System,
         SystemExt,
     };
 
     fn stop() {
+        let sys = System::new_with_specifics(RefreshKind::with_processes(RefreshKind::new()));
         let lock_file = LockFile::new().unwrap();
         let watchers = lock_file.get_running_watchers();
         for (pid, _) in watchers.iter() {
-            let mut daemon = Daemon::new(Some(*pid));
-            daemon.kill();
+            sys.get_process(*pid).unwrap().kill(Signal::Kill);
         }
     }
 
