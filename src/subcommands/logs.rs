@@ -2,7 +2,7 @@ use crate::user_config::UserConfig;
 use chrono::prelude::Local;
 use std::{
     fs,
-    fs::{File, OpenOptions},
+    fs::OpenOptions,
     io::{Error, Write},
     path::PathBuf,
 };
@@ -48,7 +48,6 @@ impl ToString for Level {
 }
 
 pub struct Logger {
-    file: File,
     path: PathBuf,
 }
 
@@ -64,39 +63,17 @@ impl Logger {
     }
 
     pub fn new(path: PathBuf) -> Self {
-        let file = OpenOptions::new().append(true).read(true).create_new(true).open(&path);
-
-        match file {
-            // open() may throw an AlreadyExists error when combined with create_new()
-            Ok(file) => Self {
-                file,
-                path,
-            },
-            Err(_) => {
-                let file = OpenOptions::new()
-                    .append(true)
-                    .read(true)
-                    .open(&path)
-                    .expect("could not open log file");
-                Self {
-                    file,
-                    path,
-                }
-            }
+        OpenOptions::new().append(true).create_new(true).open(&path).ok();
+        Self {
+            path,
         }
     }
 
     pub fn write(&mut self, level: Level, msg: &str) -> Result<(), Error> {
         let datetime = Local::now();
         let level = level.to_string().to_uppercase();
-        writeln!(
-            self.file,
-            "[{}-{}] {}: {}",
-            datetime.date(),
-            datetime.time(),
-            level,
-            msg
-        )
+        let file = OpenOptions::new().append(true).open(&self.path)?;
+        writeln!(&file, "[{}-{}] {}: {}", datetime.date(), datetime.time(), level, msg)
     }
 
     pub fn len(&self) -> usize {

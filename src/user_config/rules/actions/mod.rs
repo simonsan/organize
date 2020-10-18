@@ -99,13 +99,18 @@ impl Actions {
         if to.exists() {
             if let Some(to) = to.update(&r#move.if_exists, &r#move.sep, is_watching) {
                 std::fs::rename(&path, &to)?;
+                if let Err(e) = logger.write(Level::Info, &format!("(move) {} -> {}", &path.display(), &to.display())) {
+                    eprintln!("could not write to file: {}", e);
+                }
                 Ok(Some(to))
             } else {
                 Ok(None)
             }
         } else {
             std::fs::rename(&path, &to)?;
-            logger.write(Level::Info, &format!("(move) {} -> {}", &path.display(), &to.display()))?;
+            if let Err(e) = logger.write(Level::Info, &format!("(move) {} -> {}", &path.display(), &to.display())) {
+                eprintln!("could not write to file: {}", e);
+            }
             Ok(Some(to))
         }
     }
