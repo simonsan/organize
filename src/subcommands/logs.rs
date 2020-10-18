@@ -7,12 +7,6 @@ use std::{
     path::PathBuf,
 };
 
-pub struct Logger {
-    file: File,
-    history_size: usize,
-    path: PathBuf,
-}
-
 pub fn show_logs() -> Result<(), Error> {
     let logger = Logger::default();
     for line in logger.read_lines()? {
@@ -51,6 +45,11 @@ impl ToString for Level {
         }
         .to_string()
     }
+}
+
+pub struct Logger {
+    file: File,
+    path: PathBuf,
 }
 
 impl Default for Logger {
