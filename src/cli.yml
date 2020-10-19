@@ -27,8 +27,6 @@ subcommands:
         - show_defaults:
             long: show-defaults
             conflicts_with: show_path
-  - suggest:
-      about: Show improved workflow suggestions (must be enabled in config; experimental feature)
   - watch:
       about: Watch for changes and apply rules
       args:

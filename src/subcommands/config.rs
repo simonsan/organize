@@ -1,8 +1,5 @@
-use crate::{
-    user_config::{rules::folder::Options, UserConfig},
-    PROJECT_NAME,
-};
-use clap::ArgMatches;
+use crate::user_config::{rules::folder::Options, UserConfig};
+use clap::{crate_name, ArgMatches};
 use colored::Colorize;
 use std::{env, ffi::OsString, io::Error, path::PathBuf, process};
 
@@ -23,7 +20,7 @@ pub fn config(args: &ArgMatches) -> Result<(), Error> {
         println!("hidden_files: {}", hidden_files.to_string().purple());
         println!("ignored_directories: {:?}", ignore);
     } else if args.is_present("new") {
-        let config_file = env::current_dir()?.join(format!("{}.yml", PROJECT_NAME));
+        let config_file = env::current_dir()?.join(format!("{}.yml", crate_name!()));
         UserConfig::create(&config_file)?;
         println!("New config file created at {}", config_file.display());
     } else {

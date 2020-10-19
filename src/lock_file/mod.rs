@@ -1,14 +1,13 @@
 mod lib;
 
+use crate::user_config::UserConfig;
+use clap::crate_name;
 use std::{
     fs,
-    fs::OpenOptions,
+    fs::{File, OpenOptions},
     io::{prelude::*, Error},
     path::{Path, PathBuf},
 };
-
-use crate::{user_config::UserConfig, PROJECT_NAME};
-use std::fs::File;
 use sysinfo::{Pid, RefreshKind, System, SystemExt};
 
 pub struct LockFile {
@@ -18,7 +17,7 @@ pub struct LockFile {
 
 impl LockFile {
     pub fn new() -> Result<Self, Error> {
-        let path = UserConfig::dir().join(format!("{}.lock", PROJECT_NAME));
+        let path = UserConfig::dir().join(format!("{}.lock", crate_name!()));
         if !path.exists() {
             File::create(&path).expect("could not create lock file");
         }

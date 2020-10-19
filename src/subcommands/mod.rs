@@ -10,7 +10,6 @@ pub mod watch;
 pub enum SubCommands {
     Config,
     Run,
-    Suggest,
     Watch,
     Logs,
     Stop,
@@ -21,7 +20,6 @@ impl ToString for SubCommands {
         match self {
             SubCommands::Config => "config".into(),
             SubCommands::Run => "run".into(),
-            SubCommands::Suggest => "suggest".into(),
             SubCommands::Watch => "watch".into(),
             SubCommands::Logs => "logs".into(),
             SubCommands::Stop => "stop".into(),
@@ -47,7 +45,6 @@ impl From<&str> for SubCommands {
         match name {
             "config" => Self::Config,
             "run" => Self::Run,
-            "suggest" => Self::Suggest,
             "watch" => Self::Watch,
             "logs" => Self::Logs,
             "stop" => Self::Stop,

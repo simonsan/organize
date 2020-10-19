@@ -1,5 +1,5 @@
-use crate::{path::Expandable, user_config::rules::rule::Rule, PROJECT_NAME};
-use clap::{load_yaml, ArgMatches};
+use crate::{path::Expandable, user_config::rules::rule::Rule};
+use clap::{crate_name, load_yaml, ArgMatches};
 use dirs::home_dir;
 use serde::Deserialize;
 use std::{
@@ -84,7 +84,7 @@ impl UserConfig {
     pub fn dir() -> PathBuf {
         home_dir()
             .expect("ERROR: cannot determine home directory")
-            .join(format!(".{}", PROJECT_NAME))
+            .join(format!(".{}", crate_name!()))
     }
 
     pub fn default_path() -> PathBuf {
