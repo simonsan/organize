@@ -137,7 +137,6 @@ impl Expandable for PathBuf {
         let mut as_str = self.to_str().unwrap().to_string();
         let regex = Regex::new(r"\{\w+(?:\.\w+)*}").unwrap();
         for span in regex.find_iter(self.to_str().unwrap()) {
-            // TODO: improve regex to avoid trimming and splitting
             let placeholders = span
                 .as_str()
                 .trim_matches(|x| x == '{' || x == '}')
