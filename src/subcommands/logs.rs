@@ -109,8 +109,7 @@ impl Logger {
 
     pub fn show_logs(&self) -> Result<(), Error> {
         let text = self.read()?;
-        let re = r"(?P<time>\[.+]) (?P<level>[A-Z]+?): (?:\()(?P<action>\w+?)(?:\)) (?P<old_path>.+?) (?:(?P<sep>->) (?P<new_path>.+))?";
-        let re = Regex::new(re).unwrap();
+        let re = Regex::new(r"(?P<time>\[.+]) (?P<level>[A-Z]+?): \((?P<action>\w+?)\) (?P<old_path>.+?) (?:(?P<sep>->) (?P<new_path>.+))?").unwrap();
         for r#match in re.captures_iter(&text) {
             let time = r#match.name("time").unwrap().as_str().dimmed();
             let level = Level::from(r#match.name("level").unwrap().as_str()).colored();
