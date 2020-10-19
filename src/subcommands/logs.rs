@@ -1,5 +1,6 @@
 use crate::user_config::{rules::actions::Action, UserConfig};
 use chrono::prelude::Local;
+use clap::ArgMatches;
 use colored::{ColoredString, Colorize};
 use regex::Regex;
 use std::{
@@ -9,25 +10,13 @@ use std::{
     path::PathBuf,
 };
 
-pub fn show_logs() -> Result<(), Error> {
+pub fn logs(args: &ArgMatches) -> Result<(), Error> {
     let logger = Logger::default();
-    let text = logger.read()?;
-    let re = r"(?P<time>\[.+]) (?P<level>[A-Z]+?): (?:\()(?P<action>\w+?)(?:\)) (?P<old_path>.+?) (?:(?P<sep>->) (?P<new_path>.+))?";
-    let re = Regex::new(re).unwrap();
-    for r#match in re.captures_iter(&text) {
-        let time = r#match.name("time").unwrap().as_str().dimmed();
-        let level = Level::from(r#match.name("level").unwrap().as_str()).colored();
-        let action = r#match.name("action").unwrap().as_str().bold();
-        let old_path = r#match.name("old_path").unwrap().as_str().underline();
-        print!("{} {}: ({}) {}", time, level, action, old_path);
-
-        if let (Some(sep), Some(new_path)) = (r#match.name("sep"), r#match.name("new_path")) {
-            println!(" {} {}", sep.as_str(), new_path.as_str().underline())
-        } else {
-            println!()
-        }
+    if args.subcommand().unwrap().1.is_present("clear") {
+        logger.delete()
+    } else {
+        logger.show_logs()
     }
-    Ok(())
 }
 
 pub enum Level {
@@ -116,6 +105,26 @@ impl Logger {
 
     pub fn is_empty(&self) -> bool {
         self.len() == 0
+    }
+
+    pub fn show_logs(&self) -> Result<(), Error> {
+        let text = self.read()?;
+        let re = r"(?P<time>\[.+]) (?P<level>[A-Z]+?): (?:\()(?P<action>\w+?)(?:\)) (?P<old_path>.+?) (?:(?P<sep>->) (?P<new_path>.+))?";
+        let re = Regex::new(re).unwrap();
+        for r#match in re.captures_iter(&text) {
+            let time = r#match.name("time").unwrap().as_str().dimmed();
+            let level = Level::from(r#match.name("level").unwrap().as_str()).colored();
+            let action = r#match.name("action").unwrap().as_str().bold();
+            let old_path = r#match.name("old_path").unwrap().as_str().underline();
+            print!("{} {}: ({}) {}", time, level, action, old_path);
+
+            if let (Some(sep), Some(new_path)) = (r#match.name("sep"), r#match.name("new_path")) {
+                println!(" {} {}", sep.as_str(), new_path.as_str().underline())
+            } else {
+                println!()
+            }
+        }
+        Ok(())
     }
 
     pub fn delete(self) -> Result<(), Error> {

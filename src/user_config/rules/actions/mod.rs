@@ -48,7 +48,6 @@ impl ToString for Action {
             Self::Trash => "trash",
             Self::Echo => "echo",
             Self::Shell => "shell",
-            _ => panic!("unknown action"),
         }
         .into()
     }
