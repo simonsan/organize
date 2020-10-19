@@ -22,9 +22,7 @@ pub fn show_logs() -> Result<(), Error> {
             &r#match["action"].bold(),
             &r#match["old_path"].underline(),
         );
-        if r#match.name("sep").is_some() && r#match.name("new_path").is_some() {
-            let sep = r#match.name("sep").unwrap();
-            let new_path = r#match.name("new_path").unwrap();
+        if let (Some(sep), Some(new_path)) = (r#match.name("sep"), r#match.name("new_path")) {
             println!(" {} {}", sep.as_str(), new_path.as_str().underline())
         } else {
             println!()
