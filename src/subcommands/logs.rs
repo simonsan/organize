@@ -1,6 +1,7 @@
 use crate::user_config::UserConfig;
 use chrono::prelude::Local;
 use colored::{ColoredString, Colorize};
+use regex::Regex;
 use std::{
     fs,
     fs::OpenOptions,
@@ -10,27 +11,24 @@ use std::{
 
 pub fn show_logs() -> Result<(), Error> {
     let logger = Logger::default();
-    for line in logger.read_lines()? {
-        // let time = Regex::new("\\[.+]").unwrap().find(&line).unwrap().as_str().to_string();
-        let mut components = line.split(" ");
-        let time = components.next().unwrap().to_string();
-        let level = components.next().unwrap().to_string().replace(":", "");
-        let level = Level::from(level.as_str()).colored();
-        let mut action = components.next().unwrap().to_string();
-        action = action.trim_start_matches('(').trim_end_matches(')').to_string();
-        let as_str = components.collect::<String>();
-        components = as_str.split("->");
-        let first_path = components.next().unwrap().to_string();
-        let last_path = components.next().unwrap().to_string();
-
-        println!(
-            "{} {}: ({}) {} -> {}",
-            time.dimmed(),
-            level,
-            action.bold(),
-            first_path.underline(),
-            last_path.underline()
-        )
+    let text = logger.read()?;
+    let re = r"(?P<time>\[.+]) (?P<level>[A-Z]+?): (?:\()(?P<action>\w+?)(?:\)) (?P<old_path>.+?) (?:(?P<sep>->) (?P<new_path>.+))?";
+    let re = Regex::new(re).unwrap();
+    for r#match in re.captures_iter(&text) {
+        print!(
+            "{} {}: ({}) {}",
+            &r#match["time"].dimmed(),
+            Level::from(&r#match["level"]).colored(),
+            &r#match["action"].bold(),
+            &r#match["old_path"].underline(),
+        );
+        if r#match.name("sep").is_some() && r#match.name("new_path").is_some() {
+            let sep = r#match.name("sep").unwrap();
+            let new_path = r#match.name("new_path").unwrap();
+            println!(" {} {}", sep.as_str(), new_path.as_str().underline())
+        } else {
+            println!()
+        }
     }
     Ok(())
 }
@@ -122,5 +120,9 @@ impl Logger {
     pub fn read_lines(&self) -> Result<Vec<String>, Error> {
         let logs = fs::read_to_string(&self.path)?;
         Ok(logs.lines().map(|str| str.to_string()).collect::<Vec<_>>())
+    }
+
+    pub fn read(&self) -> Result<String, Error> {
+        fs::read_to_string(&self.path)
     }
 }
