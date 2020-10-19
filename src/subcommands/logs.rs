@@ -1,4 +1,4 @@
-use crate::user_config::UserConfig;
+use crate::user_config::{rules::actions::Action, UserConfig};
 use chrono::prelude::Local;
 use colored::{ColoredString, Colorize};
 use regex::Regex;
@@ -15,13 +15,12 @@ pub fn show_logs() -> Result<(), Error> {
     let re = r"(?P<time>\[.+]) (?P<level>[A-Z]+?): (?:\()(?P<action>\w+?)(?:\)) (?P<old_path>.+?) (?:(?P<sep>->) (?P<new_path>.+))?";
     let re = Regex::new(re).unwrap();
     for r#match in re.captures_iter(&text) {
-        print!(
-            "{} {}: ({}) {}",
-            &r#match["time"].dimmed(),
-            Level::from(&r#match["level"]).colored(),
-            &r#match["action"].bold(),
-            &r#match["old_path"].underline(),
-        );
+        let time = r#match.name("time").unwrap().as_str().dimmed();
+        let level = Level::from(r#match.name("level").unwrap().as_str()).colored();
+        let action = r#match.name("action").unwrap().as_str().bold();
+        let old_path = r#match.name("old_path").unwrap().as_str().underline();
+        print!("{} {}: ({}) {}", time, level, action, old_path);
+
         if let (Some(sep), Some(new_path)) = (r#match.name("sep"), r#match.name("new_path")) {
             println!(" {} {}", sep.as_str(), new_path.as_str().underline())
         } else {
@@ -96,11 +95,19 @@ impl Logger {
         }
     }
 
-    pub fn write(&mut self, level: Level, msg: &str) -> Result<(), Error> {
+    pub fn write(&mut self, level: Level, action: Action, msg: &str) -> Result<(), Error> {
         let datetime = Local::now();
         let level = level.to_string().to_uppercase();
         let file = OpenOptions::new().append(true).open(&self.path)?;
-        writeln!(&file, "[{}-{}] {}: {}", datetime.date(), datetime.time(), level, msg)
+        writeln!(
+            &file,
+            "[{}-{}] {}: ({}) {}",
+            datetime.date(),
+            datetime.time(),
+            level,
+            action.to_string(),
+            msg
+        )
     }
 
     pub fn len(&self) -> usize {

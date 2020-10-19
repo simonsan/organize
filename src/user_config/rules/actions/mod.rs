@@ -13,6 +13,47 @@ use crate::subcommands::logs::{Level, Logger};
 
 mod lib;
 
+pub enum Action {
+    Move,
+    Rename,
+    Copy,
+    Delete,
+    Trash,
+    Echo,
+    Shell,
+}
+
+impl From<&str> for Action {
+    fn from(str: &str) -> Self {
+        match str.to_lowercase().as_str() {
+            "move" => Self::Move,
+            "copy" => Self::Copy,
+            "rename" => Self::Rename,
+            "delete" => Self::Delete,
+            "trash" => Self::Trash,
+            "echo" => Self::Echo,
+            "shell" => Self::Shell,
+            _ => panic!("unknown action"),
+        }
+    }
+}
+
+impl ToString for Action {
+    fn to_string(&self) -> String {
+        match self {
+            Self::Move => "move",
+            Self::Copy => "copy",
+            Self::Rename => "rename",
+            Self::Delete => "delete",
+            Self::Trash => "trash",
+            Self::Echo => "echo",
+            Self::Shell => "shell",
+            _ => panic!("unknown action"),
+        }
+        .into()
+    }
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
 pub struct Actions {
     pub echo: Option<String>,
@@ -50,7 +91,7 @@ impl Actions {
     fn copy(&self, path: &Path, is_watching: bool) -> Result<Option<PathBuf>, Error> {
         assert!(self.copy.is_some());
         let copy = self.copy.as_ref().unwrap();
-
+        let mut logger = Logger::default();
         let mut to = copy.to.expand_placeholders(path)?;
         if !to.exists() {
             fs::create_dir_all(&to)?;
@@ -60,29 +101,59 @@ impl Actions {
         if to.exists() {
             if let Some(to) = to.update(&copy.if_exists, &copy.sep, is_watching) {
                 std::fs::copy(&path, &to)?;
+                if let Err(e) = logger.write(
+                    Level::Info,
+                    Action::Copy,
+                    &format!("{} -> {}", &path.display(), &to.display()),
+                ) {
+                    eprintln!("could not write to file: {}", e);
+                }
                 Ok(Some(to))
             } else {
                 Ok(None)
             }
         } else {
             std::fs::copy(&path, &to)?;
+            if let Err(e) = logger.write(
+                Level::Info,
+                Action::Copy,
+                &format!("{} -> {}", &path.display(), &to.display()),
+            ) {
+                eprintln!("could not write to file: {}", e);
+            }
             Ok(Some(to))
         }
     }
 
     fn rename(&self, path: &Path, is_watching: bool) -> Result<Option<PathBuf>, Error> {
         assert!(self.rename.is_some());
+        let mut logger = Logger::default();
         let rename = self.rename.as_ref().unwrap();
         let to = rename.to.expand_placeholders(path)?;
         if to.exists() {
             if let Some(to) = to.update(&rename.if_exists, &rename.sep, is_watching) {
                 std::fs::rename(&path, &to)?;
+                if let Err(e) = logger.write(
+                    Level::Info,
+                    Action::Rename,
+                    &format!("{} -> {}", &path.display(), &to.display()),
+                ) {
+                    eprintln!("could not write to file: {}", e);
+                }
                 Ok(Some(to))
             } else {
                 Ok(None)
             }
         } else {
             std::fs::rename(&path, &rename.to)?;
+            if let Err(e) = logger.write(
+                Level::Info,
+                Action::Rename,
+                &format!("{} -> {}", &path.display(), &to.display()),
+            ) {
+                eprintln!("could not write to file: {}", e);
+            }
+
             Ok(Some(rename.to.clone()))
         }
     }
@@ -99,7 +170,11 @@ impl Actions {
         if to.exists() {
             if let Some(to) = to.update(&r#move.if_exists, &r#move.sep, is_watching) {
                 std::fs::rename(&path, &to)?;
-                if let Err(e) = logger.write(Level::Info, &format!("(move) {} -> {}", &path.display(), &to.display())) {
+                if let Err(e) = logger.write(
+                    Level::Info,
+                    Action::Move,
+                    &format!("{} -> {}", &path.display(), &to.display()),
+                ) {
                     eprintln!("could not write to file: {}", e);
                 }
                 Ok(Some(to))
@@ -108,7 +183,11 @@ impl Actions {
             }
         } else {
             std::fs::rename(&path, &to)?;
-            if let Err(e) = logger.write(Level::Info, &format!("(move) {} -> {}", &path.display(), &to.display())) {
+            if let Err(e) = logger.write(
+                Level::Info,
+                Action::Move,
+                &format!("(move) {} -> {}", &path.display(), &to.display()),
+            ) {
                 eprintln!("could not write to file: {}", e);
             }
             Ok(Some(to))
@@ -116,7 +195,12 @@ impl Actions {
     }
 
     fn delete(&self, path: &Path) -> Result<(), Error> {
-        std::fs::remove_file(path)
+        std::fs::remove_file(path)?;
+        let mut logger = Logger::default();
+        if let Err(e) = logger.write(Level::Info, Action::Delete, &format!("{}", path.display())) {
+            eprintln!("could not write to file: {}", e)
+        }
+        Ok(())
     }
 }
 
