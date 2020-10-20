@@ -24,7 +24,3 @@ pub(in crate::user_config) fn deserialize_regex<'de, D: Deserializer<'de>>(deser
 pub(in crate::user_config) fn default_regex() -> Regex {
     Regex::new("").unwrap()
 }
-
-pub(in crate::user_config) fn default_sep() -> String {
-    " ".to_string()
-}

@@ -1,3 +1,5 @@
+use copy::Copy;
+use r#move::Move;
 use std::{
     fs,
     io::Error,
@@ -6,13 +8,33 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
-use crate::path::{Expandable, Update};
+use super::deserialize::deserialize_path;
+use crate::{
+    subcommands::logs::{Level, Logger},
+    user_config::rules::actions::{delete::Delete, echo::Echo, rename::Rename, shell::Shell},
+};
 
-use super::deserialize::{default_sep, deserialize_path};
-use crate::subcommands::logs::{Level, Logger};
-use crate::string::Placeholder;
+pub mod copy;
+pub mod delete;
+pub mod echo;
+pub mod r#move;
+pub mod rename;
+pub mod shell;
 
-mod lib;
+#[derive(Debug, Clone, Deserialize, Serialize, Eq, PartialEq)]
+pub struct Sep(String);
+
+impl Default for Sep {
+    fn default() -> Self {
+        Self(" ".into())
+    }
+}
+
+impl Sep {
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
 
 pub enum Action {
     Move,
@@ -56,187 +78,45 @@ impl ToString for Action {
 
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
 pub struct Actions {
-    pub echo: Option<String>,
-    pub shell: Option<String>,
-    pub trash: Option<bool>,
-    pub delete: Option<bool>,
-    pub copy: Option<ConflictingFileOperation>,
-    pub r#move: Option<ConflictingFileOperation>,
-    pub rename: Option<ConflictingFileOperation>,
+    pub echo: Option<Echo>,
+    pub shell: Option<Shell>,
+    pub delete: Option<Delete>,
+    pub copy: Option<Copy>,
+    pub r#move: Option<Move>,
+    pub rename: Option<Rename>,
 }
 
 impl Actions {
     pub fn run(&self, mut path: PathBuf, watching: bool) -> Result<(), Error> {
-        assert!(self.r#move.is_some() ^ self.rename.is_some());
-        if self.copy.is_some() {
-            self.copy(&path, watching)?;
+        assert!((self.r#move.is_some() ^ self.rename.is_some()) || self.r#move.is_none() && self.rename.is_none());
+        if let Some(echo) = &self.echo {
+            echo.run(&path);
+        }
+        if let Some(shell) = &self.shell {
+            shell.run(&path)?;
+        }
+        if let Some(copy) = &self.copy {
+            copy.run(&path, watching)?;
         }
         if self.r#move.is_some() ^ self.rename.is_some() {
             let mut result = PathBuf::new();
-            if self.r#move.is_some() {
-                if let Some(path) = self.r#move(&path, watching)? {
+            if let Some(r#move) = &self.r#move {
+                if let Some(path) = r#move.run(&path, watching)? {
                     result = path;
                 }
-            } else if let Some(path) = self.rename(&path, watching)? {
-                result = path;
+            } else if let Some(rename) = &self.rename {
+                if let Some(path) = rename.run(&path, watching)? {
+                    result = path;
+                }
             }
             path = result;
         }
-        if self.delete.is_some() {
-            self.delete(&path)?;
+        if let Some(delete) = &self.delete {
+            if delete.as_bool() {
+                delete.run(&path)?;
+            }
         }
         Ok(())
-    }
-
-    fn copy(&self, path: &Path, is_watching: bool) -> Result<Option<PathBuf>, Error> {
-        assert!(self.copy.is_some());
-        let copy = self.copy.as_ref().unwrap();
-        let mut logger = Logger::default();
-        let mut to: PathBuf = copy.to.to_str().unwrap().to_string().expand_placeholders(path)?.into();
-        if !to.exists() {
-            fs::create_dir_all(&to)?;
-        }
-        to = to.join(&path.file_name().unwrap());
-
-        if to.exists() {
-            if let Some(to) = to.update(&copy.if_exists, &copy.sep, is_watching) {
-                std::fs::copy(&path, &to)?;
-                if let Err(e) = logger.write(
-                    Level::Info,
-                    Action::Copy,
-                    &format!("{} -> {}", &path.display(), &to.display()),
-                ) {
-                    eprintln!("could not write to file: {}", e);
-                }
-                Ok(Some(to))
-            } else {
-                Ok(None)
-            }
-        } else {
-            std::fs::copy(&path, &to)?;
-            if let Err(e) = logger.write(
-                Level::Info,
-                Action::Copy,
-                &format!("{} -> {}", &path.display(), &to.display()),
-            ) {
-                eprintln!("could not write to file: {}", e);
-            }
-            Ok(Some(to))
-        }
-    }
-
-    fn rename(&self, path: &Path, is_watching: bool) -> Result<Option<PathBuf>, Error> {
-        assert!(self.rename.is_some());
-        let mut logger = Logger::default();
-        let rename = self.rename.as_ref().unwrap();
-        let mut to: PathBuf = rename.to.to_str().unwrap().to_string().expand_placeholders(path)?.into();
-        if to.exists() {
-            if let Some(to) = to.update(&rename.if_exists, &rename.sep, is_watching) {
-                std::fs::rename(&path, &to)?;
-                if let Err(e) = logger.write(
-                    Level::Info,
-                    Action::Rename,
-                    &format!("{} -> {}", &path.display(), &to.display()),
-                ) {
-                    eprintln!("could not write to file: {}", e);
-                }
-                Ok(Some(to))
-            } else {
-                Ok(None)
-            }
-        } else {
-            std::fs::rename(&path, &rename.to)?;
-            if let Err(e) = logger.write(
-                Level::Info,
-                Action::Rename,
-                &format!("{} -> {}", &path.display(), &to.display()),
-            ) {
-                eprintln!("could not write to file: {}", e);
-            }
-
-            Ok(Some(rename.to.clone()))
-        }
-    }
-
-    fn r#move(&self, path: &Path, is_watching: bool) -> Result<Option<PathBuf>, Error> {
-        assert!(self.r#move.is_some());
-        let mut logger = Logger::default();
-        let r#move = self.r#move.as_ref().unwrap();
-        let mut to: PathBuf = r#move.to.to_str().unwrap().to_string().expand_placeholders(path)?.into();
-        if !to.exists() {
-            fs::create_dir_all(&to)?;
-        }
-        to = to.join(&path.file_name().unwrap());
-        if to.exists() {
-            if let Some(to) = to.update(&r#move.if_exists, &r#move.sep, is_watching) {
-                std::fs::rename(&path, &to)?;
-                if let Err(e) = logger.write(
-                    Level::Info,
-                    Action::Move,
-                    &format!("{} -> {}", &path.display(), &to.display()),
-                ) {
-                    eprintln!("could not write to file: {}", e);
-                }
-                Ok(Some(to))
-            } else {
-                Ok(None)
-            }
-        } else {
-            std::fs::rename(&path, &to)?;
-            if let Err(e) = logger.write(
-                Level::Info,
-                Action::Move,
-                &format!("(move) {} -> {}", &path.display(), &to.display()),
-            ) {
-                eprintln!("could not write to file: {}", e);
-            }
-            Ok(Some(to))
-        }
-    }
-
-    fn delete(&self, path: &Path) -> Result<(), Error> {
-        std::fs::remove_file(path)?;
-        let mut logger = Logger::default();
-        if let Err(e) = logger.write(Level::Info, Action::Delete, &format!("{}", path.display())) {
-            eprintln!("could not write to file: {}", e)
-        }
-        Ok(())
-    }
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct ConflictingFileOperation {
-    #[serde(deserialize_with = "deserialize_path")]
-    pub(crate) to: PathBuf,
-    #[serde(default)]
-    pub if_exists: ConflictOption,
-    #[serde(default = "default_sep")]
-    pub sep: String,
-}
-
-impl From<&str> for ConflictingFileOperation {
-    fn from(path: &str) -> Self {
-        let mut op = ConflictingFileOperation::default();
-        op.to = PathBuf::from(path).expand_vars();
-        op
-    }
-}
-
-impl From<PathBuf> for ConflictingFileOperation {
-    fn from(path: PathBuf) -> Self {
-        let mut op = ConflictingFileOperation::default();
-        op.to = path;
-        op
-    }
-}
-
-impl Default for ConflictingFileOperation {
-    fn default() -> Self {
-        Self {
-            to: PathBuf::new(), // shouldn't get to this if 'to' isn't specified
-            if_exists: Default::default(),
-            sep: " ".to_string(),
-        }
     }
 }
 
@@ -244,12 +124,13 @@ impl Default for ConflictingFileOperation {
 /// i.e. how the application should proceed when a file exists
 /// but it should move/rename/copy some file to that existing path
 // write their configs with this format due to how serde deserializes files
-#[derive(Eq, PartialEq, Debug, Clone, Deserialize, Serialize)]
+#[derive(Eq, PartialEq, Debug, Clone, Copy, Deserialize, Serialize)]
 #[serde(rename_all(serialize = "lowercase", deserialize = "lowercase"))]
 pub enum ConflictOption {
     Overwrite,
     Skip,
     Rename,
+    Delete,
     Ask, // not available when watching
 }
 
@@ -268,11 +149,77 @@ impl ConflictOption {
         self == &Self::Overwrite
     }
 
+    pub fn should_delete(&self) -> bool {
+        self == &Self::Delete
+    }
+
     pub fn should_rename(&self) -> bool {
         self == &Self::Rename
     }
 
     pub fn should_ask(&self) -> bool {
         self == &Self::Ask
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::io::{Error, ErrorKind};
+
+    use crate::{
+        path::{
+            lib::vars::{expected_path, test_file_or_dir},
+            Update,
+        },
+        user_config::rules::actions::{ConflictOption, Sep},
+    };
+
+    static WATCHING: bool = false;
+
+    #[test]
+    fn rename_with_rename_conflict() -> Result<(), Error> {
+        let target = test_file_or_dir("test2.txt");
+        let expected = expected_path(&target, &Default::default());
+        let new_path = target
+            .update(&ConflictOption::Rename, &Default::default(), WATCHING)
+            .unwrap();
+        if new_path == expected {
+            Ok(())
+        } else {
+            Err(Error::new(ErrorKind::Other, "filepath after rename is not as expected"))
+        }
+    }
+
+    #[test]
+    fn rename_with_overwrite_conflict() -> Result<(), Error> {
+        let target = test_file_or_dir("test2.txt");
+        let expected = target.clone();
+        let new_path = target
+            .update(&ConflictOption::Overwrite, &Default::default(), WATCHING)
+            .unwrap();
+        if new_path == expected {
+            Ok(())
+        } else {
+            Err(Error::new(ErrorKind::Other, "filepath after rename is not as expected"))
+        }
+    }
+
+    #[test]
+    #[should_panic] // unwrapping a None value
+    fn rename_with_skip_conflict() {
+        let target = test_file_or_dir("test2.txt");
+        target
+            .update(&ConflictOption::Skip, &Default::default(), WATCHING)
+            .unwrap();
+    }
+
+    #[test]
+    #[should_panic] // trying to modify a path that does not exist
+    fn new_path_to_non_existing_file() {
+        let target = test_file_or_dir("test_dir2").join("test1.txt");
+        assert!(!target.exists());
+        target
+            .update(&ConflictOption::Rename, &Default::default(), WATCHING)
+            .unwrap();
     }
 }

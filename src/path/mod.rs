@@ -1,5 +1,5 @@
 use std::{
-    env,
+    env, fs,
     path::{Path, PathBuf},
 };
 
@@ -7,7 +7,7 @@ use crate::{
     string::Capitalize,
     subcommands::run::resolve_conflict,
     user_config::rules::{
-        actions::ConflictOption,
+        actions::{ConflictOption, Sep},
         filters::{Filename, Filters},
     },
 };
@@ -63,7 +63,7 @@ impl MatchesFilters for PathBuf {
 }
 
 pub trait Update {
-    fn update(&self, if_exists: &ConflictOption, sep: &str, watching: bool) -> Option<PathBuf>;
+    fn update(&self, if_exists: &ConflictOption, sep: &Sep, watching: bool) -> Option<PathBuf>;
 }
 
 impl Update for PathBuf {
@@ -75,7 +75,7 @@ impl Update for PathBuf {
     /// * `is_watching`: whether this function is being run from a watcher or not
     /// # Return
     /// This function will return `Some(new_path)` if `if_exists` is not set to skip, otherwise it returns `None`
-    fn update(&self, if_exists: &ConflictOption, sep: &str, watching: bool) -> Option<Self> {
+    fn update(&self, if_exists: &ConflictOption, sep: &Sep, watching: bool) -> Option<Self> {
         #[cfg(debug_assertions)]
         assert!(self.exists());
 
@@ -87,7 +87,7 @@ impl Update for PathBuf {
                 let mut new_path = self.clone();
                 let mut n = 1;
                 while new_path.exists() {
-                    let new_filename = format!("{}{}({:?}).{}", stem, sep, n, extension);
+                    let new_filename = format!("{}{}({:?}).{}", stem, sep.as_str(), n, extension);
                     new_path.set_file_name(new_filename);
                     n += 1;
                 }
@@ -101,6 +101,10 @@ impl Update for PathBuf {
                     resolve_conflict(&self)
                 };
                 self.update(&if_exists, sep, watching)
+            }
+            ConflictOption::Delete => {
+                fs::remove_file(&self).unwrap();
+                None
             }
         }
     }

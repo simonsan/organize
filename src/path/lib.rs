@@ -6,7 +6,10 @@ pub mod vars {
         path::PathBuf,
     };
 
-    use crate::path::{get_stem_and_extension, Expandable};
+    use crate::{
+        path::{get_stem_and_extension, Expandable},
+        user_config::rules::actions::Sep,
+    };
     use dirs::home_dir;
     use std::path::Path;
 
@@ -25,10 +28,10 @@ pub mod vars {
         tests_dir().join("files").join(filename)
     }
 
-    pub fn expected_path(file: &Path, sep: &str) -> PathBuf {
+    pub fn expected_path(file: &Path, sep: &Sep) -> PathBuf {
         let (stem, extension) = get_stem_and_extension(file);
         let parent = file.parent().unwrap();
-        parent.join(format!("{}{}(1).{}", stem, sep, extension))
+        parent.join(format!("{}{}(1).{}", stem, sep.as_str(), extension))
     }
 
     #[test]
