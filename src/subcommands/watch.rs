@@ -154,7 +154,7 @@ impl Watcher {
                                 continue;
                             }
                             if *watch && path.matches_filters(&rule.filters) {
-                                rule.actions.run(path, true)?;
+                                rule.actions.run(path)?;
                                 break 'rules;
                             }
                         }

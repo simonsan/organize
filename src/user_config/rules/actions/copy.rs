@@ -23,7 +23,7 @@ pub struct Copy {
 }
 
 impl Copy {
-    pub fn run(&self, path: &Path, is_watching: bool) -> Result<Option<PathBuf>> {
+    pub fn run(&self, path: &Path) -> Result<Option<PathBuf>> {
         let mut logger = Logger::default();
         let mut to: PathBuf = self.to.to_str().unwrap().to_string().expand_placeholders(path)?.into();
         if !to.exists() {
@@ -32,7 +32,7 @@ impl Copy {
         to = to.join(&path.file_name().unwrap());
 
         if to.exists() {
-            if let Some(to) = to.update(&self.if_exists, &self.sep, is_watching) {
+            if let Some(to) = to.update(&self.if_exists, &self.sep) {
                 std::fs::copy(&path, &to)?;
                 logger.try_write(
                     Level::Info,

@@ -9,7 +9,9 @@ use crate::{
         actions::{ConflictOption, Sep},
         filters::{Filename, Filters},
     },
+    WATCHING,
 };
+use std::sync::atomic::Ordering;
 
 pub mod lib;
 
@@ -60,7 +62,7 @@ impl MatchesFilters for PathBuf {
 }
 
 pub trait Update {
-    fn update(&self, if_exists: &ConflictOption, sep: &Sep, watching: bool) -> Option<PathBuf>;
+    fn update(&self, if_exists: &ConflictOption, sep: &Sep) -> Option<PathBuf>;
 }
 
 impl Update for PathBuf {
@@ -72,7 +74,7 @@ impl Update for PathBuf {
     /// * `is_watching`: whether this function is being run from a watcher or not
     /// # Return
     /// This function will return `Some(new_path)` if `if_exists` is not set to skip, otherwise it returns `None`
-    fn update(&self, if_exists: &ConflictOption, sep: &Sep, watching: bool) -> Option<Self> {
+    fn update(&self, if_exists: &ConflictOption, sep: &Sep) -> Option<Self> {
         #[cfg(debug_assertions)]
         assert!(self.exists());
 
@@ -92,12 +94,12 @@ impl Update for PathBuf {
             }
             ConflictOption::Ask => {
                 assert_ne!(ConflictOption::default(), ConflictOption::Ask);
-                let if_exists = if watching {
+                let if_exists = if WATCHING.load(Ordering::SeqCst) {
                     Default::default()
                 } else {
                     resolve_conflict(&self)
                 };
-                self.update(&if_exists, sep, watching)
+                self.update(&if_exists, sep)
             }
             ConflictOption::Delete => {
                 fs::remove_file(&self).unwrap();

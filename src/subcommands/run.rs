@@ -4,7 +4,6 @@ use dialoguer::{theme::ColorfulTheme, Select};
 
 use crate::{
     path::MatchesFilters,
-    subcommands::SubCommands,
     user_config::{rules::actions::ConflictOption, UserConfig},
 };
 use clap::ArgMatches;
@@ -12,7 +11,6 @@ use clap::ArgMatches;
 pub fn run(args: &ArgMatches) -> Result<()> {
     let config = UserConfig::new(args)?;
     let path2rules = config.to_map();
-    let subcommand = SubCommands::from(args);
 
     for (path, rules) in path2rules.iter() {
         let files = fs::read_dir(&path)?;
@@ -27,7 +25,7 @@ pub fn run(args: &ArgMatches) -> Result<()> {
                     }
                     let filters = &rule.filters;
                     if path.matches_filters(filters) {
-                        rule.actions.run(path, subcommand == SubCommands::Watch)?;
+                        rule.actions.run(path)?;
                         continue 'files;
                     }
                 }

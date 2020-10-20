@@ -80,7 +80,7 @@ pub struct Actions {
 }
 
 impl Actions {
-    pub fn run(&self, mut path: PathBuf, watching: bool) -> Result<()> {
+    pub fn run(&self, mut path: PathBuf) -> Result<()> {
         assert!((self.r#move.is_some() ^ self.rename.is_some()) || self.r#move.is_none() && self.rename.is_none());
         if let Some(echo) = &self.echo {
             echo.run(&path);
@@ -89,16 +89,16 @@ impl Actions {
             shell.run(&path)?;
         }
         if let Some(copy) = &self.copy {
-            copy.run(&path, watching)?;
+            copy.run(&path)?;
         }
         if self.r#move.is_some() ^ self.rename.is_some() {
             let mut result = PathBuf::new();
             if let Some(r#move) = &self.r#move {
-                if let Some(path) = r#move.run(&path, watching)? {
+                if let Some(path) = r#move.run(&path)? {
                     result = path;
                 }
             } else if let Some(rename) = &self.rename {
-                if let Some(path) = rename.run(&path, watching)? {
+                if let Some(path) = rename.run(&path)? {
                     result = path;
                 }
             }
@@ -167,15 +167,11 @@ mod tests {
         user_config::rules::actions::ConflictOption,
     };
 
-    static WATCHING: bool = false;
-
     #[test]
     fn rename_with_rename_conflict() -> Result<()> {
         let target = test_file_or_dir("test2.txt");
         let expected = expected_path(&target, &Default::default());
-        let new_path = target
-            .update(&ConflictOption::Rename, &Default::default(), WATCHING)
-            .unwrap();
+        let new_path = target.update(&ConflictOption::Rename, &Default::default()).unwrap();
         if new_path == expected {
             Ok(())
         } else {
@@ -187,9 +183,7 @@ mod tests {
     fn rename_with_overwrite_conflict() -> Result<()> {
         let target = test_file_or_dir("test2.txt");
         let expected = target.clone();
-        let new_path = target
-            .update(&ConflictOption::Overwrite, &Default::default(), WATCHING)
-            .unwrap();
+        let new_path = target.update(&ConflictOption::Overwrite, &Default::default()).unwrap();
         if new_path == expected {
             Ok(())
         } else {
@@ -201,9 +195,7 @@ mod tests {
     #[should_panic] // unwrapping a None value
     fn rename_with_skip_conflict() {
         let target = test_file_or_dir("test2.txt");
-        target
-            .update(&ConflictOption::Skip, &Default::default(), WATCHING)
-            .unwrap();
+        target.update(&ConflictOption::Skip, &Default::default()).unwrap();
     }
 
     #[test]
@@ -211,8 +203,6 @@ mod tests {
     fn new_path_to_non_existing_file() {
         let target = test_file_or_dir("test_dir2").join("test1.txt");
         assert!(!target.exists());
-        target
-            .update(&ConflictOption::Rename, &Default::default(), WATCHING)
-            .unwrap();
+        target.update(&ConflictOption::Rename, &Default::default()).unwrap();
     }
 }
