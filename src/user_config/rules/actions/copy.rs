@@ -3,7 +3,7 @@ use crate::{
     path::Update,
     string::Placeholder,
     subcommands::logs::{Level, Logger},
-    user_config::rules::actions::{Action, ConflictOption, Sep},
+    user_config::rules::actions::{ActionType, ConflictOption, Sep},
 };
 use serde::{Deserialize, Serialize};
 use std::{
@@ -36,7 +36,7 @@ impl Copy {
                 std::fs::copy(&path, &to)?;
                 logger.try_write(
                     Level::Info,
-                    Action::Copy,
+                    ActionType::Copy,
                     &format!("{} -> {}", &path.display(), &to.display()),
                 );
                 Ok(Some(to))
@@ -47,7 +47,7 @@ impl Copy {
             std::fs::copy(&path, &to)?;
             logger.try_write(
                 Level::Info,
-                Action::Copy,
+                ActionType::Copy,
                 &format!("{} -> {}", &path.display(), &to.display()),
             );
             Ok(Some(to))

@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use super::deserialize::deserialize_path;
 use crate::user_config::rules::actions::{delete::Delete, echo::Echo, rename::Rename, shell::Shell};
+use std::path::Path;
 
 pub mod copy;
 pub mod delete;
@@ -29,7 +30,7 @@ impl Sep {
     }
 }
 
-pub enum Action {
+pub enum ActionType {
     Move,
     Rename,
     Copy,
@@ -39,7 +40,7 @@ pub enum Action {
     Shell,
 }
 
-impl From<&str> for Action {
+impl From<&str> for ActionType {
     fn from(str: &str) -> Self {
         match str.to_lowercase().as_str() {
             "move" => Self::Move,
@@ -54,7 +55,7 @@ impl From<&str> for Action {
     }
 }
 
-impl ToString for Action {
+impl ToString for ActionType {
     fn to_string(&self) -> String {
         match self {
             Self::Move => "move",

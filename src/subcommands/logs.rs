@@ -1,4 +1,4 @@
-use crate::user_config::{rules::actions::Action, UserConfig};
+use crate::user_config::{rules::actions::ActionType, UserConfig};
 use chrono::prelude::Local;
 use clap::ArgMatches;
 use colored::{ColoredString, Colorize};
@@ -84,13 +84,13 @@ impl Logger {
         }
     }
 
-    pub fn try_write(&mut self, level: Level, action: Action, msg: &str) {
+    pub fn try_write(&mut self, level: Level, action: ActionType, msg: &str) {
         if let Err(e) = self.write(level, action, msg) {
             eprintln!("could not write to file: {}", e);
         }
     }
 
-    pub fn write(&mut self, level: Level, action: Action, msg: &str) -> Result<()> {
+    pub fn write(&mut self, level: Level, action: ActionType, msg: &str) -> Result<()> {
         let datetime = Local::now();
         let level = level.to_string().to_uppercase();
         let file = OpenOptions::new().append(true).open(&self.path)?;
