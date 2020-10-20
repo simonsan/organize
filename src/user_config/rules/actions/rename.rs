@@ -7,8 +7,7 @@ use crate::{
 };
 use serde::{Deserialize, Serialize};
 use std::{
-    fs,
-    io::Error,
+    io::Result,
     path::{Path, PathBuf},
 };
 
@@ -23,7 +22,7 @@ pub struct Rename {
 }
 
 impl Rename {
-    pub fn run(&self, path: &Path, is_watching: bool) -> Result<Option<PathBuf>, Error> {
+    pub fn run(&self, path: &Path, is_watching: bool) -> Result<Option<PathBuf>> {
         let mut logger = Logger::default();
         let to: PathBuf = self.to.to_str().unwrap().to_string().expand_placeholders(path)?.into();
         if to.exists() {

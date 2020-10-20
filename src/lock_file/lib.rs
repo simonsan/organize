@@ -4,7 +4,7 @@ mod tests {
     use std::{
         convert::TryInto,
         fs,
-        io::{Error, ErrorKind},
+        io::{Error, ErrorKind, Result},
     };
     use sysinfo::{ProcessExt, RefreshKind, Signal, System, SystemExt};
 
@@ -27,7 +27,7 @@ mod tests {
     }
 
     #[test]
-    fn clear_dead_processes() -> Result<(), Error> {
+    fn clear_dead_processes() -> Result<()> {
         stop();
         simulate_watch();
         let lock_file = LockFile::new()?;

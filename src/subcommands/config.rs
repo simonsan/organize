@@ -1,9 +1,9 @@
 use crate::user_config::{rules::folder::Options, UserConfig};
 use clap::{crate_name, ArgMatches};
 use colored::Colorize;
-use std::{env, ffi::OsString, io::Error, path::PathBuf, process};
+use std::{env, ffi::OsString, io::Result, path::PathBuf, process};
 
-pub fn config(args: &ArgMatches) -> Result<(), Error> {
+pub fn config(args: &ArgMatches) -> Result<()> {
     if args.is_present("show_path") {
         println!("{}", UserConfig::path(args).display());
     } else if args.is_present("show_defaults") {
@@ -37,7 +37,7 @@ pub fn config(args: &ArgMatches) -> Result<(), Error> {
 /// ### Panics
 /// This functions panics in the following cases:
 /// - The $EDITOR env. variable was found but its process could not be started.
-fn edit(path: PathBuf) -> Result<(), Error> {
+fn edit(path: PathBuf) -> Result<()> {
     let editor = get_default_editor();
     process::Command::new(&editor).arg(path).spawn()?.wait()?;
     Ok(())

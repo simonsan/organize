@@ -4,15 +4,12 @@ use std::{
 };
 
 use crate::{
-    string::Capitalize,
     subcommands::run::resolve_conflict,
     user_config::rules::{
         actions::{ConflictOption, Sep},
         filters::{Filename, Filters},
     },
 };
-use regex::Regex;
-use std::io::{Error, ErrorKind};
 
 pub mod lib;
 

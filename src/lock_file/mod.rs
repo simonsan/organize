@@ -5,7 +5,7 @@ use clap::crate_name;
 use std::{
     fs,
     fs::{File, OpenOptions},
-    io::{prelude::*, Error},
+    io::{prelude::*, Result},
     path::{Path, PathBuf},
 };
 use sysinfo::{Pid, RefreshKind, System, SystemExt};
@@ -16,7 +16,7 @@ pub struct LockFile {
 }
 
 impl LockFile {
-    pub fn new() -> Result<Self, Error> {
+    pub fn new() -> Result<Self> {
         let path = UserConfig::dir().join(format!("{}.lock", crate_name!()));
         if !path.exists() {
             File::create(&path).expect("could not create lock file");
@@ -32,7 +32,7 @@ impl LockFile {
         format!("{}\n{}\n{}", pid, config.display(), self.sep)
     }
 
-    fn set_readonly(&self, readonly: bool) -> Result<(), Error> {
+    fn set_readonly(&self, readonly: bool) -> Result<()> {
         let f = File::open(&self.path)?;
         let mut perms = f.metadata()?.permissions();
         perms.set_readonly(readonly);
@@ -40,7 +40,7 @@ impl LockFile {
         Ok(())
     }
 
-    pub fn append(&self, pid: Pid, config: &Path) -> Result<(), Error> {
+    pub fn append(&self, pid: Pid, config: &Path) -> Result<()> {
         if !self.path.exists() {
             File::create(&self.path)?;
         }
@@ -78,7 +78,7 @@ impl LockFile {
         }
     }
 
-    fn clear_dead_processes(self) -> Result<Self, Error> {
+    fn clear_dead_processes(self) -> Result<Self> {
         self.set_readonly(false)?;
         let mut running_processes = String::new();
         let sys = System::new_with_specifics(RefreshKind::with_processes(RefreshKind::new()));

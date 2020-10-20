@@ -1,4 +1,4 @@
-use std::{fs, io::Error, path::Path};
+use std::{fs, io::Result, path::Path};
 
 use dialoguer::{theme::ColorfulTheme, Select};
 
@@ -9,7 +9,7 @@ use crate::{
 };
 use clap::ArgMatches;
 
-pub fn run(args: &ArgMatches) -> Result<(), Error> {
+pub fn run(args: &ArgMatches) -> Result<()> {
     let config = UserConfig::new(args)?;
     let path2rules = config.to_map();
     let subcommand = SubCommands::from(args);

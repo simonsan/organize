@@ -1,18 +1,11 @@
 use copy::Copy;
 use r#move::Move;
-use std::{
-    fs,
-    io::Error,
-    path::{Path, PathBuf},
-};
+use std::{io::Result, path::PathBuf};
 
 use serde::{Deserialize, Serialize};
 
 use super::deserialize::deserialize_path;
-use crate::{
-    subcommands::logs::{Level, Logger},
-    user_config::rules::actions::{delete::Delete, echo::Echo, rename::Rename, shell::Shell},
-};
+use crate::user_config::rules::actions::{delete::Delete, echo::Echo, rename::Rename, shell::Shell};
 
 pub mod copy;
 pub mod delete;
@@ -87,7 +80,7 @@ pub struct Actions {
 }
 
 impl Actions {
-    pub fn run(&self, mut path: PathBuf, watching: bool) -> Result<(), Error> {
+    pub fn run(&self, mut path: PathBuf, watching: bool) -> Result<()> {
         assert!((self.r#move.is_some() ^ self.rename.is_some()) || self.r#move.is_none() && self.rename.is_none());
         if let Some(echo) = &self.echo {
             echo.run(&path);
@@ -164,20 +157,20 @@ impl ConflictOption {
 
 #[cfg(test)]
 mod tests {
-    use std::io::{Error, ErrorKind};
+    use std::io::{Error, ErrorKind, Result};
 
     use crate::{
         path::{
             lib::vars::{expected_path, test_file_or_dir},
             Update,
         },
-        user_config::rules::actions::{ConflictOption, Sep},
+        user_config::rules::actions::ConflictOption,
     };
 
     static WATCHING: bool = false;
 
     #[test]
-    fn rename_with_rename_conflict() -> Result<(), Error> {
+    fn rename_with_rename_conflict() -> Result<()> {
         let target = test_file_or_dir("test2.txt");
         let expected = expected_path(&target, &Default::default());
         let new_path = target
@@ -191,7 +184,7 @@ mod tests {
     }
 
     #[test]
-    fn rename_with_overwrite_conflict() -> Result<(), Error> {
+    fn rename_with_overwrite_conflict() -> Result<()> {
         let target = test_file_or_dir("test2.txt");
         let expected = target.clone();
         let new_path = target

@@ -8,7 +8,7 @@ use crate::{
 use serde::{Deserialize, Serialize};
 use std::{
     fs,
-    io::{Error, Result},
+    io::Result,
     path::{Path, PathBuf},
 };
 

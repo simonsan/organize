@@ -2,7 +2,7 @@
 pub mod vars {
     use std::{
         env,
-        io::{Error, ErrorKind},
+        io::{Error, ErrorKind, Result},
         path::PathBuf,
     };
 
@@ -35,7 +35,7 @@ pub mod vars {
     }
 
     #[test]
-    fn home() -> Result<(), Error> {
+    fn home() -> Result<()> {
         let tested = PathBuf::from("$HOME/Documents");
         let expected = home_dir().unwrap().join("Documents");
         if tested.expand_vars() == expected {
@@ -49,7 +49,7 @@ pub mod vars {
     }
 
     #[test]
-    fn new_var() -> Result<(), Error> {
+    fn new_var() -> Result<()> {
         env::set_var("PROJECT_DIR", project_dir());
         let tested = PathBuf::from("$PROJECT_DIR/tests");
         if tested.expand_vars() == tests_dir() {
@@ -79,12 +79,12 @@ pub mod vars {
 mod filters {
     use crate::{path::MatchesFilters, user_config::rules::filters::Filters};
     use std::{
-        io::{Error, ErrorKind},
+        io::{Error, ErrorKind, Result},
         path::PathBuf,
     };
 
     #[test]
-    fn test_temporary_files() -> Result<(), Error> {
+    fn test_temporary_files() -> Result<()> {
         let crdownload = PathBuf::from("$HOME/Downloads/unsplash.jpg.crdownload");
         let tmp = PathBuf::from("$HOME/Downloads/unsplash.jpg.tmp");
         let part = PathBuf::from("$HOME/Downloads/unsplash.jpg.part");
@@ -99,7 +99,7 @@ mod filters {
     }
 
     #[test]
-    fn test_filters_extensions() -> Result<(), Error> {
+    fn test_filters_extensions() -> Result<()> {
         let file = PathBuf::from("/home/cabero/Documents/matricula.pdf");
         let mut filters = Filters::default();
         filters.extensions.push("pdf".to_string());
@@ -113,7 +113,7 @@ mod filters {
         }
     }
     #[test]
-    fn test_filters_regex() -> Result<(), Error> {
+    fn test_filters_regex() -> Result<()> {
         let file = PathBuf::from("/home/cabero/Documents/matricula.pdf");
         let filters = Filters::default();
         if file.matches_filters(&filters) {
@@ -125,7 +125,7 @@ mod filters {
         }
     }
     #[test]
-    fn test_filters_filename_startswith() -> Result<(), Error> {
+    fn test_filters_filename_startswith() -> Result<()> {
         let file = PathBuf::from("/home/cabero/Documents/matricula.pdf");
         let mut filters = Filters::default();
         filters.filename.startswith = "matricula".into();
@@ -141,7 +141,7 @@ mod filters {
         }
     }
     #[test]
-    fn test_filters_filename_contains() -> Result<(), Error> {
+    fn test_filters_filename_contains() -> Result<()> {
         let file = PathBuf::from("/home/cabero/Documents/matricula.pdf");
         let mut filters = Filters::default();
         filters.filename.contains = "icula".into();
@@ -157,7 +157,7 @@ mod filters {
         }
     }
     #[test]
-    fn test_filters_filename_endswith() -> Result<(), Error> {
+    fn test_filters_filename_endswith() -> Result<()> {
         let file = PathBuf::from("/home/cabero/Documents/matricula.pdf");
         let mut filters = Filters::default();
         filters.filename.contains = "ula.pdf".into();

@@ -1,6 +1,6 @@
 use crate::subcommands::{config::config, logs::logs, run::run, stop::stop, watch::watch, SubCommands};
 use clap::{crate_authors, crate_description, crate_name, crate_version, load_yaml, App};
-use std::{env, io::Error};
+use std::{env, io::Result};
 
 pub mod lock_file;
 pub mod path;
@@ -8,7 +8,7 @@ pub mod string;
 pub mod subcommands;
 pub mod user_config;
 
-fn main() -> Result<(), Error> {
+fn main() -> Result<()> {
     if env::consts::OS == "windows" {
         eprintln!("Windows is not supported yet");
         return Ok(());

@@ -2,8 +2,7 @@ use crate::{string::Placeholder, user_config::UserConfig};
 use serde::{Deserialize, Serialize};
 use std::{
     fs,
-    fs::OpenOptions,
-    io::{Result, Stdout},
+    io::Result,
     path::{Path, PathBuf},
     process::{Command, Stdio},
 };

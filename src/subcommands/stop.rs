@@ -1,9 +1,9 @@
 use crate::{lock_file::LockFile, subcommands::watch::Daemon, user_config::UserConfig};
 use dialoguer::{theme::ColorfulTheme, Confirm, MultiSelect};
-use std::io::Error;
+use std::io::Result;
 use sysinfo::{ProcessExt, RefreshKind, Signal, System, SystemExt};
 
-pub fn stop() -> Result<(), Error> {
+pub fn stop() -> Result<()> {
     let lock_file = LockFile::new()?;
     let watchers = lock_file.get_running_watchers();
     let pids = watchers.iter().map(|(pid, _)| pid).collect::<Vec<_>>();

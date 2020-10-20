@@ -2,12 +2,12 @@
 mod tests {
     use crate::string::{Capitalize, Placeholder};
     use std::{
-        io::{Error, ErrorKind},
+        io::{Error, ErrorKind, Result},
         path::Path,
     };
 
     #[test]
-    fn capitalize() -> Result<(), Error> {
+    fn capitalize() -> Result<()> {
         let tested = String::from("house");
         let expected = String::from("House");
         if tested.capitalize() == expected {
@@ -17,7 +17,7 @@ mod tests {
         }
     }
     #[test]
-    fn single_placeholder() -> Result<(), Error> {
+    fn single_placeholder() -> Result<()> {
         let tested = String::from("/home/cabero/Downloads/{parent.name}");
         let new_path = tested.expand_placeholders(&Path::new("/home/cabero/Documents/test.pdf"))?;
         let expected = String::from("/home/cabero/Downloads/Documents");
@@ -28,7 +28,7 @@ mod tests {
         }
     }
     #[test]
-    fn multiple_placeholders() -> Result<(), Error> {
+    fn multiple_placeholders() -> Result<()> {
         let tested = String::from("/home/cabero/{extension}/{parent.name}");
         let new_path = tested.expand_placeholders(&Path::new("/home/cabero/Documents/test.pdf"))?;
         let expected = String::from("/home/cabero/pdf/Documents");

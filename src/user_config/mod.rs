@@ -5,7 +5,7 @@ use serde::Deserialize;
 use std::{
     collections::HashMap,
     fs,
-    io::{Error, ErrorKind},
+    io::{Error, ErrorKind, Result},
     path::{Path, PathBuf},
 };
 use yaml_rust::YamlEmitter;
@@ -32,7 +32,7 @@ impl UserConfig {
     /// ### Errors
     /// This constructor fails in the following cases:
     /// - The configuration file does not exist
-    pub fn new(args: &ArgMatches) -> Result<Self, Error> {
+    pub fn new(args: &ArgMatches) -> Result<Self> {
         let path = UserConfig::path(args);
 
         if !path.exists() {
@@ -46,7 +46,7 @@ impl UserConfig {
         Ok(config)
     }
 
-    pub fn create(path: &Path) -> Result<(), Error> {
+    pub fn create(path: &Path) -> Result<()> {
         // safe unwrap, dir is created at $HOME or $UserProfile%,
         // so it exists and the user must have permissions
         if path.exists() {

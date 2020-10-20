@@ -6,11 +6,11 @@ use regex::Regex;
 use std::{
     fs,
     fs::OpenOptions,
-    io::{Error, Write},
+    io::{Result, Write},
     path::PathBuf,
 };
 
-pub fn logs(args: &ArgMatches) -> Result<(), Error> {
+pub fn logs(args: &ArgMatches) -> Result<()> {
     let logger = Logger::default();
     if args.subcommand().unwrap().1.is_present("clear") {
         logger.delete()
@@ -90,7 +90,7 @@ impl Logger {
         }
     }
 
-    pub fn write(&mut self, level: Level, action: Action, msg: &str) -> Result<(), Error> {
+    pub fn write(&mut self, level: Level, action: Action, msg: &str) -> Result<()> {
         let datetime = Local::now();
         let level = level.to_string().to_uppercase();
         let file = OpenOptions::new().append(true).open(&self.path)?;
@@ -113,7 +113,7 @@ impl Logger {
         self.len() == 0
     }
 
-    pub fn show_logs(&self) -> Result<(), Error> {
+    pub fn show_logs(&self) -> Result<()> {
         let text = self.read()?;
         let re = Regex::new(r"(?P<time>\[.+]) (?P<level>[A-Z]+?): \((?P<action>\w+?)\) (?P<old_path>.+?) (?:(?P<sep>->) (?P<new_path>.+))?").unwrap();
         for r#match in re.captures_iter(&text) {
@@ -132,16 +132,16 @@ impl Logger {
         Ok(())
     }
 
-    pub fn delete(self) -> Result<(), Error> {
+    pub fn delete(self) -> Result<()> {
         fs::remove_file(self.path)
     }
 
-    pub fn read_lines(&self) -> Result<Vec<String>, Error> {
+    pub fn read_lines(&self) -> Result<Vec<String>> {
         let logs = fs::read_to_string(&self.path)?;
         Ok(logs.lines().map(|str| str.to_string()).collect::<Vec<_>>())
     }
 
-    pub fn read(&self) -> Result<String, Error> {
+    pub fn read(&self) -> Result<String> {
         fs::read_to_string(&self.path)
     }
 }

@@ -1,6 +1,6 @@
 use std::{
     env,
-    io::Error,
+    io::Result,
     process,
     sync::mpsc::{channel, Receiver},
 };
@@ -19,7 +19,7 @@ use dialoguer::{theme::ColorfulTheme, Confirm, Select};
 use std::{convert::TryInto, path::Path, process::Command};
 use sysinfo::{ProcessExt, RefreshKind, Signal, System, SystemExt};
 
-pub fn watch(args: &ArgMatches) -> Result<(), Error> {
+pub fn watch(args: &ArgMatches) -> Result<()> {
     let lock_file = LockFile::new()?;
     let path = UserConfig::path(args);
 
@@ -117,7 +117,7 @@ impl Watcher {
         }
     }
 
-    pub fn run(&mut self, args: &ArgMatches) -> Result<(), Error> {
+    pub fn run(&mut self, args: &ArgMatches) -> Result<()> {
         let config = UserConfig::new(&args)?;
         for rule in config.rules.iter() {
             for folder in rule.folders.iter() {
@@ -188,7 +188,7 @@ impl Daemon {
         lock_file.append(pid.try_into().unwrap(), path).unwrap();
     }
 
-    pub fn replace(args: &ArgMatches) -> Result<(), Error> {
+    pub fn replace(args: &ArgMatches) -> Result<()> {
         let path = UserConfig::path(args);
         let lock_file = LockFile::new()?;
         let process = lock_file.find_process_by_path(&path);

@@ -1,6 +1,6 @@
 use regex::Regex;
 use std::{
-    io::{Error, ErrorKind},
+    io::{Error, ErrorKind, Result},
     path::Path,
 };
 
@@ -11,7 +11,7 @@ pub trait Capitalize<T> {
 }
 
 pub trait Placeholder {
-    fn expand_placeholders(&self, path: &Path) -> Result<String, Error>;
+    fn expand_placeholders(&self, path: &Path) -> Result<String>;
 }
 
 impl Capitalize<String> for String {
@@ -25,7 +25,7 @@ impl Capitalize<String> for String {
 }
 
 impl Placeholder for String {
-    fn expand_placeholders(&self, path: &Path) -> Result<Self, Error> {
+    fn expand_placeholders(&self, path: &Path) -> Result<Self> {
         let mut new = self.clone();
         let regex = Regex::new(r"\{\w+(?:\.\w+)*}").unwrap();
         for span in regex.find_iter(self) {
