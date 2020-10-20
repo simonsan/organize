@@ -1,17 +1,15 @@
+use super::deserialize::deserialize_path;
+use crate::user_config::rules::actions::{delete::Delete, echo::Echo, python::Python, rename::Rename, shell::Shell};
 use copy::Copy;
 use r#move::Move;
-use std::{io::Result, path::PathBuf};
-
 use serde::{Deserialize, Serialize};
-
-use super::deserialize::deserialize_path;
-use crate::user_config::rules::actions::{delete::Delete, echo::Echo, rename::Rename, shell::Shell};
-use std::path::Path;
+use std::{io::Result, path::PathBuf};
 
 pub mod copy;
 pub mod delete;
 pub mod echo;
 pub mod r#move;
+pub mod python;
 pub mod rename;
 pub mod shell;
 
@@ -38,6 +36,7 @@ pub enum ActionType {
     Trash,
     Echo,
     Shell,
+    Python,
 }
 
 impl From<&str> for ActionType {
@@ -50,6 +49,7 @@ impl From<&str> for ActionType {
             "trash" => Self::Trash,
             "echo" => Self::Echo,
             "shell" => Self::Shell,
+            "python" => Self::Python,
             _ => panic!("unknown action"),
         }
     }
@@ -65,6 +65,7 @@ impl ToString for ActionType {
             Self::Trash => "trash",
             Self::Echo => "echo",
             Self::Shell => "shell",
+            Self::Python => "python",
         }
         .into()
     }
@@ -74,6 +75,7 @@ impl ToString for ActionType {
 pub struct Actions {
     pub echo: Option<Echo>,
     pub shell: Option<Shell>,
+    pub python: Option<Python>,
     pub delete: Option<Delete>,
     pub copy: Option<Copy>,
     pub r#move: Option<Move>,
@@ -85,6 +87,9 @@ impl Actions {
         assert!((self.r#move.is_some() ^ self.rename.is_some()) || self.r#move.is_none() && self.rename.is_none());
         if let Some(echo) = &self.echo {
             echo.run(&path);
+        }
+        if let Some(python) = &self.python {
+            python.run(&path)?;
         }
         if let Some(shell) = &self.shell {
             shell.run(&path)?;
