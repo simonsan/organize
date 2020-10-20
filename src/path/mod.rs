@@ -109,7 +109,6 @@ impl Update for PathBuf {
 pub trait Expandable {
     fn expand_user(&self) -> PathBuf;
     fn expand_vars(&self) -> PathBuf;
-    fn expand_placeholders(&self, path: &Path) -> Result<PathBuf, Error>;
 }
 
 impl Expandable for PathBuf {
@@ -131,84 +130,6 @@ impl Expandable for PathBuf {
                 }
             })
             .collect()
-    }
-
-    fn expand_placeholders(&self, path: &Path) -> Result<Self, Error> {
-        let mut as_str = self.to_str().unwrap().to_string();
-        let regex = Regex::new(r"\{\w+(?:\.\w+)*}").unwrap();
-        for span in regex.find_iter(self.to_str().unwrap()) {
-            let placeholders = span
-                .as_str()
-                .trim_matches(|x| x == '{' || x == '}')
-                .split('.')
-                .collect::<Vec<_>>();
-            let mut current_value = path.to_path_buf();
-            for placeholder in placeholders {
-                current_value = match placeholder {
-                    "path" => current_value,
-                    "parent" => current_value
-                        .parent()
-                        .ok_or_else(|| {
-                            Error::new(
-                                ErrorKind::Other,
-                                format!(
-                                    "modified path has no {} (original filepath: {})",
-                                    placeholder,
-                                    path.display()
-                                ),
-                            )
-                        })?
-                        .into(),
-                    "name" => current_value
-                        .file_name()
-                        .ok_or_else(|| {
-                            Error::new(
-                                ErrorKind::Other,
-                                format!(
-                                    "modified path has no {} (original filepath: {})",
-                                    placeholder,
-                                    path.display()
-                                ),
-                            )
-                        })?
-                        .into(),
-                    "stem" => current_value
-                        .file_stem()
-                        .ok_or_else(|| {
-                            Error::new(
-                                ErrorKind::Other,
-                                format!(
-                                    "modified path has no {} (original filepath: {})",
-                                    placeholder,
-                                    path.display()
-                                ),
-                            )
-                        })?
-                        .into(),
-                    "extension" => current_value
-                        .extension()
-                        .ok_or_else(|| {
-                            Error::new(
-                                ErrorKind::Other,
-                                format!(
-                                    "modified path has no {} (original filepath: {})",
-                                    placeholder,
-                                    path.display()
-                                ),
-                            )
-                        })?
-                        .into(),
-                    "to_uppercase" => current_value.to_str().unwrap().to_uppercase().into(),
-                    "to_lowercase" => current_value.to_str().unwrap().to_lowercase().into(),
-                    "capitalize" => current_value.to_str().unwrap().to_string().capitalize().into(),
-                    _ => panic!("unknown placeholder"),
-                }
-            }
-            as_str = as_str
-                .replace(&span.as_str(), current_value.to_str().unwrap())
-                .replace("//", "/");
-        }
-        Ok(as_str.into())
     }
 }
 

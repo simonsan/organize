@@ -10,6 +10,7 @@ use crate::path::{Expandable, Update};
 
 use super::deserialize::{default_sep, deserialize_path};
 use crate::subcommands::logs::{Level, Logger};
+use crate::string::Placeholder;
 
 mod lib;
 
@@ -91,7 +92,7 @@ impl Actions {
         assert!(self.copy.is_some());
         let copy = self.copy.as_ref().unwrap();
         let mut logger = Logger::default();
-        let mut to = copy.to.expand_placeholders(path)?;
+        let mut to: PathBuf = copy.to.to_str().unwrap().to_string().expand_placeholders(path)?.into();
         if !to.exists() {
             fs::create_dir_all(&to)?;
         }
@@ -128,7 +129,7 @@ impl Actions {
         assert!(self.rename.is_some());
         let mut logger = Logger::default();
         let rename = self.rename.as_ref().unwrap();
-        let to = rename.to.expand_placeholders(path)?;
+        let mut to: PathBuf = rename.to.to_str().unwrap().to_string().expand_placeholders(path)?.into();
         if to.exists() {
             if let Some(to) = to.update(&rename.if_exists, &rename.sep, is_watching) {
                 std::fs::rename(&path, &to)?;
@@ -161,7 +162,7 @@ impl Actions {
         assert!(self.r#move.is_some());
         let mut logger = Logger::default();
         let r#move = self.r#move.as_ref().unwrap();
-        let mut to = r#move.to.expand_placeholders(path)?;
+        let mut to: PathBuf = r#move.to.to_str().unwrap().to_string().expand_placeholders(path)?.into();
         if !to.exists() {
             fs::create_dir_all(&to)?;
         }
