@@ -4,6 +4,7 @@
 - Adopt TDD
 - Make tests
 - Validate config (check out https://github.com/paazmaya/grunt-yaml-validator or https://github.com/MathiasPius/yaml-validator)
+- Implement command to test configuration
 
 
 #### Implement:
