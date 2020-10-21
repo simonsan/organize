@@ -1,5 +1,5 @@
 use std::{
-    env, fs,
+    env,
     path::{Path, PathBuf},
 };
 
@@ -100,10 +100,6 @@ impl Update for PathBuf {
                     resolve_conflict(&self)
                 };
                 self.update(&if_exists, sep)
-            }
-            ConflictOption::Delete => {
-                fs::remove_file(&self).unwrap();
-                None
             }
         }
     }

@@ -1,17 +1,17 @@
 use super::deserialize::deserialize_path;
-use crate::user_config::rules::actions::{delete::Delete, echo::Echo, python::Python, rename::Rename, shell::Shell};
-use copy::Copy;
-use r#move::Move;
+use crate::{
+    path::Update,
+    string::Placeholder,
+    subcommands::logs::{Level, Logger},
+    user_config::UserConfig,
+};
 use serde::{Deserialize, Serialize};
-use std::{io::Result, path::PathBuf};
-
-pub mod copy;
-pub mod delete;
-pub mod echo;
-pub mod r#move;
-pub mod python;
-pub mod rename;
-pub mod shell;
+use std::{
+    fs,
+    io::Result,
+    path::{Path, PathBuf},
+    process::{Command, Stdio},
+};
 
 #[derive(Debug, Clone, Deserialize, Serialize, Eq, PartialEq)]
 pub struct Sep(String);
@@ -28,7 +28,8 @@ impl Sep {
     }
 }
 
-pub enum ActionType {
+#[derive(Eq, PartialEq)]
+pub enum Action {
     Move,
     Rename,
     Copy,
@@ -39,7 +40,7 @@ pub enum ActionType {
     Python,
 }
 
-impl From<&str> for ActionType {
+impl From<&str> for Action {
     fn from(str: &str) -> Self {
         match str.to_lowercase().as_str() {
             "move" => Self::Move,
@@ -55,7 +56,7 @@ impl From<&str> for ActionType {
     }
 }
 
-impl ToString for ActionType {
+impl ToString for Action {
     fn to_string(&self) -> String {
         match self {
             Self::Move => "move",
@@ -71,51 +72,168 @@ impl ToString for ActionType {
     }
 }
 
+#[derive(Debug, Clone, Deserialize, Serialize, Eq, PartialEq)]
+pub struct FileAction {
+    #[serde(deserialize_with = "deserialize_path")]
+    pub to: PathBuf,
+    #[serde(default)]
+    pub if_exists: ConflictOption,
+    #[serde(default)]
+    pub sep: Sep,
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
 pub struct Actions {
-    pub echo: Option<Echo>,
-    pub shell: Option<Shell>,
-    pub python: Option<Python>,
-    pub delete: Option<Delete>,
-    pub copy: Option<Copy>,
-    pub r#move: Option<Move>,
-    pub rename: Option<Rename>,
+    pub echo: Option<String>,
+    pub shell: Option<String>,
+    pub python: Option<String>,
+    pub delete: Option<bool>,
+    pub copy: Option<FileAction>,
+    pub r#move: Option<FileAction>,
+    pub rename: Option<FileAction>,
 }
 
 impl Actions {
     pub fn run(&self, mut path: PathBuf) -> Result<()> {
         assert!((self.r#move.is_some() ^ self.rename.is_some()) || self.r#move.is_none() && self.rename.is_none());
-        if let Some(echo) = &self.echo {
-            echo.run(&path);
+        if self.echo.is_some() {
+            self.echo(&path);
         }
-        if let Some(python) = &self.python {
-            python.run(&path)?;
+        if self.python.is_some() {
+            self.python(&path)?;
         }
-        if let Some(shell) = &self.shell {
-            shell.run(&path)?;
+        if self.shell.is_some() {
+            self.shell(&path)?;
         }
-        if let Some(copy) = &self.copy {
-            copy.run(&path)?;
+        if self.copy.is_some() {
+            self.copy(&path)?;
         }
         if self.r#move.is_some() ^ self.rename.is_some() {
-            let mut result = PathBuf::new();
-            if let Some(r#move) = &self.r#move {
-                if let Some(path) = r#move.run(&path)? {
-                    result = path;
+            let mut new_path = PathBuf::new();
+            if self.r#move.is_some() {
+                if let Some(path) = self.r#move(&path)? {
+                    new_path = path;
                 }
-            } else if let Some(rename) = &self.rename {
-                if let Some(path) = rename.run(&path)? {
-                    result = path;
+            } else if self.rename.is_some() {
+                if let Some(path) = self.rename(&path)? {
+                    new_path = path;
                 }
             }
-            path = result;
+            path = new_path;
         }
-        if let Some(delete) = &self.delete {
-            if delete.as_bool() {
-                delete.run(&path)?;
-            }
+        if self.delete.is_some() && self.delete.unwrap() {
+            self.delete(&path)?;
         }
         Ok(())
+    }
+
+    fn delete(&self, path: &Path) -> Result<()> {
+        fs::remove_file(path)
+    }
+
+    fn copy(&self, path: &Path) -> Result<Option<PathBuf>> {
+        assert!(self.copy.is_some());
+        let copy = self.copy.as_ref().unwrap();
+        Self::helper(path, &copy.to, &copy.if_exists, &copy.sep, Action::Copy)
+    }
+
+    fn rename(&self, path: &Path) -> Result<Option<PathBuf>> {
+        assert!(self.rename.is_some());
+        let rename = self.rename.as_ref().unwrap();
+        Self::helper(path, &rename.to, &rename.if_exists, &rename.sep, Action::Rename)
+    }
+
+    fn r#move(&self, path: &Path) -> Result<Option<PathBuf>> {
+        assert!(self.r#move.is_some());
+        let r#move = self.r#move.as_ref().unwrap();
+        Self::helper(path, &r#move.to, &r#move.if_exists, &r#move.sep, Action::Move)
+    }
+
+    fn echo(&self, path: &Path) {
+        assert!(self.echo.is_some());
+        let echo = self.echo.as_ref().unwrap();
+        println!("{}", echo.expand_placeholders(path).unwrap());
+    }
+
+    fn shell(&self, path: &Path) -> Result<()> {
+        assert!(self.shell.is_some());
+        let shell = self.shell.as_ref().unwrap();
+        let script = Self::write_script(shell, path)?;
+        let output = Command::new("sh")
+            .arg(&script)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("could not run shell script")
+            .wait_with_output()
+            .expect("shell script terminated with an error");
+        fs::remove_file(script)?;
+        println!("{}", String::from_utf8_lossy(&output.stdout));
+        Ok(())
+    }
+
+    fn python(&self, path: &Path) -> Result<()> {
+        assert!(self.python.is_some());
+        let python = self.python.as_ref().unwrap();
+        let script = Self::write_script(python, path)?;
+        let output = Command::new("python")
+            .arg(&script)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("could not run shell script")
+            .wait_with_output()
+            .expect("shell script terminated with an error");
+        println!("{}", String::from_utf8_lossy(&output.stdout));
+        fs::remove_file(script)?;
+        Ok(())
+    }
+
+    fn write_script(content: &str, path: &Path) -> Result<PathBuf> {
+        let dir = UserConfig::dir().join("scripts");
+        if !dir.exists() {
+            fs::create_dir_all(&dir)?;
+        }
+        let script = dir.join(path.file_name().unwrap());
+        fs::write(&script, content.to_string().expand_placeholders(path).unwrap())?;
+        Ok(script)
+    }
+
+    fn helper(
+        path: &Path,
+        to: &Path,
+        if_exists: &ConflictOption,
+        sep: &Sep,
+        r#type: Action,
+    ) -> Result<Option<PathBuf>> {
+        assert!(r#type == Action::Move || r#type == Action::Rename || r#type == Action::Copy);
+        let mut logger = Logger::default();
+        let mut to: PathBuf = to.to_str().unwrap().to_string().expand_placeholders(path)?.into();
+        if r#type == Action::Copy || r#type == Action::Move {
+            if !to.exists() {
+                fs::create_dir_all(&to)?;
+            }
+            to = to.join(&path.file_name().unwrap());
+            println!("{}", to.display())
+        }
+        if to.exists() {
+            if let Some(new_path) = to.update(&if_exists, &sep) {
+                to = new_path;
+            } else {
+                return Ok(None);
+            }
+        }
+        if r#type == Action::Copy {
+            std::fs::copy(&path, &to)?;
+        } else if r#type == Action::Rename || r#type == Action::Move {
+            std::fs::rename(&path, &to)?;
+        }
+        logger.try_write(
+            Level::Info,
+            r#type,
+            &format!("{} -> {}", &path.display(), &to.display()),
+        );
+        Ok(Some(to))
     }
 }
 
@@ -129,35 +247,12 @@ pub enum ConflictOption {
     Overwrite,
     Skip,
     Rename,
-    Delete,
     Ask, // not available when watching
 }
 
 impl Default for ConflictOption {
     fn default() -> Self {
         ConflictOption::Rename
-    }
-}
-
-impl ConflictOption {
-    pub fn should_skip(&self) -> bool {
-        self == &Self::Skip
-    }
-
-    pub fn should_overwrite(&self) -> bool {
-        self == &Self::Overwrite
-    }
-
-    pub fn should_delete(&self) -> bool {
-        self == &Self::Delete
-    }
-
-    pub fn should_rename(&self) -> bool {
-        self == &Self::Rename
-    }
-
-    pub fn should_ask(&self) -> bool {
-        self == &Self::Ask
     }
 }
 
