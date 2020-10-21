@@ -127,14 +127,6 @@ impl Logger {
         writeln!(&file, "{}", msg)
     }
 
-    pub fn len(&self) -> usize {
-        self.read_lines().unwrap().len()
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-
     fn format(line: &str) -> Line {
         let re = Regex::new(r"(?P<time>\[.+]) (?P<level>[A-Z]+?): \((?P<action>\w+?)\) (?P<old_path>.+?) (?:(?P<sep>->) (?P<new_path>.+))?").unwrap();
         let r#match = re.captures(line).unwrap();
@@ -163,11 +155,6 @@ impl Logger {
 
     pub fn delete(self) -> Result<()> {
         fs::remove_file(self.path)
-    }
-
-    pub fn read_lines(&self) -> Result<Vec<String>> {
-        let logs = fs::read_to_string(&self.path)?;
-        Ok(logs.lines().map(|str| str.to_string()).collect::<Vec<_>>())
     }
 
     pub fn read(&self) -> Result<String> {
