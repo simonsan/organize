@@ -95,7 +95,6 @@ pub struct Actions {
 
 impl Actions {
     pub fn run(&self, mut path: PathBuf) -> Result<()> {
-        #[cfg(debug_assertions)]
         assert!((self.r#move.is_some() ^ self.rename.is_some()) || self.r#move.is_none() && self.rename.is_none());
         if self.echo.is_some() {
             self.echo(&path);
@@ -133,36 +132,31 @@ impl Actions {
     }
 
     fn copy(&self, path: &Path) -> Result<Option<PathBuf>> {
-        #[cfg(debug_assertions)]
-        assert!(self.copy.is_some());
+        debug_assert!(self.copy.is_some());
         let copy = self.copy.as_ref().unwrap();
         Self::helper(path, &copy.to, &copy.if_exists, &copy.sep, Action::Copy)
     }
 
     fn rename(&self, path: &Path) -> Result<Option<PathBuf>> {
-        #[cfg(debug_assertions)]
-        assert!(self.rename.is_some());
+        debug_assert!(self.rename.is_some());
         let rename = self.rename.as_ref().unwrap();
         Self::helper(path, &rename.to, &rename.if_exists, &rename.sep, Action::Rename)
     }
 
     fn r#move(&self, path: &Path) -> Result<Option<PathBuf>> {
-        #[cfg(debug_assertions)]
-        assert!(self.r#move.is_some());
+        debug_assert!(self.r#move.is_some());
         let r#move = self.r#move.as_ref().unwrap();
         Self::helper(path, &r#move.to, &r#move.if_exists, &r#move.sep, Action::Move)
     }
 
     fn echo(&self, path: &Path) {
-        #[cfg(debug_assertions)]
-        assert!(self.echo.is_some());
+        debug_assert!(self.echo.is_some());
         let echo = self.echo.as_ref().unwrap();
         println!("{}", echo.expand_placeholders(path).unwrap());
     }
 
     fn shell(&self, path: &Path) -> Result<()> {
-        #[cfg(debug_assertions)]
-        assert!(self.shell.is_some());
+        debug_assert!(self.shell.is_some());
         let shell = self.shell.as_ref().unwrap();
         let script = Self::write_script(shell, path)?;
         let output = Command::new("sh")
@@ -179,8 +173,7 @@ impl Actions {
     }
 
     fn python(&self, path: &Path) -> Result<()> {
-        #[cfg(debug_assertions)]
-        assert!(self.python.is_some());
+        debug_assert!(self.python.is_some());
         let python = self.python.as_ref().unwrap();
         let script = Self::write_script(python, path)?;
         let output = Command::new("python")
@@ -206,6 +199,13 @@ impl Actions {
         Ok(script)
     }
 
+    /// Helper function for the move, rename and copy actions.
+    /// # Args:
+    /// - `path`: the path of the file that was found and matches the filters
+    /// - `to`: the destination path of `path`
+    /// - `if_exists`: variable that helps resolve any naming conflicts between `path` and `to`
+    /// - `sep`: counter separator (e.g. in "file (1).test", `sep` would be a whitespace; in "file-(1).test", it would be a hyphen)
+    /// - `type`: whether this helper should move, rename or copy the given file (`path`)
     fn helper(
         path: &Path,
         to: &Path,
@@ -214,7 +214,7 @@ impl Actions {
         r#type: Action,
     ) -> Result<Option<PathBuf>> {
         #[cfg(debug_assertions)]
-        assert!(r#type == Action::Move || r#type == Action::Rename || r#type == Action::Copy);
+        debug_assert!(r#type == Action::Move || r#type == Action::Rename || r#type == Action::Copy);
         let mut logger = Logger::default();
         let mut to: PathBuf = to.to_str().unwrap().to_string().expand_placeholders(path)?.into();
         if r#type == Action::Copy || r#type == Action::Move {
@@ -248,8 +248,10 @@ impl Actions {
 /// Defines the options available to resolve a naming conflict,
 /// i.e. how the application should proceed when a file exists
 /// but it should move/rename/copy some file to that existing path
-// write their configs with this format due to how serde deserializes files
 #[derive(Eq, PartialEq, Debug, Clone, Copy, Deserialize, Serialize)]
+// for the config schema to keep these options as lowercase (i.e. the user doesn't have to
+// write `if_exists: Rename`), and not need a #[allow(non_camel_case_types)] flag, serde
+// provides the option to modify the fields are deserialize/serialize time
 #[serde(rename_all(serialize = "lowercase", deserialize = "lowercase"))]
 pub enum ConflictOption {
     Overwrite,
@@ -312,7 +314,7 @@ mod tests {
     fn new_path_to_non_existing_file() {
         let target = test_file_or_dir("test_dir2").join("test1.txt");
         #[cfg(debug_assertions)]
-        assert!(!target.exists());
+        debug_assert!(!target.exists());
         target.update(&ConflictOption::Rename, &Default::default()).unwrap();
     }
 }

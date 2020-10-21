@@ -11,12 +11,10 @@ pub fn config(args: &ArgMatches) -> Result<()> {
             recursive,
             watch,
             ignore,
-            suggestions,
             hidden_files,
         } = Options::default();
         println!("recursive: {}", recursive.to_string().purple());
         println!("watch: {}", watch.to_string().purple());
-        println!("suggestions: {}", suggestions.to_string().purple());
         println!("hidden_files: {}", hidden_files.to_string().purple());
         println!("ignored_directories: {:?}", ignore);
     } else if args.is_present("new") {

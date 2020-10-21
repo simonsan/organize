@@ -20,8 +20,6 @@ pub struct Options {
     #[serde(default)]
     pub ignore: Vec<PathBuf>,
     #[serde(default)]
-    pub suggestions: bool,
-    #[serde(default)]
     pub hidden_files: bool,
 }
 
@@ -31,7 +29,6 @@ impl Default for Options {
             recursive: false,
             watch: true,
             hidden_files: false,
-            suggestions: false,
             ignore: Vec::new(),
         }
     }

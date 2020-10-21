@@ -29,31 +29,34 @@ impl MatchesFilters for PathBuf {
         }
 
         let as_str = self.to_str().unwrap();
-        if !filters.regex.to_string().is_empty() && filters.regex.is_match(&as_str) {
-            return true;
+        if !filters.regex.to_string().is_empty() && !filters.regex.is_match(&as_str) {
+            return false;
         }
 
         let Filename {
             startswith,
             endswith,
             contains,
-            ..
+            case_sensitive,
         } = &filters.filename;
 
-        let filename = self.file_name().unwrap().to_str().unwrap();
-        if !startswith.is_empty() && filename.starts_with(startswith) {
-            return true;
+        let mut filename = self.file_name().unwrap().to_str().unwrap().to_string();
+        if !case_sensitive {
+            filename = filename.to_lowercase();
         }
-        if !endswith.is_empty() && filename.ends_with(endswith) {
-            return true;
+        if !startswith.is_empty() && !filename.starts_with(startswith) {
+            return false;
         }
-        if !contains.is_empty() && filename.contains(contains) {
-            return true;
+        if !endswith.is_empty() && !filename.ends_with(endswith) {
+            return false;
         }
-        if !filters.extensions.is_empty() && filters.extensions.contains(&extension.to_string()) {
-            return true;
+        if !contains.is_empty() && !filename.contains(contains) {
+            return false;
         }
-        false
+        if !filters.extensions.is_empty() && !filters.extensions.contains(&extension.to_string()) {
+            return false;
+        }
+        true
     }
 
     fn is_hidden(&self) -> bool {

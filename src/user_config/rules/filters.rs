@@ -23,7 +23,6 @@ impl Default for Filters {
     }
 }
 
-#[allow(dead_code)]
 #[derive(Deserialize, Serialize, Debug, Clone, Default)]
 pub struct Filename {
     #[serde(default)]
