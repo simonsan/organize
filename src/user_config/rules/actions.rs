@@ -95,6 +95,7 @@ pub struct Actions {
 
 impl Actions {
     pub fn run(&self, mut path: PathBuf) -> Result<()> {
+        #[cfg(debug_assertions)]
         assert!((self.r#move.is_some() ^ self.rename.is_some()) || self.r#move.is_none() && self.rename.is_none());
         if self.echo.is_some() {
             self.echo(&path);
@@ -132,30 +133,35 @@ impl Actions {
     }
 
     fn copy(&self, path: &Path) -> Result<Option<PathBuf>> {
+        #[cfg(debug_assertions)]
         assert!(self.copy.is_some());
         let copy = self.copy.as_ref().unwrap();
         Self::helper(path, &copy.to, &copy.if_exists, &copy.sep, Action::Copy)
     }
 
     fn rename(&self, path: &Path) -> Result<Option<PathBuf>> {
+        #[cfg(debug_assertions)]
         assert!(self.rename.is_some());
         let rename = self.rename.as_ref().unwrap();
         Self::helper(path, &rename.to, &rename.if_exists, &rename.sep, Action::Rename)
     }
 
     fn r#move(&self, path: &Path) -> Result<Option<PathBuf>> {
+        #[cfg(debug_assertions)]
         assert!(self.r#move.is_some());
         let r#move = self.r#move.as_ref().unwrap();
         Self::helper(path, &r#move.to, &r#move.if_exists, &r#move.sep, Action::Move)
     }
 
     fn echo(&self, path: &Path) {
+        #[cfg(debug_assertions)]
         assert!(self.echo.is_some());
         let echo = self.echo.as_ref().unwrap();
         println!("{}", echo.expand_placeholders(path).unwrap());
     }
 
     fn shell(&self, path: &Path) -> Result<()> {
+        #[cfg(debug_assertions)]
         assert!(self.shell.is_some());
         let shell = self.shell.as_ref().unwrap();
         let script = Self::write_script(shell, path)?;
@@ -173,6 +179,7 @@ impl Actions {
     }
 
     fn python(&self, path: &Path) -> Result<()> {
+        #[cfg(debug_assertions)]
         assert!(self.python.is_some());
         let python = self.python.as_ref().unwrap();
         let script = Self::write_script(python, path)?;
@@ -206,6 +213,7 @@ impl Actions {
         sep: &Sep,
         r#type: Action,
     ) -> Result<Option<PathBuf>> {
+        #[cfg(debug_assertions)]
         assert!(r#type == Action::Move || r#type == Action::Rename || r#type == Action::Copy);
         let mut logger = Logger::default();
         let mut to: PathBuf = to.to_str().unwrap().to_string().expand_placeholders(path)?.into();
@@ -303,6 +311,7 @@ mod tests {
     #[should_panic] // trying to modify a path that does not exist
     fn new_path_to_non_existing_file() {
         let target = test_file_or_dir("test_dir2").join("test1.txt");
+        #[cfg(debug_assertions)]
         assert!(!target.exists());
         target.update(&ConflictOption::Rename, &Default::default()).unwrap();
     }

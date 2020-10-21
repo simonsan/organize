@@ -75,8 +75,7 @@ impl Update for PathBuf {
     /// # Return
     /// This function will return `Some(new_path)` if `if_exists` is not set to skip, otherwise it returns `None`
     fn update(&self, if_exists: &ConflictOption, sep: &Sep) -> Option<Self> {
-        #[cfg(debug_assertions)]
-        assert!(self.exists());
+        debug_assert!(self.exists());
 
         match if_exists {
             ConflictOption::Skip => None,
@@ -93,7 +92,7 @@ impl Update for PathBuf {
                 Some(new_path)
             }
             ConflictOption::Ask => {
-                assert_ne!(ConflictOption::default(), ConflictOption::Ask);
+                debug_assert_ne!(ConflictOption::default(), ConflictOption::Ask);
                 let if_exists = if WATCHING.load(Ordering::SeqCst) {
                     Default::default()
                 } else {
