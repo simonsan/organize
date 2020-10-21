@@ -62,6 +62,15 @@ impl Level {
     }
 }
 
+struct Line {
+    time: ColoredString,
+    level: ColoredString,
+    action: ColoredString,
+    old_path: ColoredString,
+    sep: Option<String>,
+    new_path: Option<ColoredString>,
+}
+
 pub struct Logger {
     path: PathBuf,
 }
@@ -94,15 +103,28 @@ impl Logger {
         let datetime = Local::now();
         let level = level.to_string().to_uppercase();
         let file = OpenOptions::new().append(true).open(&self.path)?;
-        writeln!(
-            &file,
+        let msg = format!(
             "[{}-{}] {}: ({}) {}",
             datetime.date(),
             datetime.time(),
             level,
             action.to_string(),
             msg
-        )
+        );
+        let Line {
+            time,
+            level,
+            action,
+            old_path,
+            sep,
+            new_path,
+        } = Self::format(&msg);
+        let mut msg = format!("{} {}: ({}) {}", time, level, action, old_path);
+        if let (Some(sep), Some(new_path)) = (sep, new_path) {
+            msg.push_str(&format!(" {} {}", sep, new_path));
+        }
+        println!("{}", msg);
+        writeln!(&file, "{}", msg)
     }
 
     pub fn len(&self) -> usize {
@@ -113,21 +135,28 @@ impl Logger {
         self.len() == 0
     }
 
+    fn format(line: &str) -> Line {
+        let re = Regex::new(r"(?P<time>\[.+]) (?P<level>[A-Z]+?): \((?P<action>\w+?)\) (?P<old_path>.+?) (?:(?P<sep>->) (?P<new_path>.+))?").unwrap();
+        let r#match = re.captures(line).unwrap();
+        let mut line = Line {
+            time: r#match.name("time").unwrap().as_str().dimmed(),
+            level: Level::from(r#match.name("level").unwrap().as_str()).colored(),
+            action: r#match.name("action").unwrap().as_str().bold(),
+            old_path: r#match.name("old_path").unwrap().as_str().underline(),
+            sep: None,
+            new_path: None,
+        };
+        if let (Some(sep), Some(new_path)) = (r#match.name("sep"), r#match.name("new_path")) {
+            line.sep = Some(sep.as_str().to_string());
+            line.new_path = Some(new_path.as_str().underline());
+        }
+        line
+    }
+
     pub fn show_logs(&self) -> Result<()> {
         let text = self.read()?;
-        let re = Regex::new(r"(?P<time>\[.+]) (?P<level>[A-Z]+?): \((?P<action>\w+?)\) (?P<old_path>.+?) (?:(?P<sep>->) (?P<new_path>.+))?").unwrap();
-        for r#match in re.captures_iter(&text) {
-            let time = r#match.name("time").unwrap().as_str().dimmed();
-            let level = Level::from(r#match.name("level").unwrap().as_str()).colored();
-            let action = r#match.name("action").unwrap().as_str().bold();
-            let old_path = r#match.name("old_path").unwrap().as_str().underline();
-            print!("{} {}: ({}) {}", time, level, action, old_path);
-
-            if let (Some(sep), Some(new_path)) = (r#match.name("sep"), r#match.name("new_path")) {
-                println!(" {} {}", sep.as_str(), new_path.as_str().underline())
-            } else {
-                println!()
-            }
+        for line in text.lines() {
+            println!("{}", line);
         }
         Ok(())
     }

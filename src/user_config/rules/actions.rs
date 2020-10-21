@@ -95,7 +95,6 @@ pub struct Actions {
 
 impl Actions {
     pub fn run(&self, mut path: PathBuf) -> Result<()> {
-        assert!((self.r#move.is_some() ^ self.rename.is_some()) || self.r#move.is_none() && self.rename.is_none());
         if self.echo.is_some() {
             self.echo(&path);
         }
@@ -222,7 +221,6 @@ impl Actions {
                 fs::create_dir_all(&to)?;
             }
             to = to.join(&path.file_name().unwrap());
-            println!("{}", to.display())
         }
         if to.exists() {
             if let Some(new_path) = to.update(&if_exists, &sep) {
