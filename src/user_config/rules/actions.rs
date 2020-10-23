@@ -1,5 +1,6 @@
 use super::deserialize::deserialize_path;
 use crate::{
+    error::ErrorKind,
     path::Update,
     string::Placeholder,
     subcommands::logs::{Level, Logger},
@@ -9,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use std::{
     borrow::Cow,
     fs,
-    io::Result,
+    io::{Error, ErrorKind, Result},
     path::{Path, PathBuf},
     process::{Command, Stdio},
 };
@@ -95,59 +96,78 @@ pub struct Actions {
 }
 
 impl Actions {
-    pub fn run(&self, path: PathBuf) -> Result<()> {
+    pub fn run(&self, path: PathBuf) {
         let mut path = Cow::from(path);
         if self.echo.is_some() {
-            self.echo(&path);
+            if let Err(e) = self.echo(&path) {
+                eprintln!("error: {}", e.to_string());
+                return;
+            }
         }
         if self.python.is_some() {
-            self.python(&path)?;
+            if let Err(e) = self.python(&path) {
+                eprintln!("error: {}", e.to_string());
+                return;
+            }
         }
         if self.shell.is_some() {
-            self.shell(&path)?;
+            if let Err(e) = self.shell(&path) {
+                eprintln!("error: {}", e.to_string());
+                return;
+            }
         }
         if self.copy.is_some() {
-            self.copy(&mut path);
+            if let Err(e) = self.copy(&mut path) {
+                eprintln!("error: {}", e.to_string());
+                return;
+            }
         }
         if self.r#move.is_some() ^ self.rename.is_some() {
-            if self.r#move.is_some() {
-                self.r#move(&mut path);
-            } else if self.rename.is_some() {
-                self.rename(&mut path);
+            let mut result = if self.r#move.is_some() {
+                self.r#move(&mut path)
+            } else {
+                self.rename(&mut path)
+            };
+            if let Err(e) = result {
+                eprintln!("error: {}", e.to_string());
+                return;
             }
         }
         if self.delete.is_some() && self.delete.unwrap() {
-            self.delete(&path)?;
+            if let Err(e) = self.delete(&path) {
+                eprintln!("error: {}", e.to_string());
+                return;
+            }
         }
-        Ok(())
     }
 
     fn delete(&self, path: &Path) -> Result<()> {
         fs::remove_file(path)
     }
 
-    fn copy(&self, path: &mut Cow<Path>) {
+    fn copy(&self, path: &mut Cow<Path>) -> Result<()> {
         debug_assert!(self.copy.is_some());
         let copy = self.copy.as_ref().unwrap();
-        Self::helper(path, &copy.to, &copy.if_exists, &copy.sep, Action::Copy);
+        Self::helper(path, &copy.to, &copy.if_exists, &copy.sep, Action::Copy)
     }
 
-    fn rename(&self, path: &mut Cow<Path>) {
+    fn rename(&self, path: &mut Cow<Path>) -> Result<()> {
         debug_assert!(self.rename.is_some());
         let rename = self.rename.as_ref().unwrap();
-        Self::helper(path, &rename.to, &rename.if_exists, &rename.sep, Action::Rename);
+        Self::helper(path, &rename.to, &rename.if_exists, &rename.sep, Action::Rename)
     }
 
-    fn r#move(&self, path: &mut Cow<Path>) {
+    fn r#move(&self, path: &mut Cow<Path>) -> Result<()> {
         debug_assert!(self.r#move.is_some());
         let r#move = self.r#move.as_ref().unwrap();
-        Self::helper(path, &r#move.to, &r#move.if_exists, &r#move.sep, Action::Move);
+        Self::helper(path, &r#move.to, &r#move.if_exists, &r#move.sep, Action::Move)
     }
 
-    fn echo(&self, path: &Path) {
+    fn echo(&self, path: &Path) -> Result<()> {
         debug_assert!(self.echo.is_some());
         let echo = self.echo.as_ref().unwrap();
-        println!("{}", echo.expand_placeholders(path).unwrap());
+        println!("{}", echo.expand_placeholders(path)?);
+        Ok(())
     }
 
     fn shell(&self, path: &Path) -> Result<()> {
@@ -189,8 +209,9 @@ impl Actions {
         if !dir.exists() {
             fs::create_dir_all(&dir)?;
         }
-        let script = dir.join(path.file_name().unwrap());
-        fs::write(&script, content.to_string().expand_placeholders(path).unwrap())?;
+        let script = dir.join("temp_script");
+        let content = content.expand_placeholders(path)?;
+        fs::write(&script, content)?;
         Ok(script)
     }
 
@@ -201,34 +222,43 @@ impl Actions {
     /// - `if_exists`: variable that helps resolve any naming conflicts between `path` and `to`
     /// - `sep`: counter separator (e.g. in "file (1).test", `sep` would be a whitespace; in "file-(1).test", it would be a hyphen)
     /// - `type`: whether this helper should move, rename or copy the given file (`path`)
-    fn helper(path: &mut Cow<Path>, to: &Path, if_exists: &ConflictOption, sep: &Sep, r#type: Action) {
+    fn helper(path: &mut Cow<Path>, to: &Path, if_exists: &ConflictOption, sep: &Sep, r#type: Action) -> Result<()> {
         #[cfg(debug_assertions)]
         debug_assert!(r#type == Action::Move || r#type == Action::Rename || r#type == Action::Copy);
+
         let mut logger = Logger::default();
         let to = PathBuf::from(to.to_str().unwrap().to_string().expand_placeholders(path).unwrap());
         let mut to = Cow::from(to);
         if r#type == Action::Copy || r#type == Action::Move {
             if !to.exists() {
-                fs::create_dir_all(&to).unwrap();
+                fs::create_dir_all(&to)?;
             }
-            to.to_mut().push(&path.file_name().unwrap());
+            to.to_mut().push(
+                path.file_name()
+                    .ok_or_else(|| Error::new(ErrorKind::Other, "path has no filename"))?,
+            );
         }
+
         if to.exists() && to.update(&if_exists, &sep).is_err() {
-            return;
+            Ok(())
         }
+
         if r#type == Action::Copy {
-            std::fs::copy(&path, &to).unwrap();
+            std::fs::copy(&path, &to)?;
         } else if r#type == Action::Rename || r#type == Action::Move {
-            std::fs::rename(&path, &to).unwrap();
+            std::fs::rename(&path, &to)?;
         }
+
         logger.try_write(
             &Level::Info,
             &r#type,
             &format!("{} -> {}", &path.display(), &to.display()),
         );
+
         if r#type == Action::Rename || r#type == Action::Move {
             *path = to;
         }
+        Ok(())
     }
 }
 

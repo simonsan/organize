@@ -1,6 +1,6 @@
 use regex::Regex;
 use std::{
-    io::{Error, ErrorKind, Result},
+    io::{Error, ErrorKind},
     path::Path,
 };
 
@@ -21,6 +21,12 @@ impl Capitalize<String> for String {
         }
         let mut c = self.chars();
         c.next().unwrap().to_uppercase().collect::<String>() + c.as_str()
+    }
+}
+
+impl Placeholder for &str {
+    fn expand_placeholders(&self, path: &Path) -> Result<String> {
+        self.to_string().expand_placeholders(path)
     }
 }
 

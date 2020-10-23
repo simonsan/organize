@@ -19,7 +19,9 @@ mod tests {
     #[test]
     fn single_placeholder() -> Result<()> {
         let tested = String::from("/home/cabero/Downloads/{parent.name}");
-        let new_path = tested.expand_placeholders(&Path::new("/home/cabero/Documents/test.pdf"))?;
+        let new_path = tested
+            .expand_placeholders(&Path::new("/home/cabero/Documents/test.pdf"))
+            .unwrap();
         let expected = String::from("/home/cabero/Downloads/Documents");
         if new_path == expected {
             Ok(())
@@ -30,7 +32,9 @@ mod tests {
     #[test]
     fn multiple_placeholders() -> Result<()> {
         let tested = String::from("/home/cabero/{extension}/{parent.name}");
-        let new_path = tested.expand_placeholders(&Path::new("/home/cabero/Documents/test.pdf"))?;
+        let new_path = tested
+            .expand_placeholders(&Path::new("/home/cabero/Documents/test.pdf"))
+            .unwrap();
         let expected = String::from("/home/cabero/pdf/Documents");
         if new_path == expected {
             Ok(())
