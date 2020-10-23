@@ -7,9 +7,19 @@ mod tests {
     };
 
     #[test]
-    fn capitalize() -> Result<()> {
+    fn capitalize_word() -> Result<()> {
         let tested = String::from("house");
         let expected = String::from("House");
+        if tested.capitalize() == expected {
+            Ok(())
+        } else {
+            Err(Error::from(ErrorKind::Other))
+        }
+    }
+    #[test]
+    fn capitalize_single_char() -> Result<()> {
+        let tested = String::from("h");
+        let expected = String::from("H");
         if tested.capitalize() == expected {
             Ok(())
         } else {
