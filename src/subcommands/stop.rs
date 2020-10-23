@@ -1,39 +1,29 @@
-use crate::{lock_file::LockFile, subcommands::watch::Daemon, user_config::UserConfig};
-use dialoguer::{theme::ColorfulTheme, Confirm, MultiSelect};
+use crate::{lock_file::LockFile, user_config::UserConfig, MATCHES};
+use clap::crate_name;
 use std::io::Result;
 use sysinfo::{ProcessExt, RefreshKind, Signal, System, SystemExt};
 
 pub fn stop() -> Result<()> {
     let lock_file = LockFile::new()?;
     let watchers = lock_file.get_running_watchers();
-    let pids = watchers.iter().map(|(pid, _)| pid).collect::<Vec<_>>();
-    let paths = watchers.iter().map(|(_, path)| path.display()).collect::<Vec<_>>();
 
     if watchers.is_empty() {
         println!("No instance was found running.");
-        let prompt = "Would you like to start a new daemon with the default configuration?";
-        let confirm = Confirm::with_theme(&ColorfulTheme::default())
-            .with_prompt(prompt)
-            .interact()
-            .unwrap();
-        if confirm {
-            Daemon::start(&UserConfig::default_path());
-        }
     } else {
         let sys = System::new_with_specifics(RefreshKind::with_processes(RefreshKind::new()));
-        if watchers.len() == 1 {
-            sys.get_process(**pids.first().unwrap()).unwrap().kill(Signal::Kill);
+        if MATCHES.subcommand().unwrap().1.is_present("all") {
+            for process in sys.get_process_by_name(crate_name!()) {
+                process.kill(Signal::Kill);
+            }
         } else {
-            let prompt = "Press SpaceBar to select one or more options and press Enter to stop them:";
-            let selections = MultiSelect::with_theme(&ColorfulTheme::default())
-                .with_prompt(prompt)
-                .items(&paths[..])
-                .interact()
-                .unwrap();
-            for selection in selections {
-                sys.get_process(**pids.get(selection).unwrap())
-                    .unwrap()
-                    .kill(Signal::Kill);
+            let path = UserConfig::path();
+            match lock_file.get_process_by_path(&path) {
+                Some(pid) => {
+                    sys.get_process(pid).unwrap().kill(Signal::Kill);
+                }
+                None => {
+                    println!("No instance was found running with configuration: {}", path.display());
+                }
             }
         }
     }

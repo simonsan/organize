@@ -93,10 +93,14 @@ impl UserConfig {
 
     #[cfg(not(target_os = "windows"))]
     pub fn dir() -> PathBuf {
-        home_dir()
+        let dir = home_dir()
             .expect("ERROR: cannot determine home directory")
             .join(".config")
-            .join(crate_name!())
+            .join(crate_name!());
+        if !dir.exists() {
+            fs::create_dir_all(&dir).expect("error: could not create config directory (permission denied)");
+        }
+        dir
     }
 
     pub fn default_path() -> PathBuf {

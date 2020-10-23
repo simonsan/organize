@@ -95,21 +95,21 @@ impl LockFile {
         Ok(self)
     }
 
-    pub fn find_process_by_path(&self, path: &Path) -> Option<(Pid, PathBuf)> {
+    pub fn get_process_by_path(&self, path: &Path) -> Option<Pid> {
         self.get_running_watchers()
             .iter()
             .filter(|(_, config)| config == path)
             .collect::<Vec<_>>()
             .first()
-            .map(|(pid, config)| (*pid, config.clone()))
+            .map(|(pid, _)| *pid)
     }
 
-    pub fn find_process_by_pid(&self, pid: Pid) -> Option<(Pid, PathBuf)> {
+    pub fn get_process_by_pid(&self, pid: Pid) -> Option<PathBuf> {
         self.get_running_watchers()
             .iter()
             .filter(|(running_pid, _)| pid == *running_pid)
             .collect::<Vec<_>>()
             .first()
-            .map(|(pid, config)| (*pid, config.clone()))
+            .map(|(_, config)| config.clone())
     }
 }

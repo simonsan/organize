@@ -31,15 +31,9 @@ subcommands:
       about: Watch for changes and apply rules
       args:
         - config: *config
-        - daemon:
-            long: daemon
-            display_order: 1
-            takes_value: false
-            help: Start watching as a background process
         - replace:
-            requires: daemon
             long: replace
-            help: Restarts the running daemon
+            help: Replace the current instance
   - logs:
       about: Show logs
       args:
@@ -49,3 +43,8 @@ subcommands:
             takes_value: false
   - stop:
       about: Stop watching
+      args:
+        - all:
+            long: all
+            short: a
+            help: Stop all running instances

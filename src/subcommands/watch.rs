@@ -1,5 +1,4 @@
 use std::{
-    env,
     io::Result,
     process,
     sync::mpsc::{channel, Receiver},
@@ -16,81 +15,40 @@ use crate::{
     MATCHES,
 };
 use dialoguer::{theme::ColorfulTheme, Confirm, Select};
-use std::{convert::TryInto, path::Path, process::Command};
 use sysinfo::{ProcessExt, RefreshKind, Signal, System, SystemExt};
 
 pub fn watch() -> Result<()> {
     let lock_file = LockFile::new()?;
-    let path = UserConfig::path();
-    let args = MATCHES.subcommand().unwrap().1;
 
     // REPLACE
-    if args.is_present("replace") {
+    if MATCHES.subcommand().unwrap().1.is_present("replace") {
         Daemon::replace()?;
+    } else if lock_file.get_running_watchers().is_empty() {
+        let path = UserConfig::path();
+        run()?;
+        lock_file.append(process::id() as i32, &path)?;
+        std::mem::drop(path);
+        std::mem::drop(lock_file);
+        let mut watcher = Watcher::new();
+        watcher.run()?;
     } else {
-        // DAEMON
-        if args.is_present("daemon") {
-            let processes = lock_file.get_running_watchers();
-            if processes.is_empty() {
-                Daemon::start(&path);
-            } else {
-                println!("{}", "The following configurations were found running:".bold());
-                for (_, path) in processes {
-                    println!(" {} {}", "·".bright_black(), path.display().to_string().underline())
-                }
-                println!();
-                let options = ["Stop instance and run", "Run anyway", "Do nothing"];
-                let selection = Select::with_theme(&ColorfulTheme::default())
-                    .with_prompt("Select an option:")
-                    .items(&options)
-                    .default(0)
-                    .interact()
-                    .unwrap();
+        let options = ["Stop instance", "Run anyway", "Do nothing"];
+        let selection = Select::with_theme(&ColorfulTheme::default())
+            .with_prompt("An existing instance was found:")
+            .items(&options)
+            .default(0)
+            .interact()
+            .unwrap();
 
-                match selection {
-                    0 => {
-                        stop()?;
-                        Daemon::start(&path);
-                    }
-                    1 => Daemon::start(&path),
-                    _ => {}
-                }
+        match selection {
+            0 => stop()?,
+            1 => {
+                run()?;
+                lock_file.append(process::id() as i32, &path)?;
+                let mut watcher = Watcher::new();
+                watcher.run()?;
             }
-        // NO ARGS
-        } else if lock_file.get_running_watchers().is_empty() {
-            run()?;
-            lock_file.append(process::id() as i32, &path)?;
-            std::mem::drop(path);
-            std::mem::drop(lock_file);
-            let mut watcher = Watcher::new();
-            watcher.run()?;
-        } else if lock_file.find_process_by_pid(process::id() as i32).is_some() {
-            // if the pid has already been registered, that means that `organize` was run with the --daemon option
-            // and we don't need to prompt the user
-            run()?;
-            let mut watcher = Watcher::new();
-            watcher.run()?;
-        } else {
-            let options = ["Stop instance", "Run anyway", "Do nothing"];
-            let selection = Select::with_theme(&ColorfulTheme::default())
-                .with_prompt("An existing instance was found:")
-                .items(&options)
-                .default(0)
-                .interact()
-                .unwrap();
-
-            match selection {
-                0 => stop()?,
-                1 => {
-                    run()?;
-                    lock_file.append(process::id() as i32, &path)?;
-                    std::mem::drop(lock_file);
-                    std::mem::drop(path);
-                    let mut watcher = Watcher::new();
-                    watcher.run()?;
-                }
-                _ => {}
-            }
+            _ => {}
         }
     }
     Ok(())
@@ -168,36 +126,17 @@ impl Watcher {
 pub(crate) struct Daemon;
 
 impl Daemon {
-    pub fn start(path: &Path) {
-        let mut args = env::args();
-        let command = args.next().unwrap(); // must've been started through a command
-        let mut args: Vec<_> = args
-            .filter(|arg| arg != "--daemon" && arg != "--replace" && arg != "stop")
-            .collect();
-        if args.is_empty() {
-            // if called from the stop command, `args` will be empty (stop doesn't have sub-arguments)
-            // so we must push `watch` to be able to run the daemon
-            args.push("watch".into());
-        }
-        let lock_file = LockFile::new().unwrap();
-        let pid = Command::new(command)
-            .args(&args)
-            .spawn()
-            .expect("couldn't start daemon")
-            .id() as i32;
-        lock_file.append(pid.try_into().unwrap(), path).unwrap();
-    }
-
     pub fn replace() -> Result<()> {
         let path = UserConfig::path();
         let lock_file = LockFile::new()?;
-        let process = lock_file.find_process_by_path(&path);
-        match process {
-            Some((pid, _)) => {
-                let sys = System::new_with_specifics(RefreshKind::with_processes(RefreshKind::new()));
-                sys.get_process(pid).unwrap().kill(Signal::Kill);
-                Daemon::start(&path);
-                Ok(())
+        match lock_file.get_process_by_path(&path) {
+            Some(pid) => {
+                {
+                    // force sys to go out of scope before watch() is run
+                    let sys = System::new_with_specifics(RefreshKind::with_processes(RefreshKind::new()));
+                    sys.get_process(pid).unwrap().kill(Signal::Kill);
+                }
+                watch()
             }
             None => {
                 // there is no running process
@@ -217,10 +156,12 @@ impl Daemon {
                     .with_prompt("Would you like to start a new instance?")
                     .interact()
                     .unwrap();
+
                 if confirm {
-                    Daemon::start(&path);
+                    watch()
+                } else {
+                    Ok(())
                 }
-                Ok(())
             }
         }
     }
