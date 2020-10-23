@@ -1,5 +1,5 @@
-use crate::{path::Expandable, user_config::rules::rule::Rule};
-use clap::{crate_name, load_yaml, ArgMatches};
+use crate::{path::Expandable, user_config::rules::rule::Rule, MATCHES};
+use clap::{crate_name, load_yaml};
 use dirs::home_dir;
 use serde::Deserialize;
 use std::{
@@ -32,8 +32,8 @@ impl UserConfig {
     /// ### Errors
     /// This constructor fails in the following cases:
     /// - The configuration file does not exist
-    pub fn new(args: &ArgMatches) -> Result<Self> {
-        let path = UserConfig::path(args);
+    pub fn new() -> Result<Self> {
+        let path = UserConfig::path();
 
         if !path.exists() {
             Self::create(&path)?;
@@ -83,8 +83,9 @@ impl UserConfig {
         Ok(())
     }
 
-    pub fn path(args: &ArgMatches) -> PathBuf {
-        match args.subcommand().unwrap().1.value_of("config") {
+    pub fn path() -> PathBuf {
+        let args = MATCHES.subcommand().unwrap().1;
+        match args.value_of("config") {
             Some(path) => PathBuf::from(path).expand_user().expand_vars().canonicalize().unwrap(),
             None => Self::default_path(),
         }

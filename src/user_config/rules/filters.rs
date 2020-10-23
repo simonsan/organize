@@ -18,10 +18,6 @@ impl PartialEq for Filters {
             && self.filename == other.filename
             && self.extensions == other.extensions
     }
-
-    fn ne(&self, other: &Self) -> bool {
-        !self.eq(other)
-    }
 }
 
 #[allow(clippy::trivial_regex)]

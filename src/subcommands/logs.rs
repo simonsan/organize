@@ -1,6 +1,8 @@
-use crate::user_config::{rules::actions::Action, UserConfig};
+use crate::{
+    user_config::{rules::actions::Action, UserConfig},
+    MATCHES,
+};
 use chrono::prelude::Local;
-use clap::ArgMatches;
 use colored::{ColoredString, Colorize};
 use regex::Regex;
 use std::{
@@ -8,11 +10,14 @@ use std::{
     fs::OpenOptions,
     io::{Result, Write},
     path::PathBuf,
+    result,
+    str::FromStr,
 };
 
-pub fn logs(args: &ArgMatches) -> Result<()> {
+pub fn logs() -> Result<()> {
     let logger = Logger::default();
-    if args.subcommand().unwrap().1.is_present("clear") {
+    let args = MATCHES.subcommand().unwrap().1;
+    if args.is_present("clear") {
         logger.delete()
     } else {
         logger.show_logs()
@@ -26,14 +31,16 @@ pub enum Level {
     Error,
 }
 
-impl From<&str> for Level {
-    fn from(level: &str) -> Self {
+impl FromStr for Level {
+    type Err = ();
+
+    fn from_str(level: &str) -> result::Result<Self, Self::Err> {
         let level = level.to_lowercase();
         match level.as_str() {
-            "debug" => Self::Debug,
-            "error" => Self::Error,
-            "warn" => Self::Warn,
-            "info" => Self::Info,
+            "debug" => Ok(Self::Debug),
+            "error" => Ok(Self::Error),
+            "warn" => Ok(Self::Warn),
+            "info" => Ok(Self::Info),
             _ => panic!("unknown log level"),
         }
     }
@@ -132,7 +139,13 @@ impl Logger {
         let r#match = re.captures(line).unwrap();
         let mut line = Line {
             time: r#match.name("time").unwrap().as_str().dimmed(),
-            level: Level::from(r#match.name("level").unwrap().as_str()).colored(),
+            level: r#match
+                .name("level")
+                .unwrap()
+                .as_str()
+                .parse::<Level>()
+                .unwrap()
+                .colored(),
             action: r#match.name("action").unwrap().as_str().bold(),
             old_path: r#match.name("old_path").unwrap().as_str().underline(),
             sep: None,

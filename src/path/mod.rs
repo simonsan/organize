@@ -10,12 +10,11 @@ use crate::{
         actions::{ConflictOption, Sep},
         filters::{Filename, Filters},
     },
-    WATCHING,
+    MATCHES,
 };
 use std::{
     borrow::Cow,
     io::{Error, ErrorKind},
-    sync::atomic::Ordering,
 };
 
 pub mod lib;
@@ -104,7 +103,8 @@ impl Update for Cow<'_, Path> {
             }
             ConflictOption::Ask => {
                 debug_assert_ne!(ConflictOption::default(), ConflictOption::Ask);
-                let if_exists = if WATCHING.load(Ordering::SeqCst) {
+                let cmd = MATCHES.subcommand_name().unwrap();
+                let if_exists = if cmd == "watch" {
                     Default::default()
                 } else {
                     resolve_conflict(&self)

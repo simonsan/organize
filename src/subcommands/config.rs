@@ -1,11 +1,15 @@
-use crate::user_config::{rules::folder::Options, UserConfig};
-use clap::{crate_name, ArgMatches};
+use crate::{
+    user_config::{rules::folder::Options, UserConfig},
+    MATCHES,
+};
+use clap::crate_name;
 use colored::Colorize;
 use std::{env, ffi::OsString, io::Result, path::PathBuf, process};
 
-pub fn config(args: &ArgMatches) -> Result<()> {
+pub fn config() -> Result<()> {
+    let args = MATCHES.subcommand().unwrap().1;
     if args.is_present("show_path") {
-        println!("{}", UserConfig::path(args).display());
+        println!("{}", UserConfig::path().display());
     } else if args.is_present("show_defaults") {
         let Options {
             recursive,
@@ -22,7 +26,7 @@ pub fn config(args: &ArgMatches) -> Result<()> {
         UserConfig::create(&config_file)?;
         println!("New config file created at {}", config_file.display());
     } else {
-        edit(UserConfig::path(args))?;
+        edit(UserConfig::path())?;
     }
     Ok(())
 }

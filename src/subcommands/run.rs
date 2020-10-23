@@ -6,10 +6,9 @@ use crate::{
     path::MatchesFilters,
     user_config::{rules::actions::ConflictOption, UserConfig},
 };
-use clap::ArgMatches;
 
-pub fn run(args: &ArgMatches) -> Result<()> {
-    let config = UserConfig::new(args)?;
+pub fn run() -> Result<()> {
+    let config = UserConfig::new()?;
     let path2rules = config.to_map();
 
     for (path, rules) in path2rules.iter() {

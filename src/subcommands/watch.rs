@@ -13,23 +13,23 @@ use crate::{
     path::MatchesFilters,
     subcommands::{run::run, stop::stop},
     user_config::{rules::folder::Options, UserConfig},
+    MATCHES,
 };
-use clap::ArgMatches;
 use dialoguer::{theme::ColorfulTheme, Confirm, Select};
 use std::{convert::TryInto, path::Path, process::Command};
 use sysinfo::{ProcessExt, RefreshKind, Signal, System, SystemExt};
 
-pub fn watch(args: &ArgMatches) -> Result<()> {
+pub fn watch() -> Result<()> {
     let lock_file = LockFile::new()?;
-    let path = UserConfig::path(args);
+    let path = UserConfig::path();
+    let args = MATCHES.subcommand().unwrap().1;
 
     // REPLACE
-    if args.subcommand().unwrap().1.is_present("replace") {
-        Daemon::replace(args)?;
+    if args.is_present("replace") {
+        Daemon::replace()?;
     } else {
         // DAEMON
-
-        if args.subcommand().unwrap().1.is_present("daemon") {
+        if args.is_present("daemon") {
             let processes = lock_file.get_running_watchers();
             if processes.is_empty() {
                 Daemon::start(&path);
@@ -58,18 +58,18 @@ pub fn watch(args: &ArgMatches) -> Result<()> {
             }
         // NO ARGS
         } else if lock_file.get_running_watchers().is_empty() {
-            run(args)?;
+            run()?;
             lock_file.append(process::id() as i32, &path)?;
             std::mem::drop(path);
             std::mem::drop(lock_file);
             let mut watcher = Watcher::new();
-            watcher.run(args)?;
+            watcher.run()?;
         } else if lock_file.find_process_by_pid(process::id() as i32).is_some() {
             // if the pid has already been registered, that means that `organize` was run with the --daemon option
             // and we don't need to prompt the user
-            run(args)?;
+            run()?;
             let mut watcher = Watcher::new();
-            watcher.run(args)?;
+            watcher.run()?;
         } else {
             let options = ["Stop instance", "Run anyway", "Do nothing"];
             let selection = Select::with_theme(&ColorfulTheme::default())
@@ -82,12 +82,12 @@ pub fn watch(args: &ArgMatches) -> Result<()> {
             match selection {
                 0 => stop()?,
                 1 => {
-                    run(args)?;
+                    run()?;
                     lock_file.append(process::id() as i32, &path)?;
                     std::mem::drop(lock_file);
                     std::mem::drop(path);
                     let mut watcher = Watcher::new();
-                    watcher.run(args)?;
+                    watcher.run()?;
                 }
                 _ => {}
             }
@@ -117,8 +117,8 @@ impl Watcher {
         }
     }
 
-    pub fn run(&mut self, args: &ArgMatches) -> Result<()> {
-        let config = UserConfig::new(&args)?;
+    pub fn run(&mut self) -> Result<()> {
+        let config = UserConfig::new()?;
         for rule in config.rules.iter() {
             for folder in rule.folders.iter() {
                 let is_recursive = if folder.options.recursive {
@@ -188,8 +188,8 @@ impl Daemon {
         lock_file.append(pid.try_into().unwrap(), path).unwrap();
     }
 
-    pub fn replace(args: &ArgMatches) -> Result<()> {
-        let path = UserConfig::path(args);
+    pub fn replace() -> Result<()> {
+        let path = UserConfig::path();
         let lock_file = LockFile::new()?;
         let process = lock_file.find_process_by_path(&path);
         match process {
