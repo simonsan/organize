@@ -21,7 +21,7 @@ lazy_static! {
 fn main() -> Result<()> {
     debug_assert!(MATCHES.subcommand().is_some());
 
-    if env::consts::OS == "windows" {
+    if cfg!(target_os = "windows") {
         eprintln!("Windows is not supported yet");
         return Ok(());
     }
