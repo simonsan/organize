@@ -10,11 +10,10 @@ use notify::{op, raw_watcher, RawEvent, RecommendedWatcher, RecursiveMode, Watch
 use crate::{
     lock_file::LockFile,
     path::MatchesFilters,
-    subcommands::{run::run, stop::stop},
+    subcommands::run::run,
     user_config::{rules::folder::Options, UserConfig},
     MATCHES,
 };
-use dialoguer::{theme::ColorfulTheme, Confirm, Select};
 use sysinfo::{ProcessExt, RefreshKind, Signal, System, SystemExt};
 
 pub fn watch() -> Result<()> {
@@ -23,32 +22,21 @@ pub fn watch() -> Result<()> {
     // REPLACE
     if MATCHES.subcommand().unwrap().1.is_present("replace") {
         Daemon::replace()?;
-    } else if lock_file.get_running_watchers().is_empty() {
-        let path = UserConfig::path();
-        run()?;
-        lock_file.append(process::id() as i32, &path)?;
-        std::mem::drop(path);
-        std::mem::drop(lock_file);
-        let mut watcher = Watcher::new();
-        watcher.run()?;
     } else {
-        let options = ["Stop instance", "Run anyway", "Do nothing"];
-        let selection = Select::with_theme(&ColorfulTheme::default())
-            .with_prompt("An existing instance was found:")
-            .items(&options)
-            .default(0)
-            .interact()
-            .unwrap();
-
-        match selection {
-            0 => stop()?,
-            1 => {
-                run()?;
-                lock_file.append(process::id() as i32, &path)?;
-                let mut watcher = Watcher::new();
-                watcher.run()?;
-            }
-            _ => {}
+        let path = UserConfig::path();
+        if lock_file.get_running_watchers().is_empty() {
+            run()?;
+            lock_file.append(process::id() as i32, &path)?;
+            std::mem::drop(path);
+            std::mem::drop(lock_file);
+            let mut watcher = Watcher::new();
+            watcher.run()?;
+        } else if path == UserConfig::default_path() {
+            println!(
+                "An existing instance was found running with the default configuration. Use --replace to restart it"
+            );
+        } else {
+            println!("An existing instance was found running with the desired configuration. Use --replace --config {} to restart it", path.display());
         }
     }
     Ok(())
@@ -152,16 +140,7 @@ impl Daemon {
                         path.display().to_string().underline()
                     );
                 };
-                let confirm = Confirm::with_theme(&ColorfulTheme::default())
-                    .with_prompt("Would you like to start a new instance?")
-                    .interact()
-                    .unwrap();
-
-                if confirm {
-                    watch()
-                } else {
-                    Ok(())
-                }
+                Ok(())
             }
         }
     }
