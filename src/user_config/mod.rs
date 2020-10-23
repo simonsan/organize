@@ -91,10 +91,12 @@ impl UserConfig {
         }
     }
 
+    #[cfg(not(target_os = "windows"))]
     pub fn dir() -> PathBuf {
         home_dir()
             .expect("ERROR: cannot determine home directory")
-            .join(format!(".{}", crate_name!()))
+            .join(".config")
+            .join(crate_name!())
     }
 
     pub fn default_path() -> PathBuf {
