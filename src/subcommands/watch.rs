@@ -27,16 +27,12 @@ pub fn watch() -> Result<()> {
         if lock_file.get_running_watchers().is_empty() {
             run()?;
             lock_file.append(process::id() as i32, &path)?;
-            std::mem::drop(path);
-            std::mem::drop(lock_file);
             let mut watcher = Watcher::new();
             watcher.run()?;
         } else if path == UserConfig::default_path() {
-            println!(
-                "An existing instance was found running with the default configuration. Use --replace to restart it"
-            );
+            println!("An existing instance is already running. Use --replace to restart it");
         } else {
-            println!("An existing instance was found running with the desired configuration. Use --replace --config {} to restart it", path.display());
+            println!("An existing instance is already running with the desired configuration. Use --replace --config {} to restart it", path.display());
         }
     }
     Ok(())
@@ -87,16 +83,15 @@ impl Watcher {
             {
                 if let op::CREATE = op {
                     if path.is_file() {
-                        let parent = path.parent().unwrap().to_path_buf();
-                        let values = path2rules.get(&parent).unwrap().to_owned();
-                        'rules: for (rule, i) in values {
-                            let folder = rule.folders.get(i).unwrap();
+                        let parent = path.parent().unwrap();
+                        'rules: for (rule, i) in path2rules.get(parent).unwrap() {
+                            let folder = rule.folders.get(*i).unwrap();
                             let Options {
                                 watch,
                                 ignore,
                                 ..
                             } = &folder.options;
-                            if ignore.contains(&parent) {
+                            if ignore.contains(&parent.to_path_buf()) {
                                 continue;
                             }
                             if *watch && path.matches_filters(&rule.filters) {
