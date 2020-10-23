@@ -25,7 +25,7 @@ pub fn run(args: &ArgMatches) -> Result<()> {
                     }
                     let filters = &rule.filters;
                     if path.matches_filters(filters) {
-                        rule.actions.run(path)?;
+                        rule.actions.run(path);
                         continue 'files;
                     }
                 }

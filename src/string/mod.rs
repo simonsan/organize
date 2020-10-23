@@ -1,6 +1,6 @@
 use regex::Regex;
 use std::{
-    io::{Error, ErrorKind},
+    io::{Error, ErrorKind, Result},
     path::Path,
 };
 

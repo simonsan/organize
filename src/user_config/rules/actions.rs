@@ -1,6 +1,5 @@
 use super::deserialize::deserialize_path;
 use crate::{
-    error::ErrorKind,
     path::Update,
     string::Placeholder,
     subcommands::logs::{Level, Logger},
@@ -123,7 +122,7 @@ impl Actions {
             }
         }
         if self.r#move.is_some() ^ self.rename.is_some() {
-            let mut result = if self.r#move.is_some() {
+            let result = if self.r#move.is_some() {
                 self.r#move(&mut path)
             } else {
                 self.rename(&mut path)
@@ -240,7 +239,7 @@ impl Actions {
         }
 
         if to.exists() && to.update(&if_exists, &sep).is_err() {
-            Ok(())
+            return Ok(());
         }
 
         if r#type == Action::Copy {

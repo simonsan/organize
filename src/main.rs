@@ -6,7 +6,6 @@ use std::{
     sync::atomic::{AtomicBool, Ordering},
 };
 
-pub mod error;
 pub mod lock_file;
 pub mod path;
 pub mod string;
