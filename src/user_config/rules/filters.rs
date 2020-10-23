@@ -12,6 +12,18 @@ pub struct Filters {
     pub extensions: Vec<String>,
 }
 
+impl PartialEq for Filters {
+    fn eq(&self, other: &Self) -> bool {
+        self.regex.to_string() == other.regex.to_string()
+            && self.filename == other.filename
+            && self.extensions == other.extensions
+    }
+
+    fn ne(&self, other: &Self) -> bool {
+        !self.eq(other)
+    }
+}
+
 #[allow(clippy::trivial_regex)]
 impl Default for Filters {
     fn default() -> Self {
@@ -23,7 +35,7 @@ impl Default for Filters {
     }
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone, Default)]
+#[derive(Eq, PartialEq, Deserialize, Serialize, Debug, Clone, Default)]
 pub struct Filename {
     #[serde(default)]
     pub startswith: String,

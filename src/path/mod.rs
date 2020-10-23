@@ -27,6 +27,10 @@ pub trait MatchesFilters {
 
 impl MatchesFilters for PathBuf {
     fn matches_filters(&self, filters: &Filters) -> bool {
+        if *filters == Filters::default() {
+            // empty filters
+            return false;
+        }
         let extension = self.extension().unwrap_or_default().to_str().unwrap_or_default();
         let temporary_file_extensions = ["crdownload", "part", "tmp", "download"];
         if !extension.is_empty() && temporary_file_extensions.contains(&extension) {
