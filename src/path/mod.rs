@@ -1,5 +1,6 @@
 use std::{
     env,
+    io::Result,
     path::{Path, PathBuf},
 };
 
@@ -11,7 +12,11 @@ use crate::{
     },
     WATCHING,
 };
-use std::sync::atomic::Ordering;
+use std::{
+    borrow::Cow,
+    io::{Error, ErrorKind},
+    sync::atomic::Ordering,
+};
 
 pub mod lib;
 
@@ -65,10 +70,10 @@ impl MatchesFilters for PathBuf {
 }
 
 pub trait Update {
-    fn update(&self, if_exists: &ConflictOption, sep: &Sep) -> Option<PathBuf>;
+    fn update(&mut self, if_exists: &ConflictOption, sep: &Sep) -> Result<()>;
 }
 
-impl Update for PathBuf {
+impl Update for Cow<'_, Path> {
     ///  When trying to rename a file to a path that already exists, calling update() on the
     ///  target path will return a new valid path.
     ///  # Args
@@ -77,22 +82,21 @@ impl Update for PathBuf {
     /// * `is_watching`: whether this function is being run from a watcher or not
     /// # Return
     /// This function will return `Some(new_path)` if `if_exists` is not set to skip, otherwise it returns `None`
-    fn update(&self, if_exists: &ConflictOption, sep: &Sep) -> Option<Self> {
+    fn update(&mut self, if_exists: &ConflictOption, sep: &Sep) -> Result<()> {
         debug_assert!(self.exists());
 
         match if_exists {
-            ConflictOption::Skip => None,
-            ConflictOption::Overwrite => Some(self.clone()),
+            ConflictOption::Skip => Err(Error::from(ErrorKind::AlreadyExists)),
+            ConflictOption::Overwrite => Ok(()),
             ConflictOption::Rename => {
                 let (stem, extension) = get_stem_and_extension(&self);
-                let mut new_path = self.clone();
                 let mut n = 1;
-                while new_path.exists() {
+                while self.exists() {
                     let new_filename = format!("{}{}({:?}).{}", stem, sep.as_str(), n, extension);
-                    new_path.set_file_name(new_filename);
+                    self.to_mut().set_file_name(new_filename);
                     n += 1;
                 }
-                Some(new_path)
+                Ok(())
             }
             ConflictOption::Ask => {
                 debug_assert_ne!(ConflictOption::default(), ConflictOption::Ask);
@@ -138,9 +142,9 @@ impl Expandable for PathBuf {
 /// * `path`: A reference to a std::path::PathBuf
 /// # Return
 /// Returns the stem and extension of `path` if they exist and can be parsed, otherwise returns an Error
-fn get_stem_and_extension(path: &Path) -> (&str, &str) {
-    let stem = path.file_stem().unwrap().to_str().unwrap();
-    let extension = path.extension().unwrap_or_default().to_str().unwrap();
+fn get_stem_and_extension(path: &Path) -> (String, String) {
+    let stem = path.file_stem().unwrap().to_str().unwrap().to_string();
+    let extension = path.extension().unwrap_or_default().to_str().unwrap().to_string();
 
     (stem, extension)
 }

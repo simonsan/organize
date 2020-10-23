@@ -7,6 +7,7 @@ use crate::{
 };
 use serde::{Deserialize, Serialize};
 use std::{
+    borrow::Cow,
     fs,
     io::Result,
     path::{Path, PathBuf},
@@ -94,7 +95,8 @@ pub struct Actions {
 }
 
 impl Actions {
-    pub fn run(&self, mut path: PathBuf) -> Result<()> {
+    pub fn run(&self, path: PathBuf) -> Result<()> {
+        let mut path = Cow::from(path);
         if self.echo.is_some() {
             self.echo(&path);
         }
@@ -105,20 +107,14 @@ impl Actions {
             self.shell(&path)?;
         }
         if self.copy.is_some() {
-            self.copy(&path)?;
+            self.copy(&mut path);
         }
         if self.r#move.is_some() ^ self.rename.is_some() {
-            let mut new_path = PathBuf::new();
             if self.r#move.is_some() {
-                if let Some(path) = self.r#move(&path)? {
-                    new_path = path;
-                }
+                self.r#move(&mut path);
             } else if self.rename.is_some() {
-                if let Some(path) = self.rename(&path)? {
-                    new_path = path;
-                }
+                self.rename(&mut path);
             }
-            path = new_path;
         }
         if self.delete.is_some() && self.delete.unwrap() {
             self.delete(&path)?;
@@ -130,22 +126,22 @@ impl Actions {
         fs::remove_file(path)
     }
 
-    fn copy(&self, path: &Path) -> Result<Option<PathBuf>> {
+    fn copy(&self, path: &mut Cow<Path>) {
         debug_assert!(self.copy.is_some());
         let copy = self.copy.as_ref().unwrap();
-        Self::helper(path, &copy.to, &copy.if_exists, &copy.sep, Action::Copy)
+        Self::helper(path, &copy.to, &copy.if_exists, &copy.sep, Action::Copy);
     }
 
-    fn rename(&self, path: &Path) -> Result<Option<PathBuf>> {
+    fn rename(&self, path: &mut Cow<Path>) {
         debug_assert!(self.rename.is_some());
         let rename = self.rename.as_ref().unwrap();
-        Self::helper(path, &rename.to, &rename.if_exists, &rename.sep, Action::Rename)
+        Self::helper(path, &rename.to, &rename.if_exists, &rename.sep, Action::Rename);
     }
 
-    fn r#move(&self, path: &Path) -> Result<Option<PathBuf>> {
+    fn r#move(&self, path: &mut Cow<Path>) {
         debug_assert!(self.r#move.is_some());
         let r#move = self.r#move.as_ref().unwrap();
-        Self::helper(path, &r#move.to, &r#move.if_exists, &r#move.sep, Action::Move)
+        Self::helper(path, &r#move.to, &r#move.if_exists, &r#move.sep, Action::Move);
     }
 
     fn echo(&self, path: &Path) {
@@ -200,46 +196,39 @@ impl Actions {
 
     /// Helper function for the move, rename and copy actions.
     /// # Args:
-    /// - `path`: the path of the file that was found and matches the filters
+    /// - `path`: a reference to a Cow smart pointer containing the original file
     /// - `to`: the destination path of `path`
     /// - `if_exists`: variable that helps resolve any naming conflicts between `path` and `to`
     /// - `sep`: counter separator (e.g. in "file (1).test", `sep` would be a whitespace; in "file-(1).test", it would be a hyphen)
     /// - `type`: whether this helper should move, rename or copy the given file (`path`)
-    fn helper(
-        path: &Path,
-        to: &Path,
-        if_exists: &ConflictOption,
-        sep: &Sep,
-        r#type: Action,
-    ) -> Result<Option<PathBuf>> {
+    fn helper(path: &mut Cow<Path>, to: &Path, if_exists: &ConflictOption, sep: &Sep, r#type: Action) {
         #[cfg(debug_assertions)]
         debug_assert!(r#type == Action::Move || r#type == Action::Rename || r#type == Action::Copy);
         let mut logger = Logger::default();
-        let mut to: PathBuf = to.to_str().unwrap().to_string().expand_placeholders(path)?.into();
+        let to = PathBuf::from(to.to_str().unwrap().to_string().expand_placeholders(path).unwrap());
+        let mut to = Cow::from(to);
         if r#type == Action::Copy || r#type == Action::Move {
             if !to.exists() {
-                fs::create_dir_all(&to)?;
+                fs::create_dir_all(&to).unwrap();
             }
-            to = to.join(&path.file_name().unwrap());
+            to.to_mut().push(&path.file_name().unwrap());
         }
-        if to.exists() {
-            if let Some(new_path) = to.update(&if_exists, &sep) {
-                to = new_path;
-            } else {
-                return Ok(None);
-            }
+        if to.exists() && to.update(&if_exists, &sep).is_err() {
+            return;
         }
         if r#type == Action::Copy {
-            std::fs::copy(&path, &to)?;
+            std::fs::copy(&path, &to).unwrap();
         } else if r#type == Action::Rename || r#type == Action::Move {
-            std::fs::rename(&path, &to)?;
+            std::fs::rename(&path, &to).unwrap();
         }
         logger.try_write(
-            Level::Info,
-            r#type,
+            &Level::Info,
+            &r#type,
             &format!("{} -> {}", &path.display(), &to.display()),
         );
-        Ok(Some(to))
+        if r#type == Action::Rename || r#type == Action::Move {
+            *path = to;
+        }
     }
 }
 
@@ -275,13 +264,14 @@ mod tests {
         },
         user_config::rules::actions::ConflictOption,
     };
+    use std::borrow::Cow;
 
     #[test]
     fn rename_with_rename_conflict() -> Result<()> {
-        let target = test_file_or_dir("test2.txt");
+        let mut target = Cow::from(test_file_or_dir("test2.txt"));
         let expected = expected_path(&target, &Default::default());
-        let new_path = target.update(&ConflictOption::Rename, &Default::default()).unwrap();
-        if new_path == expected {
+        target.update(&ConflictOption::Rename, &Default::default()).unwrap();
+        if target == expected {
             Ok(())
         } else {
             Err(Error::new(ErrorKind::Other, "filepath after rename is not as expected"))
@@ -290,10 +280,10 @@ mod tests {
 
     #[test]
     fn rename_with_overwrite_conflict() -> Result<()> {
-        let target = test_file_or_dir("test2.txt");
+        let mut target = Cow::from(test_file_or_dir("test2.txt"));
         let expected = target.clone();
-        let new_path = target.update(&ConflictOption::Overwrite, &Default::default()).unwrap();
-        if new_path == expected {
+        target.update(&ConflictOption::Overwrite, &Default::default()).unwrap();
+        if target == expected {
             Ok(())
         } else {
             Err(Error::new(ErrorKind::Other, "filepath after rename is not as expected"))
@@ -303,14 +293,14 @@ mod tests {
     #[test]
     #[should_panic] // unwrapping a None value
     fn rename_with_skip_conflict() {
-        let target = test_file_or_dir("test2.txt");
+        let mut target = Cow::from(test_file_or_dir("test2.txt"));
         target.update(&ConflictOption::Skip, &Default::default()).unwrap();
     }
 
     #[test]
     #[should_panic] // trying to modify a path that does not exist
     fn new_path_to_non_existing_file() {
-        let target = test_file_or_dir("test_dir2").join("test1.txt");
+        let mut target = Cow::from(test_file_or_dir("test_dir2").join("test1.txt"));
         #[cfg(debug_assertions)]
         debug_assert!(!target.exists());
         target.update(&ConflictOption::Rename, &Default::default()).unwrap();

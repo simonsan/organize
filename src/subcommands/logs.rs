@@ -93,13 +93,13 @@ impl Logger {
         }
     }
 
-    pub fn try_write(&mut self, level: Level, action: Action, msg: &str) {
+    pub fn try_write(&mut self, level: &Level, action: &Action, msg: &str) {
         if let Err(e) = self.write(level, action, msg) {
             eprintln!("could not write to file: {}", e);
         }
     }
 
-    pub fn write(&mut self, level: Level, action: Action, msg: &str) -> Result<()> {
+    pub fn write(&mut self, level: &Level, action: &Action, msg: &str) -> Result<()> {
         let datetime = Local::now();
         let level = level.to_string().to_uppercase();
         let file = OpenOptions::new().append(true).open(&self.path)?;
