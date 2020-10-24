@@ -1,15 +1,12 @@
+use crate::CONFIG;
 use std::{fs, io::Result, path::Path};
 
 use dialoguer::{theme::ColorfulTheme, Select};
 
-use crate::{
-    path::MatchesFilters,
-    user_config::{rules::actions::ConflictOption, UserConfig},
-};
+use crate::{path::MatchesFilters, user_config::rules::actions::ConflictOption};
 
 pub fn run() -> Result<()> {
-    let config = UserConfig::new()?;
-    let path2rules = config.to_map();
+    let path2rules = CONFIG.to_map();
 
     for (path, rules) in path2rules.iter() {
         let files = fs::read_dir(&path)?;

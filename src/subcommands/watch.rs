@@ -8,25 +8,22 @@ use colored::Colorize;
 use notify::{op, raw_watcher, RawEvent, RecommendedWatcher, RecursiveMode, Watcher as OtherWatcher};
 
 use crate::{
-    lock_file::LockFile,
     path::MatchesFilters,
     subcommands::run::run,
     user_config::{rules::folder::Options, UserConfig},
-    MATCHES,
+    CONFIG, LOCK_FILE, MATCHES,
 };
 use sysinfo::{ProcessExt, RefreshKind, Signal, System, SystemExt};
 
 pub fn watch() -> Result<()> {
-    let lock_file = LockFile::new()?;
-
     // REPLACE
     if MATCHES.subcommand().unwrap().1.is_present("replace") {
         Daemon::replace()?;
     } else {
         let path = UserConfig::path();
-        if lock_file.get_running_watchers().is_empty() {
+        if LOCK_FILE.get_running_watchers().is_empty() {
             run()?;
-            lock_file.append(process::id() as i32, &path)?;
+            LOCK_FILE.append(process::id() as i32, &path)?;
             let mut watcher = Watcher::new();
             watcher.run()?;
         } else if path == UserConfig::default_path() {
@@ -60,8 +57,7 @@ impl Watcher {
     }
 
     pub fn run(&mut self) -> Result<()> {
-        let config = UserConfig::new()?;
-        for rule in config.rules.iter() {
+        for rule in CONFIG.rules.iter() {
             for folder in rule.folders.iter() {
                 let is_recursive = if folder.options.recursive {
                     RecursiveMode::Recursive
@@ -73,7 +69,7 @@ impl Watcher {
         }
 
         // PROCESS SIGNALS
-        let path2rules = config.to_map();
+        let path2rules = CONFIG.to_map();
         loop {
             if let Ok(RawEvent {
                 path: Some(path),
@@ -110,9 +106,7 @@ pub(crate) struct Daemon;
 
 impl Daemon {
     pub fn replace() -> Result<()> {
-        let path = UserConfig::path();
-        let lock_file = LockFile::new()?;
-        match lock_file.get_process_by_path(&path) {
+        match LOCK_FILE.get_process_by_path(&CONFIG.path) {
             Some(pid) => {
                 {
                     // force sys to go out of scope before watch() is run
@@ -123,7 +117,7 @@ impl Daemon {
             }
             None => {
                 // there is no running process
-                if path == UserConfig::default_path() {
+                if CONFIG.path == UserConfig::default_path() {
                     println!(
                         "{}",
                         "No instance was found running with the default configuration.".bold()
@@ -132,7 +126,7 @@ impl Daemon {
                     println!(
                         "{} ({})",
                         "No instance was found running with the desired configuration".bold(),
-                        path.display().to_string().underline()
+                        CONFIG.path.display().to_string().underline()
                     );
                 };
                 Ok(())

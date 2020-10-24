@@ -1,4 +1,4 @@
-use crate::{path::Expandable, user_config::rules::rule::Rule, MATCHES};
+use crate::{path::Expandable, user_config::rules::rule::Rule, ARGS};
 use clap::{crate_name, load_yaml};
 use dirs::home_dir;
 use serde::Deserialize;
@@ -32,14 +32,14 @@ impl UserConfig {
     /// ### Errors
     /// This constructor fails in the following cases:
     /// - The configuration file does not exist
-    pub fn new() -> Result<Self> {
+    pub fn new() -> Self {
         let path = UserConfig::path();
 
         if !path.exists() {
-            Self::create(&path)?;
+            Self::create(&path);
         }
 
-        let content = fs::read_to_string(&path)?;
+        let content = fs::read_to_string(&path).unwrap();
         let mut config: UserConfig = serde_yaml::from_str(&content).expect("could not parse config file");
         config.path = path;
         for (i, rule) in config.rules.iter().enumerate() {
@@ -51,41 +51,32 @@ impl UserConfig {
                 )
             }
         }
-
-        Ok(config)
+        config
     }
 
-    pub fn create(path: &Path) -> Result<()> {
+    pub fn create(path: &Path) {
+        debug_assert!(!path.exists());
         // safe unwrap, dir is created at $HOME or $UserProfile%,
         // so it exists and the user must have permissions
-        if path.exists() {
-            return Err(Error::new(
-                ErrorKind::AlreadyExists,
-                format!(
-                    "{} already exists in this directory",
-                    path.file_name().unwrap().to_str().unwrap()
-                ),
-            ));
-        }
         match path.parent() {
             Some(parent) => {
                 if !parent.exists() {
-                    std::fs::create_dir_all(path.parent().unwrap())?;
+                    std::fs::create_dir_all(parent)
+                        .unwrap_or_else(|_| panic!("error: could not create config directory ({})", parent.display()));
                 }
                 let config = load_yaml!("../../examples/config.yml");
                 let mut output = String::new();
                 let mut emitter = YamlEmitter::new(&mut output);
-                emitter.dump(config).expect("ERROR: could not create starter config");
-                std::fs::write(path, output)?;
+                emitter.dump(config).expect("error: example config contains problems");
+                std::fs::write(path, output)
+                    .unwrap_or_else(|_| panic!("error: could not create config file ({})", path.display()));
             }
-            None => panic!("home directory's parent folder should be defined"),
+            None => panic!("config file's parent folder should be defined"),
         }
-        Ok(())
     }
 
     pub fn path() -> PathBuf {
-        let args = MATCHES.subcommand().unwrap().1;
-        match args.value_of("config") {
+        match ARGS.value_of("config") {
             Some(path) => PathBuf::from(path).expand_user().expand_vars().canonicalize().unwrap(),
             None => Self::default_path(),
         }

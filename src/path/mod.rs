@@ -67,8 +67,15 @@ impl MatchesFilters for PathBuf {
         true
     }
 
+    #[cfg(any(target_os = "linux", target_os = "macos"))]
     fn is_hidden(&self) -> bool {
         self.file_name().unwrap().to_str().unwrap().starts_with('.')
+    }
+
+    #[cfg(target_os = "windows")]
+    fn is_hidden(&self) -> bool {
+        // must use winapi
+        unimplemented!()
     }
 }
 

@@ -1,16 +1,15 @@
 use crate::{
     user_config::{rules::folder::Options, UserConfig},
-    MATCHES,
+    ARGS, CONFIG,
 };
 use clap::crate_name;
 use colored::Colorize;
 use std::{env, ffi::OsString, io::Result, path::PathBuf, process};
 
 pub fn config() -> Result<()> {
-    let args = MATCHES.subcommand().unwrap().1;
-    if args.is_present("show_path") {
-        println!("{}", UserConfig::path().display());
-    } else if args.is_present("show_defaults") {
+    if ARGS.is_present("show_path") {
+        println!("{}", CONFIG.path.display());
+    } else if ARGS.is_present("show_defaults") {
         let Options {
             recursive,
             watch,
@@ -21,9 +20,9 @@ pub fn config() -> Result<()> {
         println!("watch: {}", watch.to_string().purple());
         println!("hidden_files: {}", hidden_files.to_string().purple());
         println!("ignored_directories: {:?}", ignore);
-    } else if args.is_present("new") {
+    } else if ARGS.is_present("new") {
         let config_file = env::current_dir()?.join(format!("{}.yml", crate_name!()));
-        UserConfig::create(&config_file)?;
+        UserConfig::create(&config_file);
         println!("New config file created at {}", config_file.display());
     } else {
         edit(UserConfig::path())?;

@@ -16,7 +16,7 @@ pub struct LockFile {
 }
 
 impl LockFile {
-    pub fn new() -> Result<Self> {
+    pub fn new() -> Self {
         let path = UserConfig::dir().join(format!("{}.lock", crate_name!()));
         if !path.exists() {
             File::create(&path).expect("could not create lock file");
@@ -26,6 +26,8 @@ impl LockFile {
             sep: "---".into(),
         };
         f.clear_dead_processes()
+            .expect("error: could not modify lock file (permission error?)");
+        f
     }
 
     fn section(&self, pid: &Pid, config: &Path) -> String {
@@ -78,7 +80,7 @@ impl LockFile {
         }
     }
 
-    fn clear_dead_processes(self) -> Result<Self> {
+    fn clear_dead_processes(&self) -> Result<()> {
         self.set_readonly(false)?;
         let mut running_processes = String::new();
         let sys = System::new_with_specifics(RefreshKind::with_processes(RefreshKind::new()));
@@ -92,7 +94,7 @@ impl LockFile {
         }
         fs::write(&self.path, running_processes)?;
         self.set_readonly(true)?;
-        Ok(self)
+        Ok(())
     }
 
     pub fn get_process_by_path(&self, path: &Path) -> Option<Pid> {

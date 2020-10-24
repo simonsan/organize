@@ -1,6 +1,6 @@
 use crate::{
     user_config::{rules::actions::Action, UserConfig},
-    MATCHES,
+    ARGS,
 };
 use chrono::prelude::Local;
 use colored::{ColoredString, Colorize};
@@ -16,8 +16,7 @@ use std::{
 
 pub fn logs() -> Result<()> {
     let logger = Logger::default();
-    let args = MATCHES.subcommand().unwrap().1;
-    if args.is_present("clear") {
+    if ARGS.is_present("clear") {
         logger.delete()
     } else {
         logger.show_logs()

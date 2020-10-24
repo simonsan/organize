@@ -1,11 +1,10 @@
-use crate::{lock_file::LockFile, user_config::UserConfig, MATCHES};
+use crate::{user_config::UserConfig, LOCK_FILE, MATCHES};
 use clap::crate_name;
 use std::io::Result;
 use sysinfo::{ProcessExt, RefreshKind, Signal, System, SystemExt};
 
 pub fn stop() -> Result<()> {
-    let lock_file = LockFile::new()?;
-    let watchers = lock_file.get_running_watchers();
+    let watchers = LOCK_FILE.get_running_watchers();
 
     if watchers.is_empty() {
         println!("No instance was found running.");
@@ -17,7 +16,7 @@ pub fn stop() -> Result<()> {
             }
         } else {
             let path = UserConfig::path();
-            match lock_file.get_process_by_path(&path) {
+            match LOCK_FILE.get_process_by_path(&path) {
                 Some(pid) => {
                     sys.get_process(pid).unwrap().kill(Signal::Kill);
                 }

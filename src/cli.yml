@@ -19,14 +19,14 @@ subcommands:
         - show_path:
             long: show-path
             help: Shows the default configuration path
-            conflicts_with: new
+            exclusive: true
         - new:
             long: new
-            conflicts_with: show_defaults
             help: create a new config file in the current directory
+            exclusive: true
         - show_defaults:
             long: show-defaults
-            conflicts_with: show_path
+            exclusive: true
   - watch:
       about: Watch for changes and apply rules
       args:
