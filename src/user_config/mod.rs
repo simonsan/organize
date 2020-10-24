@@ -5,7 +5,6 @@ use serde::Deserialize;
 use std::{
     collections::HashMap,
     fs,
-    io::{Error, ErrorKind, Result},
     path::{Path, PathBuf},
 };
 use yaml_rust::YamlEmitter;
