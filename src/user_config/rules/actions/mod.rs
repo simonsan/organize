@@ -1,17 +1,27 @@
+pub mod file_action;
+
 use super::deserialize::deserialize_path;
 use crate::{
-    path::Update,
+    path::{Expandable, Update},
     string::Placeholder,
     subcommands::logs::{Level, Logger},
     user_config::UserConfig,
 };
-use serde::{Deserialize, Serialize};
+use file_action::{optional_string_or_struct, FileAction};
+use serde::{
+    de,
+    de::{MapAccess, Unexpected, Visitor},
+    export::{Formatter, PhantomData},
+    Deserialize, Deserializer, Serialize,
+};
 use std::{
     borrow::Cow,
-    fs,
+    fmt, fs,
     io::{Error, ErrorKind, Result},
     path::{Path, PathBuf},
     process::{Command, Stdio},
+    result,
+    str::FromStr,
 };
 
 #[derive(Debug, Clone, Deserialize, Serialize, Eq, PartialEq)]
@@ -73,24 +83,17 @@ impl ToString for Action {
     }
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize, Eq, PartialEq)]
-pub struct FileAction {
-    #[serde(deserialize_with = "deserialize_path")]
-    pub to: PathBuf,
-    #[serde(default)]
-    pub if_exists: ConflictOption,
-    #[serde(default)]
-    pub sep: Sep,
-}
-
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
 pub struct Actions {
     pub echo: Option<String>,
     pub shell: Option<String>,
     pub python: Option<String>,
     pub delete: Option<bool>,
+    #[serde(deserialize_with = "optional_string_or_struct", default)]
     pub copy: Option<FileAction>,
+    #[serde(deserialize_with = "optional_string_or_struct", default)]
     pub r#move: Option<FileAction>,
+    #[serde(deserialize_with = "optional_string_or_struct", default)]
     pub rename: Option<FileAction>,
 }
 
