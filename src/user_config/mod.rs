@@ -1,13 +1,17 @@
-use crate::{path::Expandable, user_config::rules::rule::Rule, ARGS};
-use clap::{crate_name, load_yaml};
+use crate::{
+    path::{Expandable, Update},
+    user_config::rules::{actions::ConflictOption, rule::Rule},
+    ARGS,
+};
+use clap::crate_name;
 use dirs::home_dir;
 use serde::Deserialize;
 use std::{
+    borrow::Cow,
     collections::HashMap,
     fs,
     path::{Path, PathBuf},
 };
-use yaml_rust::YamlEmitter;
 
 pub mod rules;
 
@@ -15,7 +19,7 @@ pub mod rules;
 /// ### Fields
 /// * `path`: the path the user's config, either the default one or some other passed with the --with-config argument
 /// * `rules`: a list of parsed rules defined by the user
-#[derive(Deserialize, Clone, Debug)]
+#[derive(Deserialize, Clone, Debug, Default)]
 pub struct UserConfig {
     pub rules: Vec<Rule>,
     #[serde(skip)]
@@ -54,21 +58,20 @@ impl UserConfig {
     }
 
     pub fn create(path: &Path) {
-        debug_assert!(!path.exists());
-        // safe unwrap, dir is created at $HOME or $UserProfile%,
-        // so it exists and the user must have permissions
+        let mut path = Cow::from(path);
+        if path.exists() {
+            path.update(&ConflictOption::Rename, &Default::default()).unwrap(); // safe unwrap (can only return an error if if_exists == Skip)
+        }
         match path.parent() {
             Some(parent) => {
                 if !parent.exists() {
                     std::fs::create_dir_all(parent)
                         .unwrap_or_else(|_| panic!("error: could not create config directory ({})", parent.display()));
                 }
-                let config = load_yaml!("../../examples/config.yml");
-                let mut output = String::new();
-                let mut emitter = YamlEmitter::new(&mut output);
-                emitter.dump(config).expect("error: example config contains problems");
-                std::fs::write(path, output)
+                let output = include_str!("../../examples/config.yml");
+                std::fs::write(&path, output)
                     .unwrap_or_else(|_| panic!("error: could not create config file ({})", path.display()));
+                println!("New config file created at {}", path.display());
             }
             None => panic!("config file's parent folder should be defined"),
         }

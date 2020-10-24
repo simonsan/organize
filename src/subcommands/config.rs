@@ -23,7 +23,6 @@ pub fn config() -> Result<()> {
     } else if ARGS.is_present("new") {
         let config_file = env::current_dir()?.join(format!("{}.yml", crate_name!()));
         UserConfig::create(&config_file);
-        println!("New config file created at {}", config_file.display());
     } else {
         edit(UserConfig::path())?;
     }

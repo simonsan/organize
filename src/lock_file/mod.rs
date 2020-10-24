@@ -10,6 +10,7 @@ use std::{
 };
 use sysinfo::{Pid, RefreshKind, System, SystemExt};
 
+#[derive(Default)]
 pub struct LockFile {
     path: PathBuf,
     sep: String,

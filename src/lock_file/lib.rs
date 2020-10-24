@@ -10,7 +10,7 @@ mod tests {
 
     fn stop() {
         let sys = System::new_with_specifics(RefreshKind::with_processes(RefreshKind::new()));
-        let lock_file = LockFile::new().unwrap();
+        let lock_file = LockFile::new();
         let watchers = lock_file.get_running_watchers();
         for (pid, _) in watchers.iter() {
             sys.get_process(*pid).unwrap().kill(Signal::Kill);
@@ -21,7 +21,7 @@ mod tests {
         let pid = 1000000000i32;
         let sys = System::new_with_specifics(RefreshKind::with_processes(RefreshKind::new()));
         assert!(sys.get_process(pid).is_none());
-        let lock_file = LockFile::new().unwrap();
+        let lock_file = LockFile::new();
         let path = UserConfig::default_path();
         lock_file.append(pid.try_into().unwrap(), &path).unwrap();
     }
@@ -30,7 +30,7 @@ mod tests {
     fn clear_dead_processes() -> Result<()> {
         stop();
         simulate_watch();
-        let lock_file = LockFile::new()?;
+        let lock_file = LockFile::new();
         let content = fs::read_to_string(&lock_file.path).expect("couldnt read lockfile");
         if content.is_empty() {
             Ok(())
