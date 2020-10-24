@@ -13,6 +13,7 @@ use crate::{
     user_config::{rules::folder::Options, UserConfig},
     CONFIG, LOCK_FILE, MATCHES,
 };
+use std::collections::HashSet;
 use sysinfo::{ProcessExt, RefreshKind, Signal, System, SystemExt};
 
 pub fn watch() -> Result<()> {
@@ -57,17 +58,22 @@ impl Watcher {
     }
 
     pub fn run(&mut self) -> Result<()> {
+        let mut folders = HashSet::new();
         for rule in CONFIG.rules.iter() {
             for folder in rule.folders.iter() {
-                let is_recursive = if folder.options.recursive {
-                    RecursiveMode::Recursive
-                } else {
-                    RecursiveMode::NonRecursive
-                };
-                self.watcher.watch(&folder.path, is_recursive).unwrap();
+                let recursive = &folder.options.recursive;
+                let path = &folder.path;
+                folders.insert((path, recursive));
             }
         }
-
+        for (path, recursive) in folders {
+            let is_recursive = if *recursive {
+                RecursiveMode::Recursive
+            } else {
+                RecursiveMode::NonRecursive
+            };
+            self.watcher.watch(path, is_recursive).unwrap();
+        }
         // PROCESS SIGNALS
         let path2rules = CONFIG.to_map();
         loop {
