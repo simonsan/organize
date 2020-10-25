@@ -1,27 +1,19 @@
 pub mod file_action;
 
-use super::deserialize::deserialize_path;
 use crate::{
-    path::{Expandable, Update},
+    path::Update,
     string::Placeholder,
     subcommands::logs::{Level, Logger},
     user_config::UserConfig,
 };
 use file_action::{optional_string_or_struct, FileAction};
-use serde::{
-    de,
-    de::{MapAccess, Unexpected, Visitor},
-    export::{Formatter, PhantomData},
-    Deserialize, Deserializer, Serialize,
-};
+use serde::{Deserialize, Serialize};
 use std::{
     borrow::Cow,
-    fmt, fs,
+    fs,
     io::{Error, ErrorKind, Result},
     path::{Path, PathBuf},
     process::{Command, Stdio},
-    result,
-    str::FromStr,
 };
 
 #[derive(Debug, Clone, Deserialize, Serialize, Eq, PartialEq)]

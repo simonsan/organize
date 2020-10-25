@@ -7,7 +7,7 @@ use crate::{
 };
 use serde::{
     de,
-    de::{MapAccess, Unexpected, Visitor},
+    de::{MapAccess, Visitor},
     export,
     export::{fmt, PhantomData},
     Deserialize, Deserializer, Serialize,

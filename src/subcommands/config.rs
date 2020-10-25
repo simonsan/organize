@@ -44,15 +44,8 @@ fn edit(path: PathBuf) -> Result<()> {
 }
 
 fn get_default_editor() -> OsString {
-    if let Some(prog) = env::var_os("VISUAL") {
-        return prog;
-    }
-    if let Some(prog) = env::var_os("EDITOR") {
-        return prog;
-    }
-    if cfg!(windows) {
-        "notepad.exe".into()
-    } else {
-        "vi".into()
+    match env::var_os("EDITOR") {
+        Some(prog) => prog,
+        None => panic!("Could not find any EDITOR environment variable or it's not properly set"),
     }
 }
