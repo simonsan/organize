@@ -1,5 +1,5 @@
 use crate::user_config::rules::{
-    actions::{file_action::FileAction, Action},
+    actions::{Action, FileAction},
     deserialize::string_or_struct,
 };
 use serde::{Deserialize, Serialize};
