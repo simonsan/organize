@@ -1,17 +1,27 @@
+pub mod copy;
+pub mod delete;
+pub mod echo;
 pub mod file_action;
+pub mod r#move;
+pub mod python;
+pub mod rename;
+pub mod shell;
 
 use crate::{
-    path::Update,
     string::Placeholder,
-    subcommands::logs::{Level, Logger},
-    user_config::UserConfig,
+    user_config::{
+        rules::actions::{
+            copy::Copy, delete::Delete, echo::Echo, python::Python, r#move::Move, rename::Rename, shell::Shell,
+        },
+        UserConfig,
+    },
 };
-use file_action::{optional_string_or_struct, FileAction};
 use serde::{Deserialize, Serialize};
 use std::{
     borrow::Cow,
     fs,
-    io::{Error, ErrorKind, Result},
+    io::Result,
+    ops::Deref,
     path::{Path, PathBuf},
     process::{Command, Stdio},
 };
@@ -37,8 +47,8 @@ pub enum Action {
     Rename,
     Copy,
     Delete,
-    Trash,
     Echo,
+    Trash,
     Shell,
     Python,
 }
@@ -76,129 +86,18 @@ impl ToString for Action {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
-pub struct Actions {
-    pub echo: Option<String>,
-    pub shell: Option<String>,
-    pub python: Option<String>,
-    pub delete: Option<bool>,
-    #[serde(deserialize_with = "optional_string_or_struct", default)]
-    pub copy: Option<FileAction>,
-    #[serde(deserialize_with = "optional_string_or_struct", default)]
-    pub r#move: Option<FileAction>,
-    #[serde(deserialize_with = "optional_string_or_struct", default)]
-    pub rename: Option<FileAction>,
+pub struct Script(String);
+
+impl Deref for Script {
+    type Target = String;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
 }
 
-impl Actions {
-    pub fn run(&self, path: PathBuf) {
-        let mut path = Cow::from(path);
-        if self.echo.is_some() {
-            if let Err(e) = self.echo(&path) {
-                eprintln!("error: {}", e.to_string());
-                return;
-            }
-        }
-        if self.python.is_some() {
-            if let Err(e) = self.python(&path) {
-                eprintln!("error: {}", e.to_string());
-                return;
-            }
-        }
-        if self.shell.is_some() {
-            if let Err(e) = self.shell(&path) {
-                eprintln!("error: {}", e.to_string());
-                return;
-            }
-        }
-        if self.copy.is_some() {
-            if let Err(e) = self.copy(&mut path) {
-                eprintln!("error: {}", e.to_string());
-                return;
-            }
-        }
-        if self.r#move.is_some() ^ self.rename.is_some() {
-            let result = if self.r#move.is_some() {
-                self.r#move(&mut path)
-            } else {
-                self.rename(&mut path)
-            };
-            if let Err(e) = result {
-                eprintln!("error: {}", e.to_string());
-                return;
-            }
-        }
-        if self.delete.is_some() && self.delete.unwrap() {
-            if let Err(e) = self.delete(&path) {
-                eprintln!("error: {}", e.to_string());
-                return;
-            }
-        }
-    }
-
-    fn delete(&self, path: &Path) -> Result<()> {
-        fs::remove_file(path)
-    }
-
-    fn copy(&self, path: &mut Cow<Path>) -> Result<()> {
-        debug_assert!(self.copy.is_some());
-        let copy = self.copy.as_ref().unwrap();
-        Self::helper(path, &copy.to, &copy.if_exists, &copy.sep, Action::Copy)
-    }
-
-    fn rename(&self, path: &mut Cow<Path>) -> Result<()> {
-        debug_assert!(self.rename.is_some());
-        let rename = self.rename.as_ref().unwrap();
-        Self::helper(path, &rename.to, &rename.if_exists, &rename.sep, Action::Rename)
-    }
-
-    fn r#move(&self, path: &mut Cow<Path>) -> Result<()> {
-        debug_assert!(self.r#move.is_some());
-        let r#move = self.r#move.as_ref().unwrap();
-        Self::helper(path, &r#move.to, &r#move.if_exists, &r#move.sep, Action::Move)
-    }
-
-    fn echo(&self, path: &Path) -> Result<()> {
-        debug_assert!(self.echo.is_some());
-        let echo = self.echo.as_ref().unwrap();
-        println!("{}", echo.expand_placeholders(path)?);
-        Ok(())
-    }
-
-    fn shell(&self, path: &Path) -> Result<()> {
-        debug_assert!(self.shell.is_some());
-        let shell = self.shell.as_ref().unwrap();
-        let script = Self::write_script(shell, path)?;
-        let output = Command::new("sh")
-            .arg(&script)
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()
-            .expect("could not run shell script")
-            .wait_with_output()
-            .expect("shell script terminated with an error");
-        fs::remove_file(script)?;
-        println!("{}", String::from_utf8_lossy(&output.stdout));
-        Ok(())
-    }
-
-    fn python(&self, path: &Path) -> Result<()> {
-        debug_assert!(self.python.is_some());
-        let python = self.python.as_ref().unwrap();
-        let script = Self::write_script(python, path)?;
-        let output = Command::new("python")
-            .arg(&script)
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()
-            .expect("could not run shell script")
-            .wait_with_output()
-            .expect("shell script terminated with an error");
-        println!("{}", String::from_utf8_lossy(&output.stdout));
-        fs::remove_file(script)?;
-        Ok(())
-    }
-
-    fn write_script(content: &str, path: &Path) -> Result<PathBuf> {
+impl Script {
+    pub(super) fn write(content: &str, path: &Path) -> Result<PathBuf> {
         let dir = UserConfig::dir().join("scripts");
         if !dir.exists() {
             fs::create_dir_all(&dir)?;
@@ -209,50 +108,80 @@ impl Actions {
         Ok(script)
     }
 
-    /// Helper function for the move, rename and copy actions.
-    /// # Args:
-    /// - `path`: a reference to a Cow smart pointer containing the original file
-    /// - `to`: the destination path of `path`
-    /// - `if_exists`: variable that helps resolve any naming conflicts between `path` and `to`
-    /// - `sep`: counter separator (e.g. in "file (1).test", `sep` would be a whitespace; in "file-(1).test", it would be a hyphen)
-    /// - `type`: whether this helper should move, rename or copy the given file (`path`)
-    fn helper(path: &mut Cow<Path>, to: &Path, if_exists: &ConflictOption, sep: &Sep, r#type: Action) -> Result<()> {
-        #[cfg(debug_assertions)]
-        debug_assert!(r#type == Action::Move || r#type == Action::Rename || r#type == Action::Copy);
-
-        let mut logger = Logger::default();
-        let to = PathBuf::from(to.to_str().unwrap().to_string().expand_placeholders(path).unwrap());
-        let mut to = Cow::from(to);
-        if r#type == Action::Copy || r#type == Action::Move {
-            if !to.exists() {
-                fs::create_dir_all(&to)?;
-            }
-            to.to_mut().push(
-                path.file_name()
-                    .ok_or_else(|| Error::new(ErrorKind::Other, "path has no filename"))?,
-            );
-        }
-
-        if to.exists() && to.update(&if_exists, &sep).is_err() {
-            return Ok(());
-        }
-
-        if r#type == Action::Copy {
-            std::fs::copy(&path, &to)?;
-        } else if r#type == Action::Rename || r#type == Action::Move {
-            std::fs::rename(&path, &to)?;
-        }
-
-        logger.try_write(
-            &Level::Info,
-            &r#type,
-            &format!("{} -> {}", &path.display(), &to.display()),
-        );
-
-        if r#type == Action::Rename || r#type == Action::Move {
-            *path = to;
-        }
+    pub(super) fn run(&self, path: &Path, program: &str) -> Result<()> {
+        let content = self.deref();
+        let script = Script::write(content, path)?;
+        let output = Command::new(program)
+            .arg(&script)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("could not run script")
+            .wait_with_output()
+            .expect("script terminated with an error");
+        println!("{}", String::from_utf8_lossy(&output.stdout));
+        fs::remove_file(script)?;
         Ok(())
+    }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+pub struct Actions {
+    pub echo: Option<Echo>,
+    pub shell: Option<Shell>,
+    pub python: Option<Python>,
+    pub delete: Option<Delete>,
+    pub copy: Option<Copy>,
+    pub r#move: Option<Move>,
+    pub rename: Option<Rename>,
+}
+
+impl Actions {
+    pub fn run(&self, path: PathBuf) {
+        let mut path = Cow::from(path);
+        if let Some(echo) = &self.echo {
+            if let Err(e) = echo.run(&path) {
+                eprintln!("error: {}", e.to_string());
+                return;
+            }
+        }
+        if let Some(python) = &self.python {
+            if let Err(e) = python.run(&path) {
+                eprintln!("error: {}", e.to_string());
+                return;
+            }
+        }
+        if let Some(shell) = &self.shell {
+            if let Err(e) = shell.run(&path) {
+                eprintln!("error: {}", e.to_string());
+                return;
+            }
+        }
+        if let Some(copy) = &self.copy {
+            if let Err(e) = copy.run(&mut path) {
+                eprintln!("error: {}", e.to_string());
+                return;
+            }
+        }
+        if self.r#move.is_some() ^ self.rename.is_some() {
+            let result = if let Some(r#move) = &self.r#move {
+                r#move.run(&mut path)
+            } else {
+                self.rename.as_ref().unwrap().run(&mut path)
+            };
+            if let Err(e) = result {
+                eprintln!("error: {}", e.to_string());
+                return;
+            }
+        }
+        if let Some(delete) = &self.delete {
+            if *delete.deref() {
+                if let Err(e) = delete.run(&path) {
+                    eprintln!("error: {}", e.to_string());
+                    return;
+                }
+            }
+        }
     }
 }
 

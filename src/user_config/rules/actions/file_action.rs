@@ -1,20 +1,23 @@
 use crate::{
-    path::Expandable,
+    path::{Expandable, Update},
+    string::Placeholder,
+    subcommands::logs::{Level, Logger},
     user_config::rules::{
-        actions::{ConflictOption, Sep},
+        actions::{Action, ConflictOption, Sep},
         deserialize::deserialize_path,
     },
 };
-use serde::{
-    de,
-    de::{MapAccess, Visitor},
-    export,
-    export::{fmt, PhantomData},
-    Deserialize, Deserializer, Serialize,
+use serde::{Deserialize, Serialize};
+use std::{
+    borrow::Cow,
+    fs,
+    io::{Error, ErrorKind, Result},
+    path::{Path, PathBuf},
+    result,
+    str::FromStr,
 };
-use std::{path::PathBuf, result, str::FromStr};
 
-#[derive(Debug, Clone, Deserialize, Serialize, Eq, PartialEq)]
+#[derive(Debug, Clone, Deserialize, Serialize, Eq, PartialEq, Default)]
 pub struct FileAction {
     #[serde(deserialize_with = "deserialize_path")]
     pub to: PathBuf,
@@ -43,68 +46,56 @@ impl FromStr for FileAction {
     }
 }
 
-// must always use with #[serde(default)]
-pub fn optional_string_or_struct<'de, T, D>(deserializer: D) -> result::Result<Option<T>, D::Error>
-where
-    T: Deserialize<'de> + FromStr<Err = ()>,
-    D: Deserializer<'de>,
-{
-    // This is a Visitor that forwards string types to T's `FromStr` impl and
-    // forwards map types to T's `Deserialize` impl. The `PhantomData` is to
-    // keep the compiler from complaining about T being an unused generic type
-    // parameter. We need T in order to know the Value type for the Visitor
-    // impl.
-    struct StringOrStruct<T>(PhantomData<fn() -> T>);
+impl FileAction {
+    /// Helper function for the move, rename and copy actions.
+    /// # Args:
+    /// - `path`: a reference to a Cow smart pointer containing the original file
+    /// - `to`: the destination path of `path`
+    /// - `if_exists`: variable that helps resolve any naming conflicts between `path` and `to`
+    /// - `sep`: counter separator (e.g. in "file (1).test", `sep` would be a whitespace; in "file-(1).test", it would be a hyphen)
+    /// - `type`: whether this helper should move, rename or copy the given file (`path`)
+    pub(super) fn helper(
+        path: &mut Cow<Path>,
+        to: &Path,
+        if_exists: &ConflictOption,
+        sep: &Sep,
+        r#type: Action,
+    ) -> Result<()> {
+        #[cfg(debug_assertions)]
+        debug_assert!(r#type == Action::Move || r#type == Action::Rename || r#type == Action::Copy);
 
-    impl<'de, T> Visitor<'de> for StringOrStruct<T>
-    where
-        T: Deserialize<'de> + FromStr<Err = ()>,
-    {
-        type Value = Option<T>;
-
-        fn expecting(&self, formatter: &mut export::Formatter) -> fmt::Result {
-            formatter.write_str("string or map")
-        }
-
-        fn visit_str<E>(self, value: &str) -> result::Result<Self::Value, E>
-        where
-            E: de::Error,
-        {
-            Ok(Some(T::from_str(value).unwrap()))
-        }
-
-        fn visit_none<E>(self) -> result::Result<Self::Value, E>
-        where
-            E: de::Error,
-        {
-            Ok(None)
-        }
-
-        fn visit_some<D>(self, deserializer: D) -> result::Result<Self::Value, <D as Deserializer<'de>>::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let action = T::deserialize(deserializer);
-            match action {
-                Ok(object) => Ok(Some(object)),
-                Err(e) => Err(e),
+        let mut logger = Logger::default();
+        let to = PathBuf::from(to.to_str().unwrap().to_string().expand_placeholders(path).unwrap());
+        let mut to = Cow::from(to);
+        if r#type == Action::Copy || r#type == Action::Move {
+            if !to.exists() {
+                fs::create_dir_all(&to)?;
             }
+            to.to_mut().push(
+                path.file_name()
+                    .ok_or_else(|| Error::new(ErrorKind::Other, "path has no filename"))?,
+            );
         }
 
-        fn visit_map<M>(self, map: M) -> result::Result<Self::Value, M::Error>
-        where
-            M: MapAccess<'de>,
-        {
-            // `MapAccessDeserializer` is a wrapper that turns a `MapAccess`
-            // into a `Deserializer`, allowing it to be used as the input to T's
-            // `Deserialize` implementation. T then deserializes itself using
-            // the entries from the map visitor.
-            Deserialize::deserialize(de::value::MapAccessDeserializer::new(map))
+        if to.exists() && to.update(&if_exists, &sep).is_err() {
+            return Ok(());
         }
-    }
 
-    match deserializer.deserialize_any(StringOrStruct(PhantomData)) {
-        Ok(d) => Ok(d),
-        Err(e) => Err(e),
+        if r#type == Action::Copy {
+            std::fs::copy(&path, &to)?;
+        } else if r#type == Action::Rename || r#type == Action::Move {
+            std::fs::rename(&path, &to)?;
+        }
+
+        logger.try_write(
+            &Level::Info,
+            &r#type,
+            &format!("{} -> {}", &path.display(), &to.display()),
+        );
+
+        if r#type == Action::Rename || r#type == Action::Move {
+            *path = to;
+        }
+        Ok(())
     }
 }
