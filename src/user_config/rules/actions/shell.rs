@@ -15,7 +15,6 @@ impl Deref for Shell {
 
 impl Shell {
     pub(super) fn run(&self, path: &Path) -> Result<()> {
-        let shell = self.deref();
-        shell.run(path, "sh")
+        self.deref().run(path, "sh")
     }
 }

@@ -18,7 +18,6 @@ impl Deref for Move {
 
 impl Move {
     pub(super) fn run(&self, path: &mut Cow<Path>) -> Result<()> {
-        let r#move = self.deref();
-        FileAction::helper(path, &r#move.to, &r#move.if_exists, &r#move.sep, ActionType::Move)
+        FileAction::helper(path, self.deref(), ActionType::Move)
     }
 }

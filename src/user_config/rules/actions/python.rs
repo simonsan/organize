@@ -15,7 +15,6 @@ impl Deref for Python {
 
 impl Python {
     pub(super) fn run(&self, path: &Path) -> Result<()> {
-        let python = self.deref();
-        python.run(path, "python")
+        self.deref().run(path, "python")
     }
 }

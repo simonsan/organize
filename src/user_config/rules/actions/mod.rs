@@ -149,7 +149,7 @@ impl Script {
         let extension = match program {
             "python" => "py",
             "sh" => "sh",
-            _ => panic!("unknown script language")
+            _ => panic!("unknown script language"),
         };
         let script = self.write(path, extension)?;
         let output = Command::new(program)
@@ -300,16 +300,22 @@ impl FileAction {
     /// - `type`: whether this helper should move, rename or copy the given file (`path`)
     pub(in crate::user_config::rules::actions) fn helper(
         path: &mut Cow<Path>,
-        to: &Path,
-        if_exists: &ConflictOption,
-        sep: &Sep,
+        action: &FileAction,
         r#type: ActionType,
     ) -> Result<()> {
         #[cfg(debug_assertions)]
         debug_assert!(r#type == ActionType::Move || r#type == ActionType::Rename || r#type == ActionType::Copy);
 
         let mut logger = Logger::default();
-        let to = PathBuf::from(to.to_str().unwrap().to_string().expand_placeholders(path).unwrap());
+        let to = PathBuf::from(
+            &action
+                .to
+                .to_str()
+                .unwrap()
+                .to_string()
+                .expand_placeholders(path)
+                .unwrap(),
+        );
         let mut to = Cow::from(to);
         if r#type == ActionType::Copy || r#type == ActionType::Move {
             if !to.exists() {
@@ -321,7 +327,7 @@ impl FileAction {
             );
         }
 
-        if to.exists() && to.update(&if_exists, &sep).is_err() {
+        if to.exists() && to.update(&action.if_exists, &action.sep).is_err() {
             return Ok(());
         }
 

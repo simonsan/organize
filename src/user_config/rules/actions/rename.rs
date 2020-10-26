@@ -18,7 +18,6 @@ impl Deref for Rename {
 
 impl Rename {
     pub(super) fn run(&self, path: &mut Cow<Path>) -> Result<()> {
-        let rename = self.deref();
-        FileAction::helper(path, &rename.to, &rename.if_exists, &rename.sep, ActionType::Rename)
+        FileAction::helper(path, self.deref(), ActionType::Rename)
     }
 }

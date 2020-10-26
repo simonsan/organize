@@ -18,7 +18,6 @@ impl Deref for Copy {
 
 impl Copy {
     pub(super) fn run(&self, path: &mut Cow<Path>) -> Result<()> {
-        let copy = self.deref();
-        FileAction::helper(path, &copy.to, &copy.if_exists, &copy.sep, ActionType::Copy)
+        FileAction::helper(path, self.deref(), ActionType::Copy)
     }
 }
