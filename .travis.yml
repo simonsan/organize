@@ -19,9 +19,11 @@ branches:
 cache: cargo
 
 matrix:
+  fast_finish: true
+  allow_failures:
+    - env: NAME='cargo-travis'
   include:
-    - rust: nightly-2018-01-12
-      before_script:
+    - before_script:
         - rustup component add rustfmt-preview
         - rustup component add clippy-preview
       script:
