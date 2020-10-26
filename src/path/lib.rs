@@ -11,7 +11,7 @@ pub mod vars {
         user_config::rules::actions::Sep,
     };
     use dirs::home_dir;
-    use std::path::Path;
+    use std::{ops::Deref, path::Path};
 
     pub fn project_dir() -> PathBuf {
         // 'cargo test' must be run from the project directory, where Cargo.toml is
@@ -31,7 +31,7 @@ pub mod vars {
     pub fn expected_path(file: &Path, sep: &Sep) -> PathBuf {
         let (stem, extension) = get_stem_and_extension(file);
         let parent = file.parent().unwrap();
-        parent.join(format!("{}{}(1).{}", stem, sep.as_str(), extension))
+        parent.join(format!("{}{}(1).{}", stem, sep.deref(), extension))
     }
 
     #[test]

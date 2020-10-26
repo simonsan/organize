@@ -37,15 +37,93 @@ use std::{
 #[derive(Debug, Clone, Deserialize, Serialize, Eq, PartialEq)]
 pub struct Sep(String);
 
+impl Deref for Sep {
+    type Target = String;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
 impl Default for Sep {
     fn default() -> Self {
         Self(" ".into())
     }
 }
 
-impl Sep {
-    pub fn as_str(&self) -> &str {
-        &self.0
+#[derive(Debug, Clone, Deserialize, Serialize, Eq, PartialEq, Default)]
+pub struct FileAction {
+    #[serde(deserialize_with = "deserialize_path")]
+    pub to: PathBuf,
+    #[serde(default)]
+    pub if_exists: ConflictOption,
+    #[serde(default)]
+    pub sep: Sep,
+}
+
+impl From<PathBuf> for FileAction {
+    fn from(path: PathBuf) -> Self {
+        Self {
+            to: path.expand_user().expand_vars(),
+            if_exists: Default::default(),
+            sep: Default::default(),
+        }
+    }
+}
+
+impl FromStr for FileAction {
+    type Err = ();
+
+    fn from_str(s: &str) -> result::Result<Self, Self::Err> {
+        let path = s.parse::<PathBuf>().unwrap();
+        Ok(Self::from(path))
+    }
+}
+
+impl FileAction {
+    /// Helper function for the move, rename and copy actions.
+    /// # Args:
+    /// - `path`: a reference to a Cow smart pointer containing the original file
+    /// - `to`: the destination path of `path`
+    /// - `if_exists`: variable that helps resolve any naming conflicts between `path` and `to`
+    /// - `sep`: counter separator (e.g. in "file (1).test", `sep` would be a whitespace; in "file-(1).test", it would be a hyphen)
+    /// - `type`: whether this helper should move, rename or copy the given file (`path`)
+    pub(super) fn helper(path: &mut Cow<Path>, action: &FileAction, kind: ActionType) -> Result<()> {
+        #[cfg(debug_assertions)]
+        debug_assert!(kind == ActionType::Move || kind == ActionType::Rename || kind == ActionType::Copy);
+
+        let mut logger = Logger::default();
+        let to = PathBuf::from(&action.to.to_str().unwrap().expand_placeholders(path).unwrap());
+        let mut to = Cow::from(to);
+        if kind == ActionType::Copy || kind == ActionType::Move {
+            if !to.exists() {
+                fs::create_dir_all(&to)?;
+            }
+            to.to_mut().push(
+                path.file_name()
+                    .ok_or_else(|| Error::new(ErrorKind::Other, "path has no filename"))?,
+            );
+        }
+
+        if to.exists() && to.update(&action.if_exists, &action.sep).is_err() {
+            return Ok(());
+        }
+
+        if kind == ActionType::Copy {
+            std::fs::copy(&path, &to)?;
+        } else if kind == ActionType::Rename || kind == ActionType::Move {
+            std::fs::rename(&path, &to)?;
+        }
+
+        logger.try_write(
+            &Level::Info,
+            &kind,
+            &format!("{} -> {}", &path.display(), &to.display()),
+        );
+
+        if kind == ActionType::Rename || kind == ActionType::Move {
+            *path = to;
+        }
+        Ok(())
     }
 }
 
@@ -87,22 +165,6 @@ pub enum ActionType {
     Rename,
     Shell,
     Trash,
-}
-
-impl From<&str> for ActionType {
-    fn from(str: &str) -> Self {
-        match str.to_lowercase().as_str() {
-            "move" => Self::Move,
-            "copy" => Self::Copy,
-            "rename" => Self::Rename,
-            "delete" => Self::Delete,
-            "trash" => Self::Trash,
-            "echo" => Self::Echo,
-            "shell" => Self::Shell,
-            "python" => Self::Python,
-            _ => panic!("unknown action"),
-        }
-    }
 }
 
 impl ToString for ActionType {
@@ -258,94 +320,5 @@ mod tests {
         #[cfg(debug_assertions)]
         debug_assert!(!target.exists());
         target.update(&ConflictOption::Rename, &Default::default()).unwrap();
-    }
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize, Eq, PartialEq, Default)]
-pub struct FileAction {
-    #[serde(deserialize_with = "deserialize_path")]
-    pub to: PathBuf,
-    #[serde(default)]
-    pub if_exists: ConflictOption,
-    #[serde(default)]
-    pub sep: Sep,
-}
-
-impl From<PathBuf> for FileAction {
-    fn from(path: PathBuf) -> Self {
-        Self {
-            to: path.expand_user().expand_vars(),
-            if_exists: Default::default(),
-            sep: Default::default(),
-        }
-    }
-}
-
-impl FromStr for FileAction {
-    type Err = ();
-
-    fn from_str(s: &str) -> result::Result<Self, Self::Err> {
-        let path = s.parse::<PathBuf>().unwrap();
-        Ok(Self::from(path))
-    }
-}
-
-impl FileAction {
-    /// Helper function for the move, rename and copy actions.
-    /// # Args:
-    /// - `path`: a reference to a Cow smart pointer containing the original file
-    /// - `to`: the destination path of `path`
-    /// - `if_exists`: variable that helps resolve any naming conflicts between `path` and `to`
-    /// - `sep`: counter separator (e.g. in "file (1).test", `sep` would be a whitespace; in "file-(1).test", it would be a hyphen)
-    /// - `type`: whether this helper should move, rename or copy the given file (`path`)
-    pub(in crate::user_config::rules::actions) fn helper(
-        path: &mut Cow<Path>,
-        action: &FileAction,
-        r#type: ActionType,
-    ) -> Result<()> {
-        #[cfg(debug_assertions)]
-        debug_assert!(r#type == ActionType::Move || r#type == ActionType::Rename || r#type == ActionType::Copy);
-
-        let mut logger = Logger::default();
-        let to = PathBuf::from(
-            &action
-                .to
-                .to_str()
-                .unwrap()
-                .to_string()
-                .expand_placeholders(path)
-                .unwrap(),
-        );
-        let mut to = Cow::from(to);
-        if r#type == ActionType::Copy || r#type == ActionType::Move {
-            if !to.exists() {
-                fs::create_dir_all(&to)?;
-            }
-            to.to_mut().push(
-                path.file_name()
-                    .ok_or_else(|| Error::new(ErrorKind::Other, "path has no filename"))?,
-            );
-        }
-
-        if to.exists() && to.update(&action.if_exists, &action.sep).is_err() {
-            return Ok(());
-        }
-
-        if r#type == ActionType::Copy {
-            std::fs::copy(&path, &to)?;
-        } else if r#type == ActionType::Rename || r#type == ActionType::Move {
-            std::fs::rename(&path, &to)?;
-        }
-
-        logger.try_write(
-            &Level::Info,
-            &r#type,
-            &format!("{} -> {}", &path.display(), &to.display()),
-        );
-
-        if r#type == ActionType::Rename || r#type == ActionType::Move {
-            *path = to;
-        }
-        Ok(())
     }
 }
