@@ -4,7 +4,7 @@ use crate::{
     ARGS,
 };
 use clap::crate_name;
-use dirs::home_dir;
+use dirs::{config_dir, home_dir};
 use serde::Deserialize;
 use std::{
     borrow::Cow,
@@ -75,14 +75,12 @@ impl UserConfig {
         }
     }
 
-    #[cfg(not(target_os = "windows"))]
     pub fn dir() -> PathBuf {
-        let dir = home_dir()
-            .expect("ERROR: cannot determine home directory")
-            .join(".config")
+        let dir = config_dir()
+            .expect("ERROR: cannot determine config directory")
             .join(crate_name!());
         if !dir.exists() {
-            fs::create_dir_all(&dir).expect("error: could not create config directory (permission denied)");
+            fs::create_dir_all(&dir).expect("error: could not create config directory");
         }
         dir
     }
