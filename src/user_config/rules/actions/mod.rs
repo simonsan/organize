@@ -5,6 +5,7 @@ pub mod r#move;
 pub mod python;
 pub mod rename;
 pub mod shell;
+pub mod trash;
 
 use crate::{
     path::{Expandable, Update},
@@ -14,6 +15,7 @@ use crate::{
         rules::{
             actions::{
                 copy::Copy, delete::Delete, echo::Echo, python::Python, r#move::Move, rename::Rename, shell::Shell,
+                trash::Trash,
             },
             deserialize::deserialize_path,
         },
@@ -31,6 +33,7 @@ use std::{
     result,
     str::FromStr,
 };
+use std::borrow::Borrow;
 
 #[derive(Debug, Clone, Deserialize, Serialize, Eq, PartialEq)]
 pub struct Sep(String);
@@ -57,32 +60,34 @@ pub enum Action {
     Delete(Delete),
     Python(Python),
     Echo(Echo),
+    Trash(Trash),
 }
 
 impl Action {
     pub fn run(&self, path: &mut Cow<Path>) -> Result<()> {
         match self {
-            Action::Move(r#move) => r#move.run(path),
             Action::Copy(copy) => copy.run(path),
+            Action::Delete(delete) => delete.run(path),
+            Action::Echo(echo) => echo.run(path),
+            Action::Move(r#move) => r#move.run(path),
+            Action::Python(python) => python.run(path),
             Action::Rename(rename) => rename.run(path),
             Action::Shell(shell) => shell.run(path),
-            Action::Delete(delete) => delete.run(path),
-            Action::Python(python) => python.run(path),
-            Action::Echo(echo) => echo.run(path),
+            Action::Trash(trash) => trash.run(path),
         }
     }
 }
 
 #[derive(Eq, PartialEq)]
 pub enum ActionType {
-    Move,
-    Rename,
     Copy,
     Delete,
     Echo,
-    Trash,
-    Shell,
+    Move,
     Python,
+    Rename,
+    Shell,
+    Trash,
 }
 
 impl From<&str> for ActionType {
