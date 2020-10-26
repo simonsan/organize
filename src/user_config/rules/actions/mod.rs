@@ -33,7 +33,6 @@ use std::{
     result,
     str::FromStr,
 };
-use std::borrow::Borrow;
 
 #[derive(Debug, Clone, Deserialize, Serialize, Eq, PartialEq)]
 pub struct Sep(String);
@@ -134,20 +133,25 @@ impl Deref for Script {
 }
 
 impl Script {
-    pub(super) fn write(content: &str, path: &Path) -> Result<PathBuf> {
+    pub(super) fn write(&self, path: &Path, extension: &str) -> Result<PathBuf> {
+        let content = self.deref().expand_placeholders(path)?;
         let dir = UserConfig::dir().join("scripts");
         if !dir.exists() {
             fs::create_dir_all(&dir)?;
         }
-        let script = dir.join("temp_script");
-        let content = content.expand_placeholders(path)?;
+        let mut script = dir.join("temp_script");
+        script.set_extension(extension);
         fs::write(&script, content)?;
         Ok(script)
     }
 
     pub(super) fn run(&self, path: &Path, program: &str) -> Result<()> {
-        let content = self.deref();
-        let script = Script::write(content, path)?;
+        let extension = match program {
+            "python" => "py",
+            "sh" => "sh",
+            _ => panic!("unknown script language")
+        };
+        let script = self.write(path, extension)?;
         let output = Command::new(program)
             .arg(&script)
             .stdout(Stdio::piped())
