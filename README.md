@@ -1,11 +1,12 @@
 ![Travis (.org) branch](https://img.shields.io/travis/cbr9/organize/alpha-2.0)
 ### Currently supported actions
 - Copy
-- Move XOR Rename (can't be both defined in the same rule)
+- Move 
+- Rename
 - Delete
-- Shell
-- Python
+- Script
 - Echo
+- Trash
 
 
 ### Currently supported filters

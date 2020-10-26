@@ -45,15 +45,6 @@ impl UserConfig {
         let content = fs::read_to_string(&path).unwrap();
         let mut config: UserConfig = serde_yaml::from_str(&content).expect("could not parse config file");
         config.path = path;
-        // for (i, rule) in config.rules.iter().enumerate() {
-        //     let action = &rule.actions;
-        //     if action.r#move.is_some() && action.rename.is_some() {
-        //         panic!(
-        //             "error: tried declaring both a `move` and `rename` action, which are incompatible (rule no. {})",
-        //             i
-        //         )
-        //     }
-        // }
         config
     }
 

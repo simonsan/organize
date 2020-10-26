@@ -21,6 +21,7 @@ pub fn watch() -> Result<()> {
     if MATCHES.subcommand().unwrap().1.is_present("replace") {
         Daemon::replace()?;
     } else {
+        // FIXME: currently two instances can't be launched because we're not checking whether or not the new one has the same config as the running one
         let path = UserConfig::path();
         if LOCK_FILE.get_running_watchers().is_empty() {
             run()?;
@@ -86,6 +87,7 @@ impl Watcher {
                 if let op::CREATE = op {
                     if path.is_file() {
                         let parent = path.parent().unwrap();
+                        // FIXME: if using recursive = true, this will panic, because the parent won't be a key in path2rules
                         'rules: for (rule, i) in path2rules.get(parent).unwrap() {
                             let folder = rule.folders.get(*i).unwrap();
                             let Options {
