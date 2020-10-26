@@ -1,5 +1,5 @@
 use crate::user_config::rules::{
-    actions::{Action, FileAction},
+    actions::{ActionType, FileAction},
     deserialize::string_or_struct,
 };
 use serde::{Deserialize, Serialize};
@@ -19,6 +19,6 @@ impl Deref for Copy {
 impl Copy {
     pub(super) fn run(&self, path: &mut Cow<Path>) -> Result<()> {
         let copy = self.deref();
-        FileAction::helper(path, &copy.to, &copy.if_exists, &copy.sep, Action::Copy)
+        FileAction::helper(path, &copy.to, &copy.if_exists, &copy.sep, ActionType::Copy)
     }
 }

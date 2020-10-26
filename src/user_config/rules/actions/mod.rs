@@ -47,8 +47,34 @@ impl Sep {
     }
 }
 
-#[derive(Eq, PartialEq)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all(serialize = "lowercase", deserialize = "lowercase"))]
 pub enum Action {
+    Move(Move),
+    Copy(Copy),
+    Rename(Rename),
+    Shell(Shell),
+    Delete(Delete),
+    Python(Python),
+    Echo(Echo),
+}
+
+impl Action {
+    pub fn run(&self, path: &mut Cow<Path>) -> Result<()> {
+        match self {
+            Action::Move(r#move) => r#move.run(path),
+            Action::Copy(copy) => copy.run(path),
+            Action::Rename(rename) => rename.run(path),
+            Action::Shell(shell) => shell.run(path),
+            Action::Delete(delete) => delete.run(path),
+            Action::Python(python) => python.run(path),
+            Action::Echo(echo) => echo.run(path),
+        }
+    }
+}
+
+#[derive(Eq, PartialEq)]
+pub enum ActionType {
     Move,
     Rename,
     Copy,
@@ -59,7 +85,7 @@ pub enum Action {
     Python,
 }
 
-impl From<&str> for Action {
+impl From<&str> for ActionType {
     fn from(str: &str) -> Self {
         match str.to_lowercase().as_str() {
             "move" => Self::Move,
@@ -75,7 +101,7 @@ impl From<&str> for Action {
     }
 }
 
-impl ToString for Action {
+impl ToString for ActionType {
     fn to_string(&self) -> String {
         match self {
             Self::Move => "move",
@@ -131,62 +157,22 @@ impl Script {
     }
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize, Default)]
-pub struct Actions {
-    pub echo: Option<Echo>,
-    pub shell: Option<Shell>,
-    pub python: Option<Python>,
-    pub delete: Option<Delete>,
-    pub copy: Option<Copy>,
-    pub r#move: Option<Move>,
-    pub rename: Option<Rename>,
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct Actions(Vec<Action>);
+
+impl Deref for Actions {
+    type Target = Vec<Action>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
 }
 
 impl Actions {
     pub fn run(&self, path: PathBuf) {
         let mut path = Cow::from(path);
-        if let Some(echo) = &self.echo {
-            if let Err(e) = echo.run(&path) {
-                eprintln!("error: {}", e.to_string());
-                return;
-            }
-        }
-        if let Some(python) = &self.python {
-            if let Err(e) = python.run(&path) {
-                eprintln!("error: {}", e.to_string());
-                return;
-            }
-        }
-        if let Some(shell) = &self.shell {
-            if let Err(e) = shell.run(&path) {
-                eprintln!("error: {}", e.to_string());
-                return;
-            }
-        }
-        if let Some(copy) = &self.copy {
-            if let Err(e) = copy.run(&mut path) {
-                eprintln!("error: {}", e.to_string());
-                return;
-            }
-        }
-        if self.r#move.is_some() ^ self.rename.is_some() {
-            let result = if let Some(r#move) = &self.r#move {
-                r#move.run(&mut path)
-            } else {
-                self.rename.as_ref().unwrap().run(&mut path)
-            };
-            if let Err(e) = result {
-                eprintln!("error: {}", e.to_string());
-                return;
-            }
-        }
-        if let Some(delete) = &self.delete {
-            if *delete.deref() {
-                if let Err(e) = delete.run(&path) {
-                    eprintln!("error: {}", e.to_string());
-                    return;
-                }
-            }
+        for action in self.iter() {
+            action.run(&mut path).ok();
         }
     }
 }
@@ -308,15 +294,15 @@ impl FileAction {
         to: &Path,
         if_exists: &ConflictOption,
         sep: &Sep,
-        r#type: Action,
+        r#type: ActionType,
     ) -> Result<()> {
         #[cfg(debug_assertions)]
-        debug_assert!(r#type == Action::Move || r#type == Action::Rename || r#type == Action::Copy);
+        debug_assert!(r#type == ActionType::Move || r#type == ActionType::Rename || r#type == ActionType::Copy);
 
         let mut logger = Logger::default();
         let to = PathBuf::from(to.to_str().unwrap().to_string().expand_placeholders(path).unwrap());
         let mut to = Cow::from(to);
-        if r#type == Action::Copy || r#type == Action::Move {
+        if r#type == ActionType::Copy || r#type == ActionType::Move {
             if !to.exists() {
                 fs::create_dir_all(&to)?;
             }
@@ -330,9 +316,9 @@ impl FileAction {
             return Ok(());
         }
 
-        if r#type == Action::Copy {
+        if r#type == ActionType::Copy {
             std::fs::copy(&path, &to)?;
-        } else if r#type == Action::Rename || r#type == Action::Move {
+        } else if r#type == ActionType::Rename || r#type == ActionType::Move {
             std::fs::rename(&path, &to)?;
         }
 
@@ -342,7 +328,7 @@ impl FileAction {
             &format!("{} -> {}", &path.display(), &to.display()),
         );
 
-        if r#type == Action::Rename || r#type == Action::Move {
+        if r#type == ActionType::Rename || r#type == ActionType::Move {
             *path = to;
         }
         Ok(())

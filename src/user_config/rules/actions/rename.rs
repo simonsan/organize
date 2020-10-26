@@ -1,5 +1,5 @@
 use crate::user_config::rules::{
-    actions::{Action, FileAction},
+    actions::{ActionType, FileAction},
     deserialize::string_or_struct,
 };
 use serde::{Deserialize, Serialize};
@@ -19,6 +19,6 @@ impl Deref for Rename {
 impl Rename {
     pub(super) fn run(&self, path: &mut Cow<Path>) -> Result<()> {
         let rename = self.deref();
-        FileAction::helper(path, &rename.to, &rename.if_exists, &rename.sep, Action::Rename)
+        FileAction::helper(path, &rename.to, &rename.if_exists, &rename.sep, ActionType::Rename)
     }
 }

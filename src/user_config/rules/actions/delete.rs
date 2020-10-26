@@ -14,6 +14,9 @@ impl Deref for Delete {
 
 impl Delete {
     pub(super) fn run(&self, path: &Path) -> Result<()> {
-        fs::remove_file(path)
+        if self.0 {
+            return fs::remove_file(path);
+        }
+        Ok(())
     }
 }
