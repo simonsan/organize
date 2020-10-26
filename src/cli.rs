@@ -78,8 +78,7 @@ impl Cli {
             daemon,
         };
 
-        cli.validate_config()?
-            .validate_watch()?;
+        cli.validate_config()?.validate_watch()?;
 
         Ok(cli)
     }
