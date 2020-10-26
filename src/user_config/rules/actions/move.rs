@@ -1,15 +1,15 @@
 use crate::user_config::rules::{
-    actions::{ActionType, FileAction},
+    actions::{ActionType, IOAction},
     deserialize::string_or_struct,
 };
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, io::Result, ops::Deref, path::Path};
 
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
-pub struct Move(#[serde(deserialize_with = "string_or_struct")] FileAction);
+pub struct Move(#[serde(deserialize_with = "string_or_struct")] IOAction);
 
 impl Deref for Move {
-    type Target = FileAction;
+    type Target = IOAction;
 
     fn deref(&self) -> &Self::Target {
         &self.0
@@ -18,6 +18,6 @@ impl Deref for Move {
 
 impl Move {
     pub(super) fn run(&self, path: &mut Cow<Path>) -> Result<()> {
-        FileAction::helper(path, self.deref(), ActionType::Move)
+        IOAction::helper(path, self.deref(), ActionType::Move)
     }
 }

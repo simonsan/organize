@@ -2,24 +2,17 @@ pub mod copy;
 pub mod delete;
 pub mod echo;
 pub mod r#move;
-pub mod python;
 pub mod rename;
-pub mod shell;
+pub mod script;
 pub mod trash;
 
 use crate::{
     path::{Expandable, Update},
     string::Placeholder,
     subcommands::logs::{Level, Logger},
-    user_config::{
-        rules::{
-            actions::{
-                copy::Copy, delete::Delete, echo::Echo, python::Python, r#move::Move, rename::Rename, shell::Shell,
-                trash::Trash,
-            },
-            deserialize::deserialize_path,
-        },
-        UserConfig,
+    user_config::rules::{
+        actions::{copy::Copy, delete::Delete, echo::Echo, r#move::Move, rename::Rename, script::Script, trash::Trash},
+        deserialize::deserialize_path,
     },
 };
 use serde::{Deserialize, Serialize};
@@ -29,7 +22,6 @@ use std::{
     io::{Error, ErrorKind, Result},
     ops::Deref,
     path::{Path, PathBuf},
-    process::{Command, Stdio},
     result,
     str::FromStr,
 };
@@ -51,7 +43,7 @@ impl Default for Sep {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, Eq, PartialEq, Default)]
-pub struct FileAction {
+pub struct IOAction {
     #[serde(deserialize_with = "deserialize_path")]
     pub to: PathBuf,
     #[serde(default)]
@@ -60,7 +52,7 @@ pub struct FileAction {
     pub sep: Sep,
 }
 
-impl From<PathBuf> for FileAction {
+impl From<PathBuf> for IOAction {
     fn from(path: PathBuf) -> Self {
         Self {
             to: path.expand_user().expand_vars(),
@@ -70,7 +62,7 @@ impl From<PathBuf> for FileAction {
     }
 }
 
-impl FromStr for FileAction {
+impl FromStr for IOAction {
     type Err = ();
 
     fn from_str(s: &str) -> result::Result<Self, Self::Err> {
@@ -79,7 +71,7 @@ impl FromStr for FileAction {
     }
 }
 
-impl FileAction {
+impl IOAction {
     /// Helper function for the move, rename and copy actions.
     /// # Args:
     /// - `path`: a reference to a Cow smart pointer containing the original file
@@ -87,7 +79,7 @@ impl FileAction {
     /// - `if_exists`: variable that helps resolve any naming conflicts between `path` and `to`
     /// - `sep`: counter separator (e.g. in "file (1).test", `sep` would be a whitespace; in "file-(1).test", it would be a hyphen)
     /// - `type`: whether this helper should move, rename or copy the given file (`path`)
-    pub(super) fn helper(path: &mut Cow<Path>, action: &FileAction, kind: ActionType) -> Result<()> {
+    pub(super) fn helper(path: &mut Cow<Path>, action: &IOAction, kind: ActionType) -> Result<()> {
         #[cfg(debug_assertions)]
         debug_assert!(kind == ActionType::Move || kind == ActionType::Rename || kind == ActionType::Copy);
 
@@ -133,11 +125,10 @@ pub enum Action {
     Move(Move),
     Copy(Copy),
     Rename(Rename),
-    Shell(Shell),
     Delete(Delete),
-    Python(Python),
     Echo(Echo),
     Trash(Trash),
+    Script(Script),
 }
 
 impl Action {
@@ -147,10 +138,9 @@ impl Action {
             Action::Delete(delete) => delete.run(path),
             Action::Echo(echo) => echo.run(path),
             Action::Move(r#move) => r#move.run(path),
-            Action::Python(python) => python.run(path),
             Action::Rename(rename) => rename.run(path),
-            Action::Shell(shell) => shell.run(path),
             Action::Trash(trash) => trash.run(path),
+            Action::Script(script) => script.run(path),
         }
     }
 }
@@ -161,9 +151,8 @@ pub enum ActionType {
     Delete,
     Echo,
     Move,
-    Python,
     Rename,
-    Shell,
+    Script,
     Trash,
 }
 
@@ -176,55 +165,9 @@ impl ToString for ActionType {
             Self::Delete => "delete",
             Self::Trash => "trash",
             Self::Echo => "echo",
-            Self::Shell => "shell",
-            Self::Python => "python",
+            Self::Script => "script",
         }
         .into()
-    }
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize, Default)]
-pub struct Script(String);
-
-impl Deref for Script {
-    type Target = String;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl Script {
-    pub(super) fn write(&self, path: &Path, extension: &str) -> Result<PathBuf> {
-        let content = self.deref().expand_placeholders(path)?;
-        let dir = UserConfig::dir().join("scripts");
-        if !dir.exists() {
-            fs::create_dir_all(&dir)?;
-        }
-        let mut script = dir.join("temp_script");
-        script.set_extension(extension);
-        fs::write(&script, content)?;
-        Ok(script)
-    }
-
-    pub(super) fn run(&self, path: &Path, program: &str) -> Result<()> {
-        let extension = match program {
-            "python" => "py",
-            "sh" => "sh",
-            _ => panic!("unknown script language"),
-        };
-        let script = self.write(path, extension)?;
-        let output = Command::new(program)
-            .arg(&script)
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()
-            .expect("could not run script")
-            .wait_with_output()
-            .expect("script terminated with an error");
-        println!("{}", String::from_utf8_lossy(&output.stdout));
-        fs::remove_file(script)?;
-        Ok(())
     }
 }
 
