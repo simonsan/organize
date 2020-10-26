@@ -1,0 +1,32 @@
+language: rust
+
+rust:
+  - stable
+  - beta
+  - nightly
+
+script: | 
+  cargo build --verbose &&
+  cargo test --verbose
+
+branches:
+  only:
+    - staging # bors r+
+    - trying # bors try
+    - master
+    - alpha-2.0
+
+cache: cargo
+
+matrix:
+  include:
+    - rust: nightly-2018-01-12
+      before_script:
+        - rustup component add rustfmt-preview
+        - rustup component add clippy-preview
+      script:
+        - cargo fmt -- --write-mode=diff
+        - cargo clippy -- -D clippy
+
+
+
